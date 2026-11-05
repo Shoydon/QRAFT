@@ -275,9 +275,12 @@ export class PqAccountClient {
       }
     });
   }
-  async reconcile(options: Pick<PqSendOptions, 'onProgress' | 'signal' | 'timeoutMs'> = {}): Promise<PqSendResult> {
+  async reconcile(options: Pick<PqSendOptions, 'onProgress' | 'signal' | 'timeoutMs'> & { expectedHash?: Hex } = {}): Promise<PqSendResult> {
+    const expectedHash = options.expectedHash ?? this.readJournal()?.hash;
     return this.withLock(`qraft:pq-sign:${this.deployment.chainId}:${this.address.toLowerCase()}`, async () => {
-      const entry = this.readJournal(); if (!entry) return { kind: 'not-sent', reason: 'There is no saved public transaction to reconcile.' };
+      const entry = this.readJournal();
+      if (entry?.hash !== expectedHash) failure('The saved native intent changed while waiting for its lock. Reconcile it in its original workflow.');
+      if (!entry) return { kind: 'not-sent', reason: 'There is no saved public transaction to reconcile.' };
       try { return await this.resume(entry, options); }
       catch { entry.state = 'unknown'; this.saveJournal(entry); return { kind: 'unknown', hash: entry.hash, reason: 'The saved native transaction remains unresolved. Its nonce and bytes have not been replaced.' }; }
     });
