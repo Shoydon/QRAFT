@@ -3,7 +3,6 @@ import {readFileSync,writeFileSync,existsSync,mkdirSync} from 'node:fs';
 import {join,dirname,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from '@playwright/test';
-const root=join(dirname(fileURLToPath(import.meta.url)),'../wasm');
 const publicRoot=join(dirname(fileURLToPath(import.meta.url)),'../../../public/pq-v5');
 const server=createServer((req,res)=>{
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Isolated membership WASM feasibility</title>');return;}
@@ -16,7 +15,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base=`http://127.0.0.1:${server.address().port}`;const browser=await chromium.launch();
 const exportPublic=process.argv.includes('--export-public-proof');
 const publicOutput=join(dirname(fileURLToPath(import.meta.url)),'../../../.local/pq-v5-browser');
-if(exportPublic)mkdirSync(publicOutput,{recursive:true});
+mkdirSync(publicOutput,{recursive:true});
 const report={profile:'v5-spbcs',experimental:true,applicationEnabled:false,externalRequests:[],consoleEntries:[],errors:[]};
 try{
  const page=await browser.newPage();page.on('request',r=>{if(!r.url().startsWith(base))report.externalRequests.push(r.url());});page.on('console',m=>report.consoleEntries.push({type:m.type(),text:m.text()}));page.on('pageerror',()=>report.errors.push('Browser page error'));
@@ -41,5 +40,5 @@ try{
  },exportPublic));
  report.success=Object.values(report.checks).every(Boolean)&&report.externalRequests.length===0&&report.consoleEntries.length===0&&report.errors.length===0;
 }catch(e){report.success=false;report.failure=String(e.message).slice(0,180);}
-finally{writeFileSync(join(root,'browser-v5-report.json'),JSON.stringify(report,null,2)+'\n');await browser.close();server.close();}
+finally{writeFileSync(join(publicOutput,'browser-v5-report.json'),JSON.stringify(report,null,2)+'\n');await browser.close();server.close();}
 process.stdout.write(JSON.stringify(report,null,2)+'\n');if(!report.success)process.exitCode=1;

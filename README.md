@@ -1,272 +1,69 @@
 # QRAFT
 
-**Q**uantum-**R**esistant **A**nonymous **F**rame **T**ransactions.
+**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application adapted from Himitsu. Deposit **0.0001 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
 
-What ships today is the middle letter: a fixed-denomination privacy pool on
-Ethereum, with every chain read routed through anon-rpc. Deposit a fixed
-amount of native ETH against a commitment, keep the private note, and later
-withdraw to any address using a proof generated in your browser.
+The active application uses ML-DSA-44 account authorization, SHA3-512 notes and Merkle commitments, and the transparent V5 withdrawal proof. User signing seeds and note witnesses stay in the browser. This is experimental devnet software: the proof construction has a conditional security argument, not an independently established quantum-security certificate or a production audit. See [security boundaries](docs/pq/application-security.md).
 
-Quantum-resistant account access and EIP-8141 frame transactions are the
-direction, not the current state — see **Not done yet**. No surface in the
-app claims either.
+## Run locally
 
-The wordmark lives in [`src/config/brand.ts`](src/config/brand.ts) — the
-header, page title and footer all read from it.
-
----
-
-## Run it
+Use Node 22.23+ (or Node 24), Rust/Cargo, Python 3, and Bun for unit tests. Keep the `PYTHON` environment variable set when starting the helper so its encoder can load PyCryptodome.
 
 ```sh
-npm install
-npm run dev          # http://localhost:3000
+npm ci
+python3 -m venv .local/pq-python
+.local/pq-python/bin/pip install -r packages/pq-hiding-stark/requirements.txt
+export PYTHON="$PWD/.local/pq-python/bin/python"
+npm run prepare:pq
+npm run dev
 ```
+
+Open **http://127.0.0.1:3000/app** for the PQ application. The landing page at `/` explains the project and links into `/app`. Startup checks the checked-in browser prover hashes. `prepare:pq` verifies and unpacks the pinned upstream archive and builds the public-only native encoder; it does not generate private notes or a trusted setup.
+
+Account creation and public proof processing require the optional local helper. In `.env.local`, set:
+
+```dotenv
+QRAFT_LOCAL_PQ_SERVICE=1
+QRAFT_DEPLOYER_KEY_FILE=.local/deployer.json
+```
+
+Supply a funded, disposable **chain 8141** gas-carrier key in that protected JSON file, with fields `chainId` (8141) and `privateKey` (0x-prefixed 32-byte key). Protect it with `chmod 600 .local/deployer.json`. Never use a mainnet key. No key is shipped. This workspace already has local test configuration; restart after changing environment variables.
+
+The helper provisions public ML-DSA account data, bootstraps 0.0003 test ETH, caches already signed authorizations and pays for public proof computation. It cannot produce an ML-DSA authorization or withdraw from the pool without a valid note proof. It uses direct RPC, so this local configuration does **not** provide anonymity for all traffic. Keep it bound to loopback; it is not an authenticated public faucet or hosted service.
+
+## Try the flow
+
+1. Create a PQ wallet. Download its backup and acknowledge that it is saved.
+2. Generate a deposit note. Download it separately and acknowledge the backup.
+3. Deposit 0.0001 ETH. The ML-DSA account signs the native frame transaction.
+4. Open Withdraw, import the note, and enter a fresh recipient address. Use a separate PQ account for withdrawal gas if you want to avoid directly linking both actions; save its backup too. The default account is not automatically rotated.
+5. Generate the proof and withdraw. The browser proves and verifies locally, then sends only the public proof and statement to the helper. Native ML-DSA transactions open and attach the verification session; the helper executes the public computation, and the account authorizes the final withdrawal.
+
+Keep **both** backups. The wallet file contains its private signing seed; the note is a bearer secret needed to recover the deposit. Neither is saved in browser local storage or sent to the local helper. Import a wallet backup to restore signing access; import the note to recover a withdrawal. Public transaction and workflow journals support resuming interrupted operations. An unknown transaction outcome must be reconciled before a new action; do not delete journals to bypass it. A receipt proves inclusion, not irreversible finality.
+
+Desktop Chromium is recommended. V5 proving currently uses approximately **2.04 GiB** of WASM memory and produces a roughly **10.3 MB** public envelope. Onchain verification is split across 663 calls and can take tens of minutes, depending on RPC and devnet throughput. The browser reports progress. Anonymous RPC may add substantial latency.
+
+## Network and verification
+
+The active deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
+
+Browser chain requests use the official Nym Anon-RPC worker by default and stop on failure, with no automatic direct fallback. The worker lookup uses a direct Ethereum bootstrap RPC. Explicit passthrough mode is labelled non-anonymous. The local helper and CLI diagnostics use direct RPC. See [.env.example](.env.example).
 
 ```sh
-npm run typecheck    # tsc --noEmit
-npm run lint         # eslint
-npm run build        # next build
-npm run check        # all three
+npm test
+npm run check
+npm run doctor
+npm run test:pq:browser
+npm run test:browser
 ```
 
-Node 20+ and npm 10+. No wallet, RPC key, or deployed contract is needed to
-run it; see **What is real, what is simulated** below.
+`doctor` checks the active PQ deployment and browser artifact hashes. `test:pq:browser` checks the browser proof and mutations without depositing. `test:browser` performs a real fresh-account deposit/restore/withdrawal test against the locally running application (default port 3006), uses disposable devnet ETH and saves protected backups/evidence under ignored `.local/`. Start it with `npm run start -- --port 3006` after building. Unit tests need Bun. Install the browser test runtime with `npx playwright install chromium` if it is not already present. Rust tests run from `packages/pq-hiding-stark` after upstream preparation. Public encoder boundary checks are documented in [public-encoder.md](docs/pq/public-encoder.md).
 
-### Optional configuration
+The [live integration evidence](docs/pq/application-checks.json) records a fresh native deposit, browser V5 proving, all 663 successful verifier calls, browser-session recovery, exact 0.0001 ETH payout and spent-note rejection. The [receipt screenshot](docs/pq/withdrawal-receipt.png) shows the confirmed native withdrawal. This test reused its deposit account for gas and makes no unlinkability claim. Browser request counters in that report cover the resumed session.
 
-Copy [`.env.example`](.env.example) to `.env.local`. Every variable has a
-working default except the KPS gateway list, which is empty because no
-long-lived public gateway exists to point at. See **Read path** below.
+If Nym reads time out, open the read-path footer, reconnect anonymous reads, and retry the same backup or saved workflow. Never discard an unresolved signed intent or switch to a replacement nonce to work around a timeout.
 
----
+## Provenance and hackathon context
 
-## What the product does
+Himitsu supplies the native frame codec, ML-DSA preparation and V5 proof implementation; QRAFT supplies the interface integration, local public helper, recovery boundaries and deployment checks. The sibling source repository is preserved separately. Historical Groth16 contracts and scripts remain as reference; the active `AppShell` loads only the PQ application and has no classical custody fallback. Legacy `protocol:*`, `prepare:proving` and `test:protocol` scripts do not exercise the active PQ path.
 
-One screen, two tabs.
-
-**Deposit** — choose a denomination (0.01 / 0.1 / 1 / 10 ETH) → see amount,
-fee and pool → generate a note locally → download it and explicitly
-acknowledge that losing it loses the deposit → connect a funding wallet →
-submit → watch it confirm → receipt. A deposit is never shown as successful
-before its transaction is confirmed. If submission or confirmation fails, the
-note is preserved and the screen says exactly what is and is not known.
-
-**Withdraw** — import a note from a file or paste field → the app validates
-its format and deployment identity → shows the denomination and whether the
-note is ready, pending, spent, or currently uncheckable → enter a recipient →
-review recipient, amount and who pays gas → generate the proof locally with
-staged progress → submit → confirm → receipt. The note is marked spent only
-after a confirmed transaction.
-
-No wallet connection is required to import a note or generate a proof. A
-wallet is requested only when a transaction actually needs funding, and never
-automatically on page load.
-
-### The privacy claim, stated precisely
-
-Deposits and withdrawals are both public onchain. The intended property is
-that an observer cannot link a particular deposit to a particular withdrawal.
-That hiding is only as strong as the number of other unspent notes of the same
-denomination, and it is weakened by timing, by gas payment, and by reusing an
-address. The interface says this and does not promise guaranteed anonymity,
-and nothing in it is described as quantum-proof.
-
----
-
-## What is real, what is simulated
-
-No pool contract is deployed and no proving artifacts (wasm/zkey) ship with
-this repo, so the app runs in **preview mode**, announced in a persistent banner.
-
-**Real:**
-
-- Note generation — rejection-sampled BN254 field elements from
-  `crypto.getRandomValues`, Poseidon commitment and nullifier hash
-  (`poseidon-lite`), keccak checksum, file export and import, format and
-  deployment-identity validation. See [`src/lib/note.ts`](src/lib/note.ts).
-- Wallet connection, account, chain and balance, when the browser has an
-  EIP-1193 wallet. Only the submission is simulated.
-- The Anon-RPC read transport and the live gas-price read it performs.
-
-**Simulated, behind adapters:** deposit submission, note inclusion and
-spent-status lookups, proof generation, withdrawal submission, and transaction
-reconciliation.
-
-Every simulated value carries `simulated: true` through the adapter layer.
-Simulated transaction references begin with four zero bytes — which a real
-hash essentially never does — are stamped `SIMULATED` wherever they appear,
-and are never linked to a block explorer. A simulated receipt cannot be
-mistaken for chain activity.
-
-### The adapter boundary
-
-[`src/lib/adapters/types.ts`](src/lib/adapters/types.ts) defines six small,
-typed adapters: account access, deposit submission, note validation, proof
-generation, withdrawal submission, and transaction reconciliation. The
-simulated implementations live in
-[`src/lib/adapters/simulated.ts`](src/lib/adapters/simulated.ts) and nothing in the
-interface imports them directly — resolution happens in
-[`src/lib/adapters/index.ts`](src/lib/adapters/index.ts).
-
-**To wire a real backend:** implement `Backend` against a deployed pool, add
-it beside `simulatedBackend`, and set `DEPLOYMENT.backend` to `'chain'` in
-[`src/config/pool.ts`](src/config/pool.ts). `getBackend()` throws rather than
-serving simulated data under a real label if that flag is set with no chain
-backend present.
-
-### Reaching the edge states
-
-Every designed state — insufficient balance, rejected deposit, unknown
-outcome, reverted transaction, pending note, spent note, uncheckable note,
-proof failure, depleted sponsor, unreachable sponsor — is reachable with a
-`?scenario=` query parameter, listed in
-[`src/lib/adapters/scenario.ts`](src/lib/adapters/scenario.ts). For example
-`/app?scenario=note-spent`.
-
-It is a query parameter rather than a control in the interface because
-forcing a chain condition is a testing affordance, and a switch for it would
-stop meaning anything the moment a contract is deployed. A real backend
-ignores the parameter entirely.
-
-## The chain
-
-The [EIP-8141 alternative-mempool devnet](https://docs.altmempool.wtf/guides/devnet/),
-chain id **1337**. Frame transactions run on no public testnet, so this is the
-only chain the project's direction can target.
-
-| | |
-|---|---|
-| Execution RPC | `https://altmempool.forshtat.com` |
-| Sidecar RPC (frame transactions) | `https://altmempool.forshtat.com/rpc` |
-| Explorer | `explorer.altmempool.wtf` |
-| Block time | 6 seconds |
-
-Know what you are pointing at: it is a demonstration network with no security
-model and no persistence guarantee, and it may reset at any time. Measured
-over 24 hours it produced roughly 2,000 blocks against the ~14,400 a
-continuous 6-second cadence implies, so it is not reliably up. Do not plan a
-demo around it being live without checking first.
-
-Because the chain id is written into every note, a reset leaves old notes
-validating against deposits that no longer exist — they read as permanently
-pending. After any reset, bump `DEPLOYMENT.id` in `src/config/pool.ts` so
-stale notes are refused outright instead.
-
-## Read path
-
-Every chain read goes through [anon-rpc](https://github.com/ethereum/anon-rpc)
-by default. The harness resolves a hash-pinned anon-client bundle from an
-on-chain specifier contract, refuses to execute bytes whose `keccak256` does
-not match, runs it in a Web Worker inside a null-origin sandboxed iframe, and
-hands back an anonymized `fetch`. The RPC provider then sees the request but
-not the browser it came from.
-
-There is **no direct-RPC fallback**, by design. A silent fall back to a direct
-connection would leak the link between a browser and the notes it is reading
-about — the exact link the pool exists to hide. If the transport cannot start,
-reads stop and the Read path panel says why.
-
-One read is not anonymized: the bootstrap read of the specifier contract that
-learns the pinned worker hash. It reveals that a specifier contract was read,
-not any address. The interface states this rather than hiding it.
-
-**Default worker: `tor-js`.** Browsers cannot open the raw TCP that Tor needs,
-so it reaches the network through KPS relays, and it needs at least one
-gateway in `NEXT_PUBLIC_ANON_RPC_GATEWAYS`. With none set, the Read path panel
-reports "Not configured" and names the variable — it does not spend a minute
-on a boot that cannot succeed. Run your own gateway for anything real; the
-anon-rpc project's
-[`adopters.json5`](https://github.com/ethereum/anon-rpc/blob/main/adopters.json5)
-lists a demonstration gateway and documents its limits.
-
-Setting `NEXT_PUBLIC_ANON_RPC_WORKER=passthrough` selects the reference worker,
-which fulfils reads with an ordinary fetch. It anonymizes nothing, and the
-Read path panel says so in those words when it is selected.
-
----
-
-## CROPS
-
-**C — Censorship resistance.** What you depend on from us: the domain serving
-this static frontend. There is no backend, API, or relayer of ours in any
-path. The app is a static Next.js build; `npm run build` produces something
-you can host anywhere, and notes are plain files that are not tied to this
-origin. What you depend on from third parties: the RPC provider in
-`NEXT_PUBLIC_READ_RPC_URL` and the anonymizing network's gateway operators,
-both of which are configuration you control. If the anonymizing network
-refuses you, reads stop with a stated reason rather than silently reverting to
-a direct connection.
-
-**O — Open source.** MIT, in [`LICENSE`](LICENSE). This README is the complete
-build instruction; there is no private step and no bundled binary. The
-anon-client bundle is fetched at runtime and verified against a hash published
-on-chain, so it is not something we can substitute.
-
-**P — Privacy.** Our server learns nothing, because there isn't one. The RPC
-provider learns which calls were made but not which browser made them, since
-reads travel through the anonymizing network. The anon-client worker is
-untrusted-but-sandboxed: it sees every request routed through it, which is why
-it is pinned by hash and auditable. The bootstrap provider learns that a
-specifier contract was read, once. There are no analytics, trackers, or error
-reporting of any kind. Notes, nullifiers, secrets and witnesses never leave
-the browser and are never placed in a URL, a log, or a request body.
-
-**S — Security.** Note secrets are generated with `crypto.getRandomValues`,
-rejection-sampled into the BN254 scalar field, and held in memory only —
-nothing is persisted to `localStorage`, `IndexedDB`, cookies, or anywhere
-else, and a reload discards them. The note file the user downloads is the only
-copy, which the interface states plainly and does not claim to have backed up.
-The app never asks for a seed phrase or a private key. Trust assumptions: the
-pool contract and circuit (unaudited, and not deployed in this build), the
-hash-pinned anon-client, and the specifier contract's owner.
-
-**Trade-offs we are stating rather than hiding:** the anonymizing network adds
-real latency; chain *writes* go through the user's own wallet and therefore
-its RPC, not through anon-rpc; and the frontend is currently served from one
-domain, so censorship resistance today rests on the build being reproducible
-and self-hostable rather than on content addressing.
-
----
-
-## Not done yet
-
-- **No pool contract, no circuit, no proving artifacts.** Everything
-  chain-facing is simulated. This is the one blocker between Preview mode and a
-  working deployment.
-- **No gas sponsor.** The gas-policy adapter models sponsored, depleted,
-  unreachable and self-funded, but no paymaster is wired. Sponsorship is never
-  advertised unless the backend reports a funded one.
-- **No KPS gateway shipped**, so the default read path reports "Not
-  configured" until one is set.
-- **Writes are not anonymized.** Transactions go through the user's wallet,
-  which uses its own RPC. Routing writes through the anonymizing network, or
-  through an alternative mempool, is future work.
-- **No persistent note storage.** Deliberate: any persistence must be an
-  explicit, clearly explained choice, and that choice has not been designed
-  yet.
-- **No automated tests.** Verification so far is `npm run check` plus a
-  scripted browser walk of both journeys and the edge states.
-- **Not quantum-resistant yet.** The Q in the name is the goal. Note
-  commitments use Poseidon over BN254 and the eventual proof system is
-  classical; post-quantum account access would be a separate mechanism, kept
-  deliberately apart from note ownership so that losing one does not lose the
-  other.
-- **No frame transactions yet.** The F in the name points at EIP-8141 and the
-  alternative mempool. The app reads from the devnet but submits through the
-  user's ordinary wallet. Frame transactions, sent to the sidecar at
-  `https://altmempool.forshtat.com/rpc`, would be what lets the pool itself pay
-  for a withdrawal, removing the need for a funded recipient address.
-- **No explorer links.** The devnet explorer's URL scheme is not documented,
-  so `explorerBase` is null rather than a guess. Transaction references render
-  without a link until someone confirms the real path.
-
----
-
-## Design
-
-[`DESIGN.md`](DESIGN.md) records the visual system; [`PRODUCT.md`](PRODUCT.md)
-records product truth and the assumptions made where a human answer was not
-available.
-
-Unaudited software. Do not put money you care about through it.
+The [ETHGlobal Mumbai Ethereum Foundation prize page](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) and [official Anon-RPC wallet documentation](https://ethereum.github.io/anon-rpc/wallets/) inform the RPC integration. Reused implementation must be disclosed according to the event's rules; this repository does not represent all upstream work as newly created at the event.

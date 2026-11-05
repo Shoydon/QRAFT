@@ -49,7 +49,8 @@ argument is narrower than generic strong simulation extractability. Neither it
 nor passing tests certifies the surrounding chain, browser or endpoint privacy.
 The old preimage/v1/v2/v3/v4 examples remain separately named diagnostic profiles.
 Groth16 notes elsewhere in the application are not reinterpreted as PQ notes.
-The replacement pool is not silently enabled in the application UI.
+QRAFT explicitly selects the V5 pool in its active PQ interface; classical notes
+are refused. See the root README for local helper setup and external limits.
 
 ## Complete verifier
 
