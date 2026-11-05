@@ -25,6 +25,17 @@ type AnonWorker = {
   close(): void;
 };
 
+/**
+ * How long to wait for the anonymizing network before calling it unavailable.
+ *
+ * A mixnet client is a large bundle and a slow handshake — Nym downloads about
+ * 18 MB and then negotiates through the mixnet — so this has to be generous.
+ * It exists only to stop the interface sitting on "connecting" forever, which
+ * is what Tor does when no gateway will relay: it retries with escalating
+ * backoff and `ready` never settles either way.
+ */
+const BOOT_TIMEOUT_MS = 150_000;
+
 const GATEWAY_DETAIL =
   `${TRANSPORT.worker.label} reaches its network through KPS relays, because browsers cannot open ` +
   `raw TCP. Set NEXT_PUBLIC_ANON_RPC_GATEWAYS to at least one gateway and reload. Chain reads stay ` +
@@ -105,9 +116,19 @@ export function createAnonRpcTransport(): ChainTransport {
       preExisting: { rpcProvider: bootstrapProvider(TRANSPORT.bootstrapRpcUrl as string) },
     }) as unknown as AnonWorker;
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new BootTimeout()),
+        BOOT_TIMEOUT_MS,
+      );
+    });
+
     try {
-      await instance.ready;
+      await Promise.race([instance.ready, deadline]);
+      clearTimeout(timer);
     } catch (error) {
+      clearTimeout(timer);
       const code = error instanceof RpcError ? String(error.code ?? '') : '';
       set({
         phase: 'failed',
@@ -182,7 +203,23 @@ export function createAnonRpcTransport(): ChainTransport {
   };
 }
 
+/** Distinguishes "took too long" from "the worker said no". */
+class BootTimeout extends Error {
+  constructor() {
+    super('boot-timeout');
+  }
+}
+
 function describeBootFailure(code: string, error: unknown): string {
+  if (error instanceof BootTimeout)
+    return (
+      `The ${TRANSPORT.worker.label} network did not become usable within ` +
+      `${Math.round(BOOT_TIMEOUT_MS / 1000)} seconds. Its client started, but no gateway would ` +
+      `relay the connection — the gateway in NEXT_PUBLIC_ANON_RPC_GATEWAYS may be down, at ` +
+      `capacity, or have rotated its key. Chain reads stay off; this app does not fall back to a ` +
+      `direct connection.`
+    );
+
   if (code === 'unsupported-chain')
     return 'The anonymizing network does not support this chain. Chain reads stay off.';
   if (code)
