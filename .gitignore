@@ -20,7 +20,7 @@ playwright-report/
 **/target/
 **/artifacts/
 **/out/
-**/cache/
+packages/**/cache/
 **/benchmark-results/
 **/__pycache__/
 *.pyc
