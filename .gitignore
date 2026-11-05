@@ -7,3 +7,11 @@ build
 next-env.d.ts
 .DS_Store
 .vercel
+.local/
+.env
+protocol/build/
+public/proving/spend.wasm
+public/proving/spend.zkey
+public/proving/snarkjs.min.js
+test-results/
+playwright-report/
