@@ -17,7 +17,9 @@
     "protocol:deploy": "node scripts/deploy.mjs",
     "test:protocol": "npm run protocol:build && npm run prepare:proving && node --experimental-strip-types scripts/test-protocol.mjs",
     "test": "bun test tests",
-    "test:pq:crypto": "bun test tests/pq.test.ts"
+    "test:pq:crypto": "bun test tests/pq.test.ts",
+    "test:pq:browser": "node packages/pq-hiding-stark/scripts/test-browser-v5.mjs",
+    "prepare:pq": "node scripts/build-pq.mjs"
   },
   "dependencies": {
     "@anon-rpc/browser-harness": "0.4.0",

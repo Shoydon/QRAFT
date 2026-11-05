@@ -15,3 +15,13 @@ public/proving/spend.zkey
 public/proving/snarkjs.min.js
 test-results/
 playwright-report/
+
+# Native PQ build outputs and local proofs
+**/target/
+**/artifacts/
+**/out/
+**/cache/
+**/benchmark-results/
+**/__pycache__/
+*.pyc
+packages/pq-hiding-stark/vendor/plonky3/

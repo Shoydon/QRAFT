@@ -1,0 +1,29 @@
+{
+  "profile": "v5-spbcs",
+  "experimental": true,
+  "applicationEnabled": false,
+  "externalRequests": [],
+  "consoleEntries": [],
+  "errors": [],
+  "proofBytes": 10306854,
+  "proveMs": 15719.099999964237,
+  "proveLinearMemoryBytes": 2190737408,
+  "verifyMs": 170,
+  "verifyLinearMemoryBytes": 56033280,
+  "totalMs": 16560.599999964237,
+  "publicVkPostcardHex": "060c01a9b8f8cdc2bd999c76b291bf8d8ccd94ecc201e28e8df8c2b0abebc701fbf5e3fdcd9783c2d501cca6bfa6f9a7eb8bf001a482eb9afbe5ecaece01ee8d80f4d98ce68e9c01a8b0fd8488befab123",
+  "checks": {
+    "valid": true,
+    "changedRoot": true,
+    "changedNullifier": true,
+    "changedContext": true,
+    "corruptedProof": true,
+    "changedSecret": true,
+    "nonBooleanDirection": true,
+    "trailingBytes": true
+  },
+  "witnessExported": false,
+  "proofExported": false,
+  "workersTerminatedAfterEveryOperation": true,
+  "success": true
+}

@@ -1,0 +1,17 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+cache_path = "cache"
+solc_version = "0.8.28"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+libs = ["../../pq-private-proof/contracts/lib"]
+remappings = ["forge-std/=../../pq-private-proof/contracts/lib/forge-std/src/"]
+fs_permissions = [{ access="read-write", path="./" }]
+fuzz.runs = 32
+
+code_size_limit = 1000000
+gas_limit = 1000000000
