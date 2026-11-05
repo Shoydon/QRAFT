@@ -1,11 +1,11 @@
 'use client';
 
 import { getAddress, type Hex } from 'viem';
-import { DEPLOYMENT } from '@/config/pool';
+import { DEPLOYMENT, IS_SIMULATED, TRANSPORT } from '@/config/pool';
 import type { AccountAdapter, AccountState } from './types';
 import { getScenario } from './scenario';
 
-interface Eip1193Provider {
+export interface Eip1193Provider {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
   on?(event: string, handler: (...args: never[]) => void): void;
   removeListener?(event: string, handler: (...args: never[]) => void): void;
@@ -40,7 +40,7 @@ function store(initial: AccountState) {
   };
 }
 
-function detectInjected(): Eip1193Provider | null {
+export function detectInjected(): Eip1193Provider | null {
   if (typeof window === 'undefined') return null;
   const injected = (window as { ethereum?: Eip1193Provider }).ethereum;
   return injected && typeof injected.request === 'function' ? injected : null;
@@ -155,10 +155,21 @@ export function injectedAccountAdapter(provider: Eip1193Provider): AccountAdapte
           });
           return;
         }
-        s.set({
-          error: `Your wallet does not have ${DEPLOYMENT.chainName} configured. Add it in your wallet, then try again.`,
-        });
+        try {
+          await provider.request({ method: 'wallet_addEthereumChain', params: [{
+            chainId: hexChainId, chainName: DEPLOYMENT.chainName,
+            nativeCurrency: { name: 'Test ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: [TRANSPORT.readRpcUrl],
+            ...(DEPLOYMENT.explorerBase ? { blockExplorerUrls: [DEPLOYMENT.explorerBase] } : {}),
+          }] });
+          await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexChainId }] });
+        } catch (addError) {
+          s.set({ error: `Could not add ${DEPLOYMENT.chainName}: ${message(addError)}` });
+          return;
+        }
       }
+      s.set({ chainId: await readChain(), error: null });
+      if (s.get().address) await adopt(await provider.request({ method: 'eth_accounts' }));
     },
 
     async refreshBalance() {
@@ -213,7 +224,12 @@ export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function resolveAccountAdapter(): AccountAdapter {
   const injected = detectInjected();
-  return injected ? injectedAccountAdapter(injected) : simulatedAccountAdapter();
+  if (injected) return injectedAccountAdapter(injected);
+  if (IS_SIMULATED) return simulatedAccountAdapter();
+  const s = store(EMPTY);
+  const unavailable = async () => { s.set({ error: 'Install an Ethereum browser wallet, then reload this page to connect. No transaction was sent.' }); };
+  return { getState: s.get, subscribe: s.subscribe, connect: unavailable,
+    async resume() {}, async disconnect() { s.set(EMPTY); }, switchChain: unavailable, async refreshBalance() {} };
 }
 
 function message(error: unknown): string {

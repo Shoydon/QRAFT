@@ -139,8 +139,8 @@ export function ReadPathLine({
           <p className="mt-2.5 text-[0.8125rem] leading-[1.55] text-ink-80">
             Both halves of this are public on {DEPLOYMENT.chainName}: anyone can see a deposit
             arrive and a withdrawal leave, with amounts and timestamps. The property the pool
-            provides is that no observer can tell <em>which</em> deposit funded <em>which</em>{' '}
-            withdrawal.
+            aims to provide is hiding <em>which</em> deposit funded <em>which</em>{' '}
+            withdrawal. Timing and wallet reuse can still reveal that link.
           </p>
           <p className="mt-2.5 text-[0.8125rem] leading-[1.55] text-ink-80">
             That link hides among the other unspent notes of the same denomination, so it is only

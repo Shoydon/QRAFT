@@ -109,6 +109,7 @@ export function DepositPanel({
     if (outcome.kind === 'confirmed') setStage({ k: 'receipt', note, outcome });
     else if (outcome.kind === 'failed') setStage({ k: 'failed', note, txHash, reason: outcome.reason });
     else if (outcome.kind === 'unknown') setStage({ k: 'unknown', note, txHash, reason: outcome.reason });
+    else setStage({ k: 'unknown', note, txHash, reason: 'The transaction is still pending. Keep your note and check again; do not resend.' });
   }
 
   const feeSummary =

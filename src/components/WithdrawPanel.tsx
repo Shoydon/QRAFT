@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Hex } from 'viem';
 import { DEPLOYMENT, type PoolConfig } from '@/config/pool';
 import { checkRecipient, formatEth, truncateMiddle } from '@/lib/format';
@@ -69,6 +69,7 @@ export function WithdrawPanel({
 
   const fileInput = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
+  useEffect(() => () => abort.current?.abort(), []);
   const noteId = useId();
   const toId = useId();
 
@@ -76,8 +77,9 @@ export function WithdrawPanel({
   const recipientError = touched && recipient.trim().length > 0 && !check.ok;
   const ready = status?.kind === 'ready';
   const sponsorBroken = gas?.kind === 'sponsor-depleted' || gas?.kind === 'sponsor-offline';
-  const needsWallet = sponsorBroken && account.status !== 'connected';
-  const canWithdraw = ready && check.ok && gas !== null && !needsWallet;
+  const needsWallet = (sponsorBroken || gas?.kind === 'self-funded') && account.status !== 'connected';
+  const wrongNetwork = gas?.kind === 'self-funded' && account.status === 'connected' && account.chainId !== DEPLOYMENT.chainId;
+  const canWithdraw = ready && check.ok && gas !== null && !needsWallet && !wrongNetwork && (!sponsorBroken || backend?.kind === 'simulated');
 
   async function load(value: string) {
     const parsed = parseNote(value);
@@ -135,8 +137,9 @@ export function WithdrawPanel({
         (progress) => setStage({ k: 'proving', loaded, recipient: to, gas, progress }),
         controller.signal,
       );
+      controller.signal.throwIfAborted();
     } catch (error) {
-      if (controller.signal.aborted) return setStage({ k: 'form' });
+      if (controller.signal.aborted) { await load(text); return setStage({ k: 'form' }); }
       return setStage({
         k: 'proof-failed',
         loaded,
@@ -179,6 +182,7 @@ export function WithdrawPanel({
       setStage({ k: 'failed', loaded: l, recipient: to, txHash, reason: outcome.reason });
     else if (outcome.kind === 'unknown')
       setStage({ k: 'unknown', loaded: l, recipient: to, txHash, reason: outcome.reason });
+    else setStage({ k: 'unknown', loaded: l, recipient: to, txHash, reason: 'The transaction is still pending. Keep your note and check again; do not resend.' });
   }
 
   function reset() {
@@ -407,6 +411,16 @@ export function WithdrawPanel({
                   wallet to this withdrawal, though not to your deposit. Otherwise come back later:
                   your note stays valid.
                 </Notice>
+              </div>
+            ) : null}
+
+            {gas?.kind === 'self-funded' ? (
+              <div className="mt-4 space-y-3">
+                <Notice tone="neutral" title="Your wallet pays withdrawal gas">
+                  The recipient receives native ETH in full. Reusing the deposit wallet for gas can link both actions; use a separate funded wallet for privacy.
+                </Notice>
+                {needsWallet ? <Button onClick={() => void backend?.account.connect()}>Connect a wallet to pay gas</Button> : null}
+                {wrongNetwork ? <Button onClick={() => void backend?.account.switchChain(DEPLOYMENT.chainId)}>Switch to {DEPLOYMENT.chainName}</Button> : null}
               </div>
             ) : null}
 

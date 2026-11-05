@@ -1,12 +1,12 @@
 import type { Hex } from 'viem';
+import manifest from '../../public/deployment.json';
+import provingHashes from '../../protocol/artifacts.json';
 
 /**
  * Deployment and pool configuration.
  *
- * No pool contract is deployed for this build, so `address` is `null` and the
- * deployment identity is a placeholder rather than an invented address.
- * A real deployment replaces this module (or loads a signed manifest into the
- * same shape) and sets `backend: 'chain'`.
+ * Public deployment identity and artifact hashes are pinned in the shipped
+ * manifest. A network reset or wrong contract code disables chain operations.
  */
 
 export type PoolRef = 'eth-0.01' | 'eth-0.1' | 'eth-1' | 'eth-10';
@@ -33,43 +33,40 @@ export interface DeploymentConfig {
   readonly explorerBase: string | null;
   readonly noteVersion: 1;
   readonly pools: readonly PoolConfig[];
-  /** `'simulated'` means chain-facing adapters do not touch a contract. */
+  /** `'demo'` means chain-facing adapters are simulated. */
   readonly backend: 'simulated' | 'chain';
 }
 
-const ETH = 10n ** 18n;
+export const DEPLOYMENT_MANIFEST = manifest;
+export const PROVING_HASHES = provingHashes;
+const refs: readonly string[] = ['eth-0.01', 'eth-0.1', 'eth-1', 'eth-10'];
+if (manifest.version !== 1 || !Number.isSafeInteger(manifest.chainId) || manifest.chainId < 1 ||
+    !/^0x[0-9a-fA-F]{64}$/.test(manifest.genesisHash) || manifest.pools.length !== 4 ||
+    new Set(manifest.pools.map(pool => pool.ref)).size !== 4 ||
+    manifest.pools.some(pool => !refs.includes(pool.ref) || !/^0x[0-9a-fA-F]{40}$/.test(pool.address) || !/^[1-9][0-9]*$/.test(pool.denominationWei)) ||
+    Object.entries(PROVING_HASHES).some(([name, hash]) => manifest.artifacts[name as keyof typeof PROVING_HASHES] !== hash)) {
+  throw new Error('Invalid QRAFT deployment manifest. Restore the matching deployment and proving artifacts.');
+}
 
 export const DEPLOYMENT: DeploymentConfig = {
-  id: 'qraft:altmempool-devnet:eth-fixed:1',
-  // The EIP-8141 alternative-mempool devnet. Frame transactions exist on no
-  // public testnet, so this is the only chain the F in QRAFT can run on.
-  //
-  // It is explicitly a throwaway network: no persistence guarantee, and it may
-  // reset at any time. A reset does not change the chain id, so notes created
-  // before one would still validate but point at deposits that no longer
-  // exist. Bump `id` after any reset so stale notes are refused outright
-  // rather than reading as permanently pending.
-  chainId: 1337,
-  chainName: 'Alt mempool devnet',
-  // The explorer's URL scheme is not documented and its SPA answers 200 for
-  // every path, so there is nothing to verify a guess against. Left null until
-  // someone opens a real transaction in the browser and reads the address bar;
-  // until then the interface shows references without a link rather than
-  // linking somewhere that 404s.
-  explorerBase: null,
+  id: manifest.id,
+  chainId: manifest.chainId,
+  chainName: manifest.chainName,
+  explorerBase: manifest.explorerBase,
   noteVersion: 1,
-  backend: 'simulated',
-  pools: [
-    { ref: 'eth-0.01', address: null, denominationWei: ETH / 100n, label: '0.01 ETH' },
-    { ref: 'eth-0.1', address: null, denominationWei: ETH / 10n, label: '0.1 ETH' },
-    { ref: 'eth-1', address: null, denominationWei: ETH, label: '1 ETH' },
-    { ref: 'eth-10', address: null, denominationWei: ETH * 10n, label: '10 ETH' },
-  ],
+  backend: ['demo', 'simulated'].includes(process.env.NEXT_PUBLIC_BACKEND ?? '') ? 'simulated' : 'chain',
+  pools: manifest.pools.map(pool => ({
+    ref: pool.ref as PoolRef,
+    address: pool.address as Hex,
+    denominationWei: BigInt(pool.denominationWei),
+    label: `${Number(pool.denominationWei) / 1e18} ETH`,
+  })),
 };
 
 export const DEFAULT_POOL_REF: PoolRef = 'eth-0.1';
 
 export const IS_SIMULATED = DEPLOYMENT.backend === 'simulated';
+export const IS_DEMO = IS_SIMULATED;
 
 export function poolByRef(ref: string): PoolConfig | null {
   return DEPLOYMENT.pools.find((p) => p.ref === ref) ?? null;
@@ -80,32 +77,19 @@ export function poolByRef(ref: string): PoolConfig | null {
  * addresses are the networks' own published values, not ours.
  */
 export const ANON_WORKERS = {
+  nym: {
+    label: 'Nym',
+    specifier: '0x3aCD9742C68F6d993066Ae25533e09b9e1f60eD0' as Hex,
+    specifierChain: 'Ethereum mainnet',
+    anonymizing: true,
+    needsGateways: false,
+  },
   'tor-js': {
     label: 'tor-js',
     specifier: '0x700dA3193D35fA54Cd3fBf29B66f2a2A0385659e' as Hex,
     specifierChain: 'Ethereum mainnet',
     anonymizing: true,
     /** Browsers cannot open raw TCP, so Tor is reached through KPS relays. */
-    needsGateways: true,
-  },
-  nym: {
-    label: 'nym',
-    specifier: '0x3aCD9742C68F6d993066Ae25533e09b9e1f60eD0' as Hex,
-    specifierChain: 'Ethereum mainnet',
-    anonymizing: true,
-    /**
-     * Requests travel as Sphinx packets through the Nym mixnet and leave at a
-     * Nym IP Packet Router, so the RPC endpoint sees the router rather than
-     * the browser. Needs no relay of our own, which is why it is the default:
-     * a gateway we do not run is a dependency that can be down when it matters.
-     */
-    needsGateways: false,
-  },
-  nox: {
-    label: 'nox',
-    specifier: '0x35133267A8F7EC35046a83DCA0f4Ca8A6e1b7A9A' as Hex,
-    specifierChain: 'Sepolia',
-    anonymizing: true,
     needsGateways: true,
   },
   passthrough: {
@@ -136,7 +120,8 @@ export const TRANSPORT = {
   /** Read once, un-anonymized, only to learn the pinned worker hash. */
   bootstrapRpcUrl: process.env.NEXT_PUBLIC_BOOTSTRAP_RPC_URL ?? 'https://ethereum-rpc.publicnode.com',
   /** Where anonymized reads are sent. This provider sees the request, not you. */
-  readRpcUrl: process.env.NEXT_PUBLIC_READ_RPC_URL ?? 'https://altmempool.forshtat.com',
+  readRpcUrl:
+    process.env.NEXT_PUBLIC_READ_RPC_URL ?? manifest.rpcUrl,
   /** Comma-separated `host:port:key` KPS gateways, for workers that need them. */
   gateways: (process.env.NEXT_PUBLIC_ANON_RPC_GATEWAYS ?? '')
     .split(',')

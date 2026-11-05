@@ -1,0 +1,15 @@
+{
+  "chainId": 8141,
+  "depositHash": "0x2411908c07dae425bbb06da2076cc32f773da26f01461817702a71990799ac56",
+  "withdrawalHash": "0x17c59351baae3ac49a851b51b4a7064e3269258b2384f181438374e057b2b225",
+  "recipient": "0x131B68f15dC1ac89b1DBb7195933288e8D33eEa3",
+  "recipientDeltaWei": "10000000000000000",
+  "directBrowserRpcPosts": 0,
+  "browserErrors": [],
+  "gasPayer": "0x2981100dB05f62fc1116b00bFe9375ddCC6862Fb",
+  "verifiedDate": "2026-11-06",
+  "noteReimport": "Spent status independently verified in a fresh browser",
+  "proofSystem": "Groth16 / BN254",
+  "transport": "Official Nym Anon-RPC worker",
+  "scope": "Application pool reads through Anon-RPC; test wallet provider uses its own RPC."
+}

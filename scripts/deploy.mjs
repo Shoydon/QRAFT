@@ -19,7 +19,8 @@ export async function deploy({ rpcUrl, privateKey, output, chainName = 'QRAFT te
     const a = await artifact(name);
     const nonce = await client.getTransactionCount({ address: account.address });
     if (nonce !== await client.getTransactionCount({ address: account.address, blockTag: 'pending' })) throw Error('Reconcile pending deployment transactions first.');
-    const request = await wallet.prepareTransactionRequest({ data: (await import('viem')).encodeDeployData({ abi: a.abi, bytecode: a.bytecode, args }), nonce });
+    const block = await client.getBlock();
+    const request = await wallet.prepareTransactionRequest({ maxFeePerGas: (block.baseFeePerGas ?? 7n) * 2n + 1n, maxPriorityFeePerGas: 1n, data: (await import('viem')).encodeDeployData({ abi: a.abi, bytecode: a.bytecode, args }), nonce });
     const raw = await wallet.signTransaction(request);
     const hash = keccak256(raw);
     await mkdir('.local/deploy-signed', { recursive: true, mode: 0o700 });
@@ -55,5 +56,5 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
     const rpcUrl = process.env.QRAFT_RPC_URL ?? 'http://127.0.0.1:8545';
     const { manifest } = await deploy({ rpcUrl, privateKey: key.privateKey, output: 'public/deployment.json', chainName: process.env.QRAFT_CHAIN_NAME ?? 'Ethrex testnet' });
     console.log(JSON.stringify({ status: 'deployed', chainId: manifest.chainId, pools: manifest.pools.map(p => ({ ref: p.ref, address: p.address })) }, null, 2));
-  } catch (error) { console.error(error.shortMessage ?? error.message); process.exitCode = 1; }
+  } catch (error) { console.error(JSON.stringify({message:error.shortMessage ?? error.message, details:error.details, cause:error.cause?.details})); process.exitCode = 1; }
 }

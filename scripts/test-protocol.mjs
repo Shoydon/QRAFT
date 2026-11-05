@@ -65,7 +65,11 @@ try {
   const p = await prove(notes[0], recipient, 0);
   const args = [p.root, notes[0].nullifierHash, recipient, p.words];
   await assert.rejects(() => client.simulateContract({ account, address: pool.address, abi, functionName:'withdraw', args: [p.root, notes[0].nullifierHash, account.address, p.words] }));
-  await assert.rejects(() => client.simulateContract({ account, address: manifest.pools[1].address, abi, functionName:'withdraw', args }));
+  const poolArtifact = JSON.parse(await readFile('protocol/build/NativePool.json'));
+  const mirrorReceipt = await receipt(await wallet.deployContract({ abi:poolArtifact.abi, bytecode:poolArtifact.bytecode, args:[manifest.transactions[0].address,manifest.transactions[1].address,amount] }));
+  for (const note of notes) await receipt(await wallet.writeContract({ address:mirrorReceipt.contractAddress, abi, functionName:'deposit', args:[note.commitment], value:amount }));
+  assert.equal(await client.readContract({address:mirrorReceipt.contractAddress,abi,functionName:'currentRoot'}),p.root);
+  await assert.rejects(() => client.simulateContract({ account, address: mirrorReceipt.contractAddress, abi, functionName:'withdraw', args }));
   await assert.rejects(() => client.simulateContract({ account, address: pool.address, abi, functionName:'withdraw', args: [p.root, notes[0].nullifierHash, recipient, Array(8).fill(0n)] }));
   const withdrawal = await receipt(await wallet.writeContract({ address: pool.address, abi, functionName:'withdraw', args }));
   assert.equal((await client.getBalance({ address: recipient })) - before, amount);
