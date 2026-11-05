@@ -1,6 +1,6 @@
 {
   "experimental": true,
-  "applicationEnabled": false,
+  "applicationEnabled": true,
   "quantumSecurityEstablished": false,
   "files": {
     "himitsu_hiding_wasm_feasibility.js": "7d14b31450d3070463b967f15a6ccaf748c713bb32d89ae2972dcaaea3066bcf",
@@ -8,5 +8,6 @@
     "worker.js": "0f05608e406151739f688b30d7cf3cfe7c7e4206179bd7c188c2ec23bf441424",
     "worker-v3.js": "9bd77274de83202a535b814c7b83bc412904c691ececad537dac299b709e0f8d",
     "worker-v5.js": "669daa28688c87c2df201ceef4368c95432749898fb2c4b580fcf35b1b3cf1cb"
-  }
+  },
+  "applicationScope": "Experimental PQ authorization, notes and transparent proof; external chain and transport limits documented separately."
 }

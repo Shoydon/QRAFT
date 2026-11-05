@@ -134,13 +134,13 @@ test('wallet backup restores from immutable chain bytes without a provisioning s
 });
 
 test('reconciliation checks its expected hash inside the account lock before any RPC',async()=>{
- const f=fixture();let swap:(()=>void)|undefined;
- const client=await PqAccountClient.create(f.transport,{...f.options,withLock:async<T>(_name:string,operation:()=>Promise<T>)=>{swap?.();return operation();}});client.markBackedUp();f.state.sendFailure=true;
+ const f=fixture();const lockState:{swap?:(()=>void)}={};
+ const client=await PqAccountClient.create(f.transport,{...f.options,withLock:async<T>(_name:string,operation:()=>Promise<T>)=>{lockState.swap?.();return operation();}});client.markBackedUp();f.state.sendFailure=true;
  await client.send({to:realManifest.pool as Hex,data:'0x1234',timeoutMs:0});
  const saved=new Map(f.journal.values);const expectedHash=client.pending!.hash;
  f.journal.values.clear();await client.send({to:realManifest.pool as Hex,data:'0x9999',timeoutMs:0});
  const other=new Map(f.journal.values);f.journal.values.clear();for(const[k,v]of saved)f.journal.values.set(k,v);
- swap=()=>{f.journal.values.clear();for(const[k,v]of other)f.journal.values.set(k,v);};
+ lockState.swap=()=>{f.journal.values.clear();for(const[k,v]of other)f.journal.values.set(k,v);};
  f.methods.length=0;const sent=f.state.sent.length;
  await expect(client.reconcile({expectedHash})).rejects.toThrow('changed while waiting');
  expect(f.methods).toEqual([]);expect(f.state.sent.length).toBe(sent);expect(client.pending!.hash).not.toBe(expectedHash);

@@ -1,6 +1,6 @@
 'use client';
 
-import { TRANSPORT } from '@/config/pool';
+import { TRANSPORT } from '@/config/transport';
 import type { ChainTransport, TransportStatus } from './types';
 
 /**
@@ -58,6 +58,8 @@ export function createAnonRpcTransport(): ChainTransport {
   const listeners = new Set<(s: TransportStatus) => void>();
   let worker: AnonWorker | null = null;
   let booting: Promise<AnonWorker> | null = null;
+  let generation = 0;
+  let requestId = 0;
 
   function set(next: Partial<TransportStatus>) {
     status = { ...status, ...next };
@@ -82,20 +84,23 @@ export function createAnonRpcTransport(): ChainTransport {
   function bootstrapProvider(url: string) {
     return {
       request: async ({ method, params }: { method: string; params?: unknown[] }) => {
+        const id = ++requestId;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: params ?? [] }),
+          body: JSON.stringify({ jsonrpc: '2.0', id, method, params: params ?? [] }),
+          signal: AbortSignal.timeout(20_000),
         });
         if (!res.ok) throw new Error(`Bootstrap RPC returned HTTP ${res.status}`);
-        const json = (await res.json()) as { result?: unknown; error?: { message?: string } };
+        const json = (await res.json()) as { jsonrpc?: string; id?: number; result?: unknown; error?: { message?: string } };
+        if (json.jsonrpc !== '2.0' || json.id !== id) throw new Error('Invalid bootstrap RPC response');
         if (json.error) throw new Error(json.error.message ?? 'Bootstrap RPC error');
         return json.result;
       },
     };
   }
 
-  async function boot(): Promise<AnonWorker> {
+  async function boot(epoch: number): Promise<AnonWorker> {
     const issue = blockingConfigIssue();
     if (issue) {
       set({ phase: 'not-configured', detail: issue });
@@ -126,11 +131,12 @@ export function createAnonRpcTransport(): ChainTransport {
 
     try {
       await Promise.race([instance.ready, deadline]);
+      if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       clearTimeout(timer);
     } catch (error) {
       clearTimeout(timer);
       const code = error instanceof RpcError ? String(error.code ?? '') : '';
-      set({
+      if (epoch === generation) set({
         phase: 'failed',
         code: code || null,
         detail: describeBootFailure(code, error),
@@ -141,7 +147,7 @@ export function createAnonRpcTransport(): ChainTransport {
         /* already torn down */
       }
       throw error;
-    }
+    } finally { clearTimeout(timer); }
 
     set({ phase: 'ready', detail: null, code: null });
     return instance;
@@ -158,13 +164,14 @@ export function createAnonRpcTransport(): ChainTransport {
 
     start() {
       if (booting) return;
-      booting = boot().then(
+      const epoch = generation;
+      booting = boot(epoch).then(
         (w) => {
           worker = w;
           return w;
         },
         (e) => {
-          booting = null;
+          if (epoch === generation) booting = null;
           throw e;
         },
       );
@@ -174,6 +181,7 @@ export function createAnonRpcTransport(): ChainTransport {
     },
 
     stop() {
+      generation += 1;
       worker?.close();
       worker = null;
       booting = null;
@@ -185,14 +193,17 @@ export function createAnonRpcTransport(): ChainTransport {
       if (!booting) throw new Error(status.detail ?? 'Anonymous reads are unavailable.');
 
       const w = await booting;
+      const id = ++requestId;
       const started = performance.now();
       const res = await w.fetch(TRANSPORT.readRpcUrl as string, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
+        signal: AbortSignal.timeout(120_000),
       });
       if (!res.ok) throw new Error(`Read failed: the RPC endpoint returned HTTP ${res.status}.`);
-      const json = (await res.json()) as { result?: T; error?: { message?: string } };
+      const json = (await res.json()) as { jsonrpc?: string; id?: number; result?: T; error?: { message?: string } };
+      if (json.jsonrpc !== '2.0' || json.id !== id || (!Object.hasOwn(json, 'result') && !json.error)) throw new Error('Invalid anonymous RPC response');
       set({
         lastLatencyMs: Math.round(performance.now() - started),
         requestCount: status.requestCount + 1,
