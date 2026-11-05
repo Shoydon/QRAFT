@@ -20,6 +20,8 @@ import { TxRef, TxRefHint } from './TxRef';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  CheckIcon,
+  CopyIcon,
   DownloadIcon,
   RetryIcon,
   WalletIcon,
@@ -29,7 +31,13 @@ const STEPS = ['Amount', 'Note', 'Confirm', 'Receipt'] as const;
 
 type Stage =
   | { k: 'amount' }
-  | { k: 'note'; note: PrivateNote; downloaded: boolean; acknowledged: boolean }
+  | {
+      k: 'note';
+      note: PrivateNote;
+      downloaded: boolean;
+      copied: boolean;
+      acknowledged: boolean;
+    }
   | { k: 'wallet'; note: PrivateNote }
   | { k: 'submitting'; note: PrivateNote; phase: DepositPhase }
   | { k: 'confirming'; note: PrivateNote; txHash: Hex }
@@ -150,7 +158,13 @@ export function DepositPanel({
             fee={fee}
             stats={stats}
             onNext={() =>
-              setStage({ k: 'note', note: createNote(pool), downloaded: false, acknowledged: false })
+              setStage({
+                k: 'note',
+                note: createNote(pool),
+                downloaded: false,
+                copied: false,
+                acknowledged: false,
+              })
             }
           />
         ) : null}
@@ -174,7 +188,13 @@ export function DepositPanel({
             wrongNetwork={wrongNetwork}
             insufficient={insufficient}
             onBack={() =>
-              setStage({ k: 'note', note: stage.note, downloaded: true, acknowledged: true })
+              setStage({
+                k: 'note',
+                note: stage.note,
+                downloaded: true,
+                copied: false,
+                acknowledged: true,
+              })
             }
             onSubmit={() => void submit(stage.note)}
           />
@@ -384,7 +404,9 @@ function NoteStep({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const { note, downloaded, acknowledged } = stage;
+  const { note, downloaded, copied, acknowledged } = stage;
+  const [copyFailed, setCopyFailed] = useState(false);
+  const saved = downloaded || copied;
 
   function download() {
     const blob = new Blob([serializeNote(note)], { type: 'text/plain;charset=utf-8' });
@@ -395,6 +417,19 @@ function NoteStep({
     a.click();
     URL.revokeObjectURL(url);
     onChange({ ...stage, downloaded: true });
+  }
+
+  async function copy() {
+    try {
+      // Clipboard only. The note is never sent anywhere, here or elsewhere.
+      await navigator.clipboard.writeText(serializeNote(note));
+      setCopyFailed(false);
+      onChange({ ...stage, copied: true });
+    } catch {
+      // Denied permission, or an insecure context. Say so rather than
+      // silently appearing to have copied a secret that was not copied.
+      setCopyFailed(true);
+    }
   }
 
   return (
@@ -420,15 +455,39 @@ function NoteStep({
         </p>
       </div>
 
-      <Button
-        variant={downloaded ? 'secondary' : 'primary'}
-        size="lg"
-        className="mt-4 w-full"
-        icon={<DownloadIcon width={17} height={17} />}
-        onClick={download}
-      >
-        {downloaded ? 'Download again' : 'Download note file'}
-      </Button>
+      <div className="mt-4 flex gap-2">
+        <Button
+          variant={saved ? 'secondary' : 'primary'}
+          size="lg"
+          className="flex-1"
+          icon={<DownloadIcon width={17} height={17} />}
+          onClick={download}
+        >
+          {downloaded ? 'Download again' : 'Download file'}
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          className="shrink-0"
+          icon={copied ? <CheckIcon width={17} height={17} /> : <CopyIcon width={17} height={17} />}
+          onClick={() => void copy()}
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+
+      {copyFailed ? (
+        <p className="mt-2.5 text-[0.75rem] leading-snug text-state-bad" role="alert">
+          Your browser would not give this page the clipboard. Download the file instead.
+        </p>
+      ) : null}
+
+      {copied && !downloaded ? (
+        <p className="mt-2.5 text-[0.75rem] leading-snug text-ink-60">
+          On your clipboard now. Paste it somewhere permanent before you do anything else —
+          clipboards are readable by other apps and get overwritten by the next thing you copy.
+        </p>
+      ) : null}
 
       {downloaded ? (
         <p className="mt-2.5 text-[0.75rem] leading-snug text-ink-60">
@@ -445,12 +504,12 @@ function NoteStep({
         <input
           type="checkbox"
           checked={acknowledged}
-          disabled={!downloaded}
+          disabled={!saved}
           onChange={(e) => onChange({ ...stage, acknowledged: e.target.checked })}
           className="mt-0.5 size-4 shrink-0 accent-[var(--color-ink)] disabled:opacity-40"
         />
         <span className="text-[0.8125rem] leading-[1.5] text-ink-80">
-          I have saved this note file somewhere I can find it again. I understand that if I lose it,
+          I have saved this note somewhere I can find it again. I understand that if I lose it,
           this {pool.label} deposit is gone — nobody, including the people who built this, can
           recover it for me.
         </span>
@@ -463,7 +522,7 @@ function NoteStep({
         <Button
           variant="primary"
           className="flex-1"
-          disabled={!downloaded || !acknowledged}
+          disabled={!saved || !acknowledged}
           iconAfter={<ArrowRightIcon width={17} height={17} />}
           onClick={onNext}
         >
