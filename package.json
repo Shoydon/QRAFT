@@ -16,7 +16,8 @@
     "protocol:build": "node scripts/build-protocol.mjs",
     "protocol:deploy": "node scripts/deploy.mjs",
     "test:protocol": "npm run protocol:build && npm run prepare:proving && node --experimental-strip-types scripts/test-protocol.mjs",
-    "test": "bun test tests"
+    "test": "bun test tests",
+    "test:pq:crypto": "bun test tests/pq.test.ts"
   },
   "dependencies": {
     "@anon-rpc/browser-harness": "0.4.0",
@@ -24,7 +25,9 @@
     "poseidon-lite": "0.3.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "viem": "2.57.16"
+    "viem": "2.57.16",
+    "@noble/post-quantum": "0.5.4",
+    "@noble/hashes": "2.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.4",
