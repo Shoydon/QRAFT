@@ -126,6 +126,30 @@ withdraw journeys. A real backend ignores it entirely.
 
 ---
 
+## The chain
+
+The [EIP-8141 alternative-mempool devnet](https://docs.altmempool.wtf/guides/devnet/),
+chain id **1337**. Frame transactions run on no public testnet, so this is the
+only chain the project's direction can target.
+
+| | |
+|---|---|
+| Execution RPC | `https://altmempool.forshtat.com` |
+| Sidecar RPC (frame transactions) | `https://altmempool.forshtat.com/rpc` |
+| Explorer | `explorer.altmempool.wtf` |
+| Block time | 6 seconds |
+
+Know what you are pointing at: it is a demonstration network with no security
+model and no persistence guarantee, and it may reset at any time. Measured
+over 24 hours it produced roughly 2,000 blocks against the ~14,400 a
+continuous 6-second cadence implies, so it is not reliably up. Do not plan a
+demo around it being live without checking first.
+
+Because the chain id is written into every note, a reset leaves old notes
+validating against deposits that no longer exist — they read as permanently
+pending. After any reset, bump `DEPLOYMENT.id` in `src/config/pool.ts` so
+stale notes are refused outright instead.
+
 ## Read path
 
 Every chain read goes through [anon-rpc](https://github.com/ethereum/anon-rpc)
@@ -226,9 +250,13 @@ and self-hostable rather than on content addressing.
   deliberately apart from note ownership so that losing one does not lose the
   other.
 - **No frame transactions yet.** The F in the name points at EIP-8141 and the
-  alternative mempool. Today the app submits through the user's ordinary
-  wallet. Frame transactions would be what lets the pool itself pay for a
-  withdrawal, removing the need for a funded recipient address.
+  alternative mempool. The app reads from the devnet but submits through the
+  user's ordinary wallet. Frame transactions, sent to the sidecar at
+  `https://altmempool.forshtat.com/rpc`, would be what lets the pool itself pay
+  for a withdrawal, removing the need for a funded recipient address.
+- **No explorer links.** The devnet explorer's URL scheme is not documented,
+  so `explorerBase` is null rather than a guess. Transaction references render
+  without a link until someone confirms the real path.
 
 ---
 

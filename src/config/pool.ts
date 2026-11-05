@@ -40,10 +40,23 @@ export interface DeploymentConfig {
 const ETH = 10n ** 18n;
 
 export const DEPLOYMENT: DeploymentConfig = {
-  id: 'demo:eth-fixed:1',
-  chainId: 11155111,
-  chainName: 'Sepolia',
-  explorerBase: 'https://sepolia.etherscan.io',
+  id: 'demo:altmempool-devnet:eth-fixed:1',
+  // The EIP-8141 alternative-mempool devnet. Frame transactions exist on no
+  // public testnet, so this is the only chain the F in QRAFT can run on.
+  //
+  // It is explicitly a throwaway network: no persistence guarantee, and it may
+  // reset at any time. A reset does not change the chain id, so notes created
+  // before one would still validate but point at deposits that no longer
+  // exist. Bump `id` after any reset so stale notes are refused outright
+  // rather than reading as permanently pending.
+  chainId: 1337,
+  chainName: 'Alt mempool devnet',
+  // The explorer's URL scheme is not documented and its SPA answers 200 for
+  // every path, so there is nothing to verify a guess against. Left null until
+  // someone opens a real transaction in the browser and reads the address bar;
+  // until then the interface shows references without a link rather than
+  // linking somewhere that 404s.
+  explorerBase: null,
   noteVersion: 1,
   backend: 'demo',
   pools: [
@@ -103,8 +116,7 @@ export const TRANSPORT = {
   /** Read once, un-anonymized, only to learn the pinned worker hash. */
   bootstrapRpcUrl: process.env.NEXT_PUBLIC_BOOTSTRAP_RPC_URL ?? 'https://ethereum-rpc.publicnode.com',
   /** Where anonymized reads are sent. This provider sees the request, not you. */
-  readRpcUrl:
-    process.env.NEXT_PUBLIC_READ_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com',
+  readRpcUrl: process.env.NEXT_PUBLIC_READ_RPC_URL ?? 'https://altmempool.forshtat.com',
   /** Comma-separated `host:port:key` KPS gateways, for workers that need them. */
   gateways: (process.env.NEXT_PUBLIC_ANON_RPC_GATEWAYS ?? '')
     .split(',')
