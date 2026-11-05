@@ -11,7 +11,7 @@ const VARIANT: Record<Variant, string> = {
   primary:
     'bg-ink text-paper shadow-[0_1px_2px_-1px_rgb(13_13_15/0.3)] hover:bg-ink-80 disabled:bg-surface disabled:text-ink-60 disabled:shadow-none disabled:ring-1 disabled:ring-inset disabled:ring-rule',
   secondary:
-    'bg-surface text-ink border border-rule-strong hover:border-ink hover:bg-sunk disabled:text-ink-60 disabled:border-rule disabled:bg-surface',
+    'bg-sunk text-ink shadow-[inset_0_0_0_1px_rgb(13_13_15/0.07)] hover:bg-rule/60 disabled:text-ink-60',
   ghost: 'text-ink-80 hover:text-ink hover:bg-sunk disabled:text-ink-60',
   danger: 'bg-surface text-state-bad border border-state-bad/35 hover:bg-state-bad/6',
 };
@@ -34,10 +34,10 @@ export function Button({
 }) {
   const pad =
     size === 'lg'
-      ? 'h-14 px-6 text-[0.9375rem]'
+      ? 'h-[3.625rem] px-7 text-[1rem]'
       : size === 'sm'
         ? 'h-8 px-3 text-[0.8125rem]'
-        : 'h-11 px-4 text-sm';
+        : 'h-11 px-4.5 text-sm';
   return (
     <button
       {...props}
@@ -65,7 +65,7 @@ export function Card({
 }) {
   return (
     <Tag
-      className={`rounded-card border border-rule bg-surface shadow-card ${className}`}
+      className={`rounded-card bg-surface shadow-card ${className}`}
     >
       {children}
     </Tag>
@@ -197,12 +197,12 @@ export function Hero({
           size, and a headline amount is read as a whole, not compared digit
           by digit the way a hash is. */}
       <p
-        className="text-[3.25rem] font-semibold leading-[1.02] tracking-[-0.045em] text-ink"
+        className="text-[4rem] font-semibold leading-[0.98] tracking-[-0.05em] text-ink"
         data-numeric
       >
         {value}
         {unit ? (
-          <span className="ml-2 align-baseline text-[1.375rem] font-medium tracking-[-0.02em] text-ink-60">
+          <span className="ml-2.5 align-baseline text-[1.5rem] font-medium tracking-[-0.02em] text-ink-45">
             {unit}
           </span>
         ) : null}

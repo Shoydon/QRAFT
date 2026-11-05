@@ -21,13 +21,13 @@ export function Disclosure({
   const id = useId();
 
   return (
-    <div className="rounded-control border border-rule bg-sunk/60">
+    <div className="overflow-hidden rounded-control bg-sunk shadow-[inset_0_0_0_1px_rgb(13_13_15/0.06)]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={id}
-        className="flex w-full items-center gap-3 px-3.5 py-3 text-left"
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
       >
         <span className="text-[0.8125rem] font-medium text-ink">{label}</span>
         <span className="ml-auto truncate text-[0.8125rem] text-ink-60" data-numeric>
@@ -39,7 +39,7 @@ export function Disclosure({
           className={`shrink-0 text-ink-60 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      <div id={id} hidden={!open} className="border-t border-rule px-3.5 pb-1 pt-1">
+      <div id={id} hidden={!open} className="border-t border-rule/70 px-4 pb-1 pt-1">
         {children}
       </div>
     </div>

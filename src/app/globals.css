@@ -34,14 +34,23 @@
   --color-spectral-5: #3a76c4;
   --color-spectral-6: #7a51c0;
 
-  /* Larger, softer radii: the surfaces should read as one continuous object. */
-  --radius-card: 22px;
-  --radius-control: 14px;
-  --radius-tile: 16px;
+  /* Surfaces are objects, not outlines. Large continuous corners, and a
+     radius scale where nested shapes stay optically concentric. */
+  --radius-card: 32px;
+  --radius-control: 18px;
+  --radius-tile: 22px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px -1px rgb(13 13 15 / 0.08), 0 12px 28px -18px rgb(13 13 15 / 0.22);
-  --shadow-lift: 0 1px 2px -1px rgb(13 13 15 / 0.1), 0 20px 44px -22px rgb(13 13 15 / 0.26);
+  /* Four layers: a contact edge, a close shadow, a mid shadow, and a wide
+     ambient one. That stack is what makes a surface read as lifted rather
+     than outlined. */
+  --shadow-card:
+    0 0 0 1px rgb(13 13 15 / 0.04), 0 1px 2px rgb(13 13 15 / 0.04),
+    0 8px 16px -8px rgb(13 13 15 / 0.08), 0 28px 56px -24px rgb(13 13 15 / 0.16);
+  --shadow-lift:
+    0 0 0 1px rgb(13 13 15 / 0.05), 0 2px 4px rgb(13 13 15 / 0.05),
+    0 16px 32px -12px rgb(13 13 15 / 0.12), 0 48px 88px -32px rgb(13 13 15 / 0.24);
+  --shadow-sunk: inset 0 1px 2px rgb(13 13 15 / 0.05);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -65,7 +74,15 @@
   }
 
   body {
+    /* A ground with depth, so a lifted surface has something to lift off. */
     background-color: var(--color-paper);
+    background-image: radial-gradient(
+      120% 80% at 50% -10%,
+      #ffffff 0%,
+      var(--color-paper) 42%,
+      #f3f1ed 100%
+    );
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
