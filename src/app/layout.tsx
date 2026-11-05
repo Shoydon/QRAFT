@@ -18,7 +18,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `${WORDMARK} — ${TAGLINE}`,
+  title: { default: `${WORDMARK} — ${TAGLINE}`, template: `%s` },
   // The description states what the build actually does, not what the name
   // describes: see SHIPPED_DESCRIPTION.
   description: `${SHIPPED_DESCRIPTION}. Deposit a fixed amount of ETH against a private note, then withdraw to any address with a proof generated in your browser.`,
