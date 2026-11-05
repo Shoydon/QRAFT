@@ -82,7 +82,7 @@ simulated receipt must never be mistakable for a real transaction.
 Recorded because the structured probe returned a track brief rather than
 answers to these specific points:
 
-- Demo mode is presented as a persistent header bar plus a `SIMULATED` stamp
+- Preview mode is presented as a persistent header bar plus a `SIMULATED` stamp
   on every receipt and hash, rather than a quiet chip.
 - Anon-RPC defaults **on**, which is stronger than the shipped adopters that
   default it off. Chosen because the track rewards traffic actually routed

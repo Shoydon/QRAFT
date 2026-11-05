@@ -4,7 +4,7 @@ import type { Hex } from 'viem';
  * Deployment and pool configuration.
  *
  * No pool contract is deployed for this build, so `address` is `null` and the
- * deployment identity is a demo identifier rather than an invented address.
+ * deployment identity is a placeholder rather than an invented address.
  * A real deployment replaces this module (or loads a signed manifest into the
  * same shape) and sets `backend: 'chain'`.
  */
@@ -33,14 +33,14 @@ export interface DeploymentConfig {
   readonly explorerBase: string | null;
   readonly noteVersion: 1;
   readonly pools: readonly PoolConfig[];
-  /** `'demo'` means chain-facing adapters are simulated. */
-  readonly backend: 'demo' | 'chain';
+  /** `'simulated'` means chain-facing adapters do not touch a contract. */
+  readonly backend: 'simulated' | 'chain';
 }
 
 const ETH = 10n ** 18n;
 
 export const DEPLOYMENT: DeploymentConfig = {
-  id: 'demo:altmempool-devnet:eth-fixed:1',
+  id: 'qraft:altmempool-devnet:eth-fixed:1',
   // The EIP-8141 alternative-mempool devnet. Frame transactions exist on no
   // public testnet, so this is the only chain the F in QRAFT can run on.
   //
@@ -58,7 +58,7 @@ export const DEPLOYMENT: DeploymentConfig = {
   // linking somewhere that 404s.
   explorerBase: null,
   noteVersion: 1,
-  backend: 'demo',
+  backend: 'simulated',
   pools: [
     { ref: 'eth-0.01', address: null, denominationWei: ETH / 100n, label: '0.01 ETH' },
     { ref: 'eth-0.1', address: null, denominationWei: ETH / 10n, label: '0.1 ETH' },
@@ -69,7 +69,7 @@ export const DEPLOYMENT: DeploymentConfig = {
 
 export const DEFAULT_POOL_REF: PoolRef = 'eth-0.1';
 
-export const IS_DEMO = DEPLOYMENT.backend === 'demo';
+export const IS_SIMULATED = DEPLOYMENT.backend === 'simulated';
 
 export function poolByRef(ref: string): PoolConfig | null {
   return DEPLOYMENT.pools.find((p) => p.ref === ref) ?? null;

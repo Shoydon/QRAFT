@@ -172,7 +172,7 @@ export function injectedAccountAdapter(provider: Eip1193Provider): AccountAdapte
  * Simulated account, used when the browser has no wallet. Every value it
  * reports is marked simulated so the interface can label it.
  */
-export function demoAccountAdapter(): AccountAdapter {
+export function simulatedAccountAdapter(): AccountAdapter {
   const address = '0xD8dA6BF26964aF9D7eEd9e03E53415D37aA96045' as Hex;
   const s = store({ ...EMPTY, providerLabel: 'Simulated wallet', simulated: true });
 
@@ -213,7 +213,7 @@ export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function resolveAccountAdapter(): AccountAdapter {
   const injected = detectInjected();
-  return injected ? injectedAccountAdapter(injected) : demoAccountAdapter();
+  return injected ? injectedAccountAdapter(injected) : simulatedAccountAdapter();
 }
 
 function message(error: unknown): string {

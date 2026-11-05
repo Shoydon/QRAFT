@@ -77,7 +77,7 @@ and nothing in it is described as quantum-proof.
 ## What is real, what is simulated
 
 No pool contract is deployed and no proving artifacts (wasm/zkey) ship with
-this repo, so the app runs in **Demo mode**, announced in a persistent banner.
+this repo, so the app runs in **preview mode**, announced in a persistent banner.
 
 **Real:**
 
@@ -105,26 +105,29 @@ mistaken for chain activity.
 typed adapters: account access, deposit submission, note validation, proof
 generation, withdrawal submission, and transaction reconciliation. The
 simulated implementations live in
-[`src/lib/adapters/demo.ts`](src/lib/adapters/demo.ts) and nothing in the
+[`src/lib/adapters/simulated.ts`](src/lib/adapters/simulated.ts) and nothing in the
 interface imports them directly — resolution happens in
 [`src/lib/adapters/index.ts`](src/lib/adapters/index.ts).
 
 **To wire a real backend:** implement `Backend` against a deployed pool, add
-it beside `demoBackend`, and set `DEPLOYMENT.backend` to `'chain'` in
+it beside `simulatedBackend`, and set `DEPLOYMENT.backend` to `'chain'` in
 [`src/config/pool.ts`](src/config/pool.ts). `getBackend()` throws rather than
 serving simulated data under a real label if that flag is set with no chain
 backend present.
 
-### Demo scenarios
+### Reaching the edge states
 
-The Demo mode banner has a scenario picker. It forces any designed state —
-insufficient balance, rejected deposit, unknown outcome, reverted transaction,
-pending note, spent note, uncheckable note, proof failure, depleted sponsor,
-unreachable sponsor — so the whole state space is reachable in a demo without
-a chain. It is a diagnostic and deliberately lives outside the deposit and
-withdraw journeys. A real backend ignores it entirely.
+Every designed state — insufficient balance, rejected deposit, unknown
+outcome, reverted transaction, pending note, spent note, uncheckable note,
+proof failure, depleted sponsor, unreachable sponsor — is reachable with a
+`?scenario=` query parameter, listed in
+[`src/lib/adapters/scenario.ts`](src/lib/adapters/scenario.ts). For example
+`/app?scenario=note-spent`.
 
----
+It is a query parameter rather than a control in the interface because
+forcing a chain condition is a testing affordance, and a switch for it would
+stop meaning anything the moment a contract is deployed. A real backend
+ignores the parameter entirely.
 
 ## The chain
 
@@ -229,7 +232,7 @@ and self-hostable rather than on content addressing.
 ## Not done yet
 
 - **No pool contract, no circuit, no proving artifacts.** Everything
-  chain-facing is simulated. This is the one blocker between Demo mode and a
+  chain-facing is simulated. This is the one blocker between Preview mode and a
   working deployment.
 - **No gas sponsor.** The gas-policy adapter models sponsored, depleted,
   unreachable and self-funded, but no paymaster is wired. Sponsorship is never

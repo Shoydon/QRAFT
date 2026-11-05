@@ -210,7 +210,7 @@ export interface ReconcileAdapter {
 /* ------------------------------------------------------------------ bundle -- */
 
 export interface Backend {
-  readonly kind: 'demo' | 'chain';
+  readonly kind: 'simulated' | 'chain';
   readonly account: AccountAdapter;
   readonly poolStats: PoolStatsAdapter;
   readonly deposit: DepositAdapter;

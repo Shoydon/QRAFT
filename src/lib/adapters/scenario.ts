@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Demo scenarios. These exist so every designed state can be reached during a
- * demo without a deployed contract. They live behind the Demo mode banner, not
- * in the deposit or withdraw journey.
+ * Scenarios. These exist so every designed state can be reached without a
+ * deployed contract. They live behind the preview banner, not in the deposit
+ * or withdraw journey.
  *
  * A real backend has no equivalent: `chainBackend` ignores this module.
  */
@@ -42,3 +42,17 @@ export function subscribeScenario(listener: (id: ScenarioId) => void): () => voi
 }
 
 export const scenarioIs = (id: ScenarioId) => current === id;
+
+/**
+ * Scenarios are selected with `?scenario=<id>` rather than a control in the
+ * interface: forcing a chain condition is a testing affordance, and the
+ * product should not carry a switch that stops meaning anything the moment a
+ * contract is deployed.
+ */
+export function initScenarioFromUrl() {
+  if (typeof window === 'undefined') return;
+  const requested = new URLSearchParams(window.location.search).get('scenario');
+  if (requested && SCENARIOS.some((s) => s.id === requested)) {
+    current = requested as ScenarioId;
+  }
+}

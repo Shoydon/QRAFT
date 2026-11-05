@@ -1,10 +1,10 @@
 'use client';
 
 import type { Hex } from 'viem';
-import { DEPLOYMENT, type PoolConfig } from '@/config/pool';
+import { type PoolConfig } from '@/config/pool';
 import type { PrivateNote } from '@/lib/note';
 import type { ChainTransport } from '@/lib/transport/types';
-import { demoAccountAdapter, resolveAccountAdapter, wait } from './account';
+import { simulatedAccountAdapter, resolveAccountAdapter, wait } from './account';
 import { getScenario } from './scenario';
 import type {
   AccountState,
@@ -203,7 +203,7 @@ function noteStatusAdapter(): NoteStatusAdapter {
         return {
           kind: 'pending',
           detail:
-            'No deposit for this note has been seen in this session. In Demo mode the pool is in-memory, so deposit a note here first, or switch to a Note scenario in the Demo mode panel.',
+            'No deposit for this note has been seen in this session. The pool is held in memory until a contract is deployed, so deposit a note here first, or pick a Note scenario below.',
           simulated: true,
         };
 
@@ -390,12 +390,12 @@ function reconcileAdapter(): ReconcileAdapter {
   };
 }
 
-export function demoBackend(transport: ChainTransport): Backend {
+export function simulatedBackend(transport: ChainTransport): Backend {
   return {
-    kind: 'demo',
+    kind: 'simulated',
     // A real wallet is used when the browser has one: address, network and
     // balance are live even though submission is simulated.
-    account: typeof window === 'undefined' ? demoAccountAdapter() : resolveAccountAdapter(),
+    account: typeof window === 'undefined' ? simulatedAccountAdapter() : resolveAccountAdapter(),
     poolStats: poolStatsAdapter(),
     deposit: depositAdapter(transport),
     noteStatus: noteStatusAdapter(),
@@ -405,4 +405,3 @@ export function demoBackend(transport: ChainTransport): Backend {
   };
 }
 
-export const DEMO_CHAIN_LABEL = `${DEPLOYMENT.chainName} · simulated pool`;

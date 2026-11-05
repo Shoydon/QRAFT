@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { WORDMARK } from '@/config/brand';
-import { DEPLOYMENT, IS_DEMO } from '@/config/pool';
+import { DEPLOYMENT } from '@/config/pool';
 import { useAccountState, useBackend, useTransportStatus } from '@/hooks/useAdapters';
 import { AccountButton } from './AccountButton';
-import { DemoBar } from './DemoBar';
 import { DepositPanel } from './DepositPanel';
 import { ReadPathLine } from './DetailSheet';
 import { WithdrawPanel } from './WithdrawPanel';
@@ -49,17 +49,18 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      {IS_DEMO ? <DemoBar /> : null}
-
       <header className="px-4 py-3.5 sm:px-6">
         <div className="mx-auto flex max-w-[34rem] items-center justify-between gap-4">
-          <span className="relative shrink-0 text-[0.875rem] font-semibold uppercase tracking-[0.16em] text-ink">
+          <Link
+            href="/"
+            className="relative shrink-0 rounded text-[0.875rem] font-semibold uppercase tracking-[0.16em] text-ink"
+          >
             {WORDMARK}
             <span
               className="spectral-bar absolute -bottom-[5px] left-0 h-[2px] w-full rounded-full"
               aria-hidden="true"
             />
-          </span>
+          </Link>
           <AccountButton account={account} backend={backend} />
         </div>
       </header>
@@ -122,8 +123,8 @@ export function AppShell() {
 
       <footer className="px-4 pb-6 sm:px-6">
         <p className="mx-auto max-w-[34rem] text-center text-[0.6875rem] leading-[1.5] text-ink-45">
-          Unaudited software for a hackathon demo on {DEPLOYMENT.chainName}. Deposits and
-          withdrawals are public; the link between them is what stays private.
+          Unaudited software running against {DEPLOYMENT.chainName}. Deposits and withdrawals
+          are public; the link between them is what stays private.
         </p>
       </footer>
     </div>

@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { getBackend } from '@/lib/adapters';
+import { initScenarioFromUrl } from '@/lib/adapters/scenario';
 import type { AccountState, Backend } from '@/lib/adapters/types';
 import type { ChainTransport, TransportStatus } from '@/lib/transport/types';
 
@@ -25,6 +26,7 @@ export function useBackend(): { backend: Backend | null; transport: ChainTranspo
   // backend-dependent may change the rendered markup on that first pass.
   return useMemo(() => {
     if (typeof window === 'undefined') return { backend: null, transport: null };
+    initScenarioFromUrl();
     const { backend, transport } = getBackend();
     return { backend, transport };
   }, []);
