@@ -88,6 +88,26 @@ export const ANON_WORKERS = {
     /** Browsers cannot open raw TCP, so Tor is reached through KPS relays. */
     needsGateways: true,
   },
+  nym: {
+    label: 'nym',
+    specifier: '0x3aCD9742C68F6d993066Ae25533e09b9e1f60eD0' as Hex,
+    specifierChain: 'Ethereum mainnet',
+    anonymizing: true,
+    /**
+     * Requests travel as Sphinx packets through the Nym mixnet and leave at a
+     * Nym IP Packet Router, so the RPC endpoint sees the router rather than
+     * the browser. Needs no relay of our own, which is why it is the default:
+     * a gateway we do not run is a dependency that can be down on demo day.
+     */
+    needsGateways: false,
+  },
+  nox: {
+    label: 'nox',
+    specifier: '0x35133267A8F7EC35046a83DCA0f4Ca8A6e1b7A9A' as Hex,
+    specifierChain: 'Sepolia',
+    anonymizing: true,
+    needsGateways: true,
+  },
   passthrough: {
     label: 'passthrough',
     specifier: '0x4fd77be300f31c5fe6ab266d35d27750a3478d27' as Hex,
@@ -112,7 +132,7 @@ export const TRANSPORT = {
   worker:
     requestedWorker && requestedWorker in ANON_WORKERS
       ? ANON_WORKERS[requestedWorker]
-      : ANON_WORKERS['tor-js'],
+      : ANON_WORKERS.nym,
   /** Read once, un-anonymized, only to learn the pinned worker hash. */
   bootstrapRpcUrl: process.env.NEXT_PUBLIC_BOOTSTRAP_RPC_URL ?? 'https://ethereum-rpc.publicnode.com',
   /** Where anonymized reads are sent. This provider sees the request, not you. */
