@@ -4,6 +4,7 @@ import { WORDMARK, TAGLINE, SHIPPED_DESCRIPTION } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { GitHubIcon } from "@/components/icons";
+import { Brand } from "@/components/Logo";
 
 const REPO = "https://github.com/Shoydon/QRAFT";
 
@@ -36,16 +37,8 @@ export default function LandingPage() {
           aria-label="Main navigation"
           className="mx-auto flex w-full max-w-[80rem] items-center justify-between"
         >
-          <Link
-            href="/"
-            aria-label="QRAFT home"
-            className="relative text-lg font-semibold tracking-[0.12em] text-ink"
-          >
-            {WORDMARK}
-            <span
-              className="spectral-bar absolute -bottom-1.5 left-0 h-[2px] w-full rounded-full"
-              aria-hidden="true"
-            />
+          <Link href="/" aria-label="QRAFT home">
+            <Brand />
           </Link>
           <a
             href={REPO}

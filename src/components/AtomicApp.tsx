@@ -9,6 +9,7 @@ import {preparePublicKey} from '../../packages/pq-account/src/keys';
 import {Button,Card,Mono,Row,RowGroup,StatusLine,ToneIcon} from './primitives';
 import {Sheet} from './Sheet';
 import {ChevronIcon,CopyIcon,DownloadIcon,LockIcon,Spinner} from './icons';
+import {Brand} from './Logo';
 import {formatEth,truncateMiddle} from '@/lib/format';
 import {browserPageTransport} from '@/lib/transport/page-transport';
 import {createKey,atomicPlan,signAtomic,submitAtomic,poolAbi} from '@/lib/atomic/account';
@@ -123,8 +124,8 @@ export function AtomicApp(){
  const walletBalance=balance&&active?.address&&balance.address===active.address?balance.value:null;
  const rowAction="inline-flex size-8 shrink-0 items-center justify-center rounded-control text-ink-60 transition-colors duration-[120ms] hover:bg-rule/60 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
  const explorer=(hash:Hex)=><a className="text-sm underline underline-offset-4" target="_blank" rel="noreferrer" href={`${manifest.explorerUrl}/tx/${hash}`}>View on explorer ↗</a>;
- return <main className="min-h-screen px-5 py-6 text-ink">
- <header className="mx-auto flex max-w-6xl items-center justify-between"><Link href="/" className="font-semibold tracking-[0.15em]">QRAFT</Link>
+ return <main className="min-h-screen px-6 pb-6 pt-6 text-ink sm:px-10 sm:pt-8 lg:px-16">
+ <header className="mx-auto flex w-full max-w-[80rem] items-center justify-between"><Link href="/" aria-label="QRAFT home"><Brand/></Link>
  <div className="flex min-w-0 items-center gap-3">{active&&<Mono className="hidden shrink-0 text-ink-60 sm:inline">{walletBalance===null?'—':`${walletBalance} ETH`}</Mono>}
  <Button variant="primary" onClick={()=>setWalletOpen(true)}>{active?`${activeWallet?.name??'PQ wallet'} · ${active.address?truncateMiddle(active.address):'Deployment pending'}`:'Connect wallet'}</Button></div></header>
  <div role="tablist" aria-label="Pool action" className="mx-auto mt-12 flex max-w-sm justify-center gap-10 border-b border-rule">{(['deposit','withdraw'] as const).map(t=>
