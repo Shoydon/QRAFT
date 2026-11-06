@@ -113,7 +113,9 @@ function TransactionReference({ hash, copyLabel = "Copy hash" }: { hash: Hex; co
       <Mono>{truncateMiddle(hash, 10, 8)}</Mono>
       <button
         type="button"
-        className="text-xs text-ink-60 underline underline-offset-4"
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-ink-60 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
+        aria-label={copied ? "Copied" : copyLabel}
+        title={copied ? "Copied" : copyLabel}
         onClick={() => {
           void navigator.clipboard.writeText(hash).then(
             () => setCopied(true),
@@ -121,7 +123,7 @@ function TransactionReference({ hash, copyLabel = "Copy hash" }: { hash: Hex; co
           );
         }}
       >
-        {copied ? "Copied" : copyLabel}
+        {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
       </button>
     </div>
   );
@@ -984,15 +986,6 @@ export function PqApp() {
                           <Row label="Gas">Sponsored by paymaster</Row>
                           <Row label="User authorization">ML-DSA-44</Row>
                         </RowGroup>
-                        {accountReady ? (
-                          <Notice
-                            tone="neutral"
-                            title="Your funding account is public"
-                          >
-                            Reusing this account for withdrawal can link both actions.
-                            For privacy, withdraw using a separate PQ wallet.
-                          </Notice>
-                        ) : null}
                         {depositInsufficient ? (
                           <Notice tone="bad" title="Not enough native ETH">
                             This account needs {AMOUNT} ETH for the deposit. The

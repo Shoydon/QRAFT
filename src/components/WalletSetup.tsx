@@ -2,7 +2,7 @@
 
 import { Sheet } from "./Sheet";
 import { Button, Notice } from "./primitives";
-import { CheckIcon } from "./icons";
+import { CheckIcon, Spinner } from "./icons";
 import type { Hex } from "viem";
 import { DeploymentReceipt } from "./DeploymentReceipt";
 
@@ -49,7 +49,9 @@ export function WalletSetup({ open, step, progress, error, deploymentHash, onClo
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <p className="text-sm font-medium">{title}</p>
-                  <span className="text-[0.6875rem] text-ink-60">{state}</span>
+                  <span className="text-[0.6875rem] text-ink-60">
+                    {active && !error ? <span role="status" aria-label={`${title} in progress`}><Spinner /></span> : state}
+                  </span>
                 </div>
               </div>
             </li>
@@ -61,9 +63,9 @@ export function WalletSetup({ open, step, progress, error, deploymentHash, onClo
         {error ? <Notice tone="bad" title="Wallet setup stopped">{error} Close this view and resume wallet setup to retry the same wallet.</Notice>
           : <p className="text-xs leading-relaxed text-ink-60">{publicKeyDetail}</p>}
       </div> : null}
-      <Button className="mt-5 w-full" onClick={onClose}>
-        {complete ? "Continue to wallet" : error ? "Back to wallet" : "Continue in background"}
-      </Button>
+      {error ? <Button className="mt-5 w-full" onClick={onClose}>
+        Back to wallet
+      </Button> : null}
     </Sheet>
   );
 }
