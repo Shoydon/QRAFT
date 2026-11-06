@@ -6,6 +6,7 @@ import {formatEther,parseEther,isAddress,type Hex} from 'viem';
 import {Button,Card,Row,RowGroup,StatusLine} from './primitives';
 import {Sheet} from './Sheet';
 import {Spinner} from './icons';
+import {Brand} from './Logo';
 import {truncateMiddle} from '@/lib/format';
 import {browserPageTransport} from '@/lib/transport/page-transport';
 import {registerWalletPasskey} from '@/lib/pq/vault';
@@ -86,7 +87,7 @@ export function PrivateWalletApp(){
  const payment=panel==='shield'||panel==='send'||panel==='withdraw'||panel==='combine';
  const quarantine=!!engine?.snapshot&&engine.snapshot.timestamp<=engine.quarantineUntil;
  return <main aria-busy={busy} className="min-h-screen bg-paper px-5 py-6 text-ink sm:px-10">
-  <header className="mx-auto flex max-w-6xl items-center justify-between border-b border-rule pb-6"><Link href="/" className="text-lg font-semibold tracking-[0.18em]">QRAFT<span className="ml-3 hidden align-middle sm:inline text-[10px] font-normal tracking-widest text-ink-60">ERC-8286 PQ WALLET</span></Link><Button aria-label="Manage ERC-8286 PQ wallets" onClick={()=>open('wallets')}>{engine?selected?.name??'Your ERC-8286 PQ wallet':'ERC-8286 PQ wallets'}{engine&&<span className="ml-2 inline-block size-1.5 rounded-full bg-state-good"/>}</Button></header>
+  <header className="mx-auto flex max-w-6xl items-center justify-between border-b border-rule pb-6"><Link href="/" aria-label="QRAFT home" className="flex items-center"><Brand/><span className="ml-3 hidden sm:inline text-[10px] font-normal tracking-widest text-ink-60">ERC-8286 PQ WALLET</span></Link><div className="flex items-center gap-5"><Link href="/about" className="text-sm text-ink-60 transition-colors duration-[120ms] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink">About</Link><Button aria-label="Manage ERC-8286 PQ wallets" onClick={()=>open('wallets')}>{engine?selected?.name??'Your ERC-8286 PQ wallet':'ERC-8286 PQ wallets'}{engine&&<span className="ml-2 inline-block size-1.5 rounded-full bg-state-good"/>}</Button></div></header>
   <div className={`mx-auto grid max-w-6xl gap-10 py-14 lg:gap-20 lg:py-20 ${engine?'lg:grid-cols-[1fr_280px]':''}`}>
    <section className={engine?undefined:'mx-auto w-full max-w-4xl text-center'}>
     {!engine?<><h1 className="mx-auto max-w-4xl text-balance text-4xl leading-[1.08] font-medium tracking-[-0.045em] sm:text-6xl lg:text-7xl">{TAGLINE}</h1><p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-ink-60">Deposit ETH, send and receive private payments, and manage everything in one balance.</p><div className="mt-9 flex flex-wrap justify-center gap-3"><Button variant="primary" size="lg" busy={busy} disabled={!manifest} onClick={wallets.length?()=>open('wallets'):create}>{wallets.length?'Unlock your ERC-8286 PQ wallet':'Create ERC-8286 PQ wallet'}</Button><Button variant="ghost" size="lg" disabled={busy} onClick={()=>open('restore')}>Restore ERC-8286 PQ wallet ↗</Button></div><p className="mt-5 text-xs text-ink-60">Keys stay on your device. Gas is sponsored.</p></>:
