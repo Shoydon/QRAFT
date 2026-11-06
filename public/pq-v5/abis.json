@@ -1,1 +1,1909 @@
-{"pool":[{"type":"constructor","inputs":[{"name":"amount","type":"uint128","internalType":"uint128"},{"name":"verifierAddress","type":"address","internalType":"address"},{"name":"expectedCodeHash","type":"bytes32","internalType":"bytes32"}],"stateMutability":"nonpayable"},{"type":"function","name":"CAPACITY","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"DEPTH","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"currentRoot","inputs":[],"outputs":[{"name":"","type":"bytes32[2]","internalType":"bytes32[2]"}],"stateMutability":"view"},{"type":"function","name":"denomination","inputs":[],"outputs":[{"name":"","type":"uint128","internalType":"uint128"}],"stateMutability":"view"},{"type":"function","name":"deposit","inputs":[{"name":"commitment","type":"bytes32[2]","internalType":"bytes32[2]"}],"outputs":[{"name":"index","type":"uint32","internalType":"uint32"}],"stateMutability":"payable"},{"type":"function","name":"isDeposited","inputs":[{"name":"commitment","type":"bytes32[2]","internalType":"bytes32[2]"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"isKnownRoot","inputs":[{"name":"root","type":"bytes32[2]","internalType":"bytes32[2]"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"isSpent","inputs":[{"name":"nullifier","type":"bytes32[2]","internalType":"bytes32[2]"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"nextIndex","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"verifier","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract IPqWithdrawalConsumer"}],"stateMutability":"view"},{"type":"function","name":"verifierCodeHash","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"withdraw","inputs":[{"name":"root","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"nullifier","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"recipient","type":"address","internalType":"address payable"},{"name":"relayer","type":"address","internalType":"address payable"},{"name":"fee","type":"uint128","internalType":"uint128"},{"name":"deadline","type":"uint64","internalType":"uint64"},{"name":"sessionId","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"withdrawalContext","inputs":[{"name":"recipient","type":"address","internalType":"address"},{"name":"relayer","type":"address","internalType":"address"},{"name":"fee","type":"uint128","internalType":"uint128"},{"name":"deadline","type":"uint64","internalType":"uint64"}],"outputs":[{"name":"result","type":"bytes32[2]","internalType":"bytes32[2]"}],"stateMutability":"view"},{"type":"function","name":"zeroAt","inputs":[{"name":"level","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes32[2]","internalType":"bytes32[2]"}],"stateMutability":"view"},{"type":"event","name":"Deposit","inputs":[{"name":"commitmentHi","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"commitmentLo","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"index","type":"uint32","indexed":true,"internalType":"uint32"},{"name":"rootHi","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"rootLo","type":"bytes32","indexed":false,"internalType":"bytes32"}],"anonymous":false},{"type":"event","name":"Withdrawal","inputs":[{"name":"nullifierHi","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"nullifierLo","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"recipient","type":"address","indexed":true,"internalType":"address"},{"name":"relayer","type":"address","indexed":true,"internalType":"address"},{"name":"fee","type":"uint128","indexed":false,"internalType":"uint128"},{"name":"sessionId","type":"bytes32","indexed":false,"internalType":"bytes32"}],"anonymous":false},{"type":"error","name":"DuplicateCommitment","inputs":[]},{"type":"error","name":"Expired","inputs":[]},{"type":"error","name":"InvalidDenomination","inputs":[]},{"type":"error","name":"InvalidFee","inputs":[]},{"type":"error","name":"InvalidLevel","inputs":[]},{"type":"error","name":"InvalidProof","inputs":[]},{"type":"error","name":"InvalidRecipient","inputs":[]},{"type":"error","name":"InvalidRelayer","inputs":[]},{"type":"error","name":"InvalidVerifier","inputs":[]},{"type":"error","name":"NullifierSpent","inputs":[]},{"type":"error","name":"PayoutFailed","inputs":[]},{"type":"error","name":"Reentrancy","inputs":[]},{"type":"error","name":"TreeFull","inputs":[]},{"type":"error","name":"UnknownRoot","inputs":[]},{"type":"error","name":"VerifierCodeChanged","inputs":[]},{"type":"error","name":"WrongDepositValue","inputs":[]},{"type":"error","name":"ZeroCommitment","inputs":[]},{"type":"error","name":"ZeroNullifier","inputs":[]}],"blobs":[{"type":"function","name":"MAX_BLOB_BYTES","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"MAX_CHUNK_BYTES","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"append","inputs":[{"name":"id","type":"uint256","internalType":"uint256"},{"name":"data","type":"bytes","internalType":"bytes"}],"outputs":[{"name":"location","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},{"type":"function","name":"begin","inputs":[{"name":"totalLength","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"stateMutability":"nonpayable"},{"type":"function","name":"chunk","inputs":[{"name":"id","type":"uint256","internalType":"uint256"},{"name":"index","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"location","type":"address","internalType":"address"},{"name":"size","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"info","inputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"owner","type":"address","internalType":"address"},{"name":"totalLength","type":"uint256","internalType":"uint256"},{"name":"written","type":"uint256","internalType":"uint256"},{"name":"complete","type":"bool","internalType":"bool"},{"name":"chunks","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"isSealed","inputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"length","inputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"nextBlobId","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"read","inputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"readSlice","inputs":[{"name":"id","type":"uint256","internalType":"uint256"},{"name":"offset","type":"uint256","internalType":"uint256"},{"name":"size","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"seal","inputs":[{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"Appended","inputs":[{"name":"blobId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"location","type":"address","indexed":true,"internalType":"address"},{"name":"length","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"written","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"Begun","inputs":[{"name":"blobId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"totalLength","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"Sealed","inputs":[{"name":"blobId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"totalLength","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"AlreadySealed","inputs":[]},{"type":"error","name":"CreateFailed","inputs":[]},{"type":"error","name":"NotOwner","inputs":[]},{"type":"error","name":"NotSealed","inputs":[]},{"type":"error","name":"Range","inputs":[]},{"type":"error","name":"UnknownBlob","inputs":[]},{"type":"error","name":"WrongLength","inputs":[]}],"session":[{"type":"constructor","inputs":[{"name":"a","type":"address","internalType":"contract AirProgram"},{"name":"b","type":"address","internalType":"contract WithdrawalSessionArithmeticV5"},{"name":"c","type":"address","internalType":"contract WithdrawalSessionAuthenticationV5"},{"name":"store","type":"address","internalType":"contract ProofBlobStore"},{"name":"st","type":"address","internalType":"contract WithdrawalSessionStreamV5"}],"stateMutability":"nonpayable"},{"type":"function","name":"AIR_CODE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"ARITHMETIC_CODE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"AUTHENTICATION_CODE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"BLOB_CODE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"STREAM_CODE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"air","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract AirProgram"}],"stateMutability":"view"},{"type":"function","name":"arithmetic","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract WithdrawalSessionArithmeticV5"}],"stateMutability":"view"},{"type":"function","name":"attachProof","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"material","type":"tuple","internalType":"struct WithdrawalVerifierSessionV5.Material","components":[{"name":"roots","type":"tuple[3]","internalType":"struct BlakeMerkleV5.Digest[3]","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]},{"name":"fri","type":"tuple[12]","internalType":"struct BlakeMerkleV5.Digest[12]","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]},{"name":"finalConstant","type":"uint256[5]","internalType":"uint256[5]"},{"name":"proofSalt","type":"tuple","internalType":"struct BlakeMerkleV5.Digest","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]}]},{"name":"claimsBlob","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"authenticateInputGroup","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"proof","type":"tuple","internalType":"struct BlakeMerkleV5.Opening","components":[{"name":"rows","type":"bytes[][]","internalType":"bytes[][]"},{"name":"salts","type":"bytes[][]","internalType":"bytes[][]"},{"name":"siblings","type":"tuple[]","internalType":"struct BlakeMerkleV5.Digest[]","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]}]}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"authentication","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract WithdrawalSessionAuthenticationV5"}],"stateMutability":"view"},{"type":"function","name":"beginTranscriptMove","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"blobs","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract ProofBlobStore"}],"stateMutability":"view"},{"type":"function","name":"challenge","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"move","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"uint256[5]","internalType":"uint256[5]"}],"stateMutability":"view"},{"type":"function","name":"checkQuotient","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"consumeVerifiedWithdrawal","inputs":[{"name":"root","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"nullifier","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"context","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"deriveTranscriptKey","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"foldAirBatch","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"program","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"foldFri","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"siblings","type":"uint256[5][]","internalType":"uint256[5][]"},{"name":"salts","type":"bytes[][]","internalType":"bytes[][]"},{"name":"nodes","type":"tuple[]","internalType":"struct BlakeMerkleV5.Digest[]","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"nextSession","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"openSession","inputs":[{"name":"consumer","type":"address","internalType":"address"},{"name":"root","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"nullifier","type":"bytes32[2]","internalType":"bytes32[2]"},{"name":"context","type":"bytes32[2]","internalType":"bytes32[2]"}],"outputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"stateMutability":"nonpayable"},{"type":"function","name":"prepareAir","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"windowBlob","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"progress","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"phase","type":"uint8","internalType":"enum WithdrawalVerifierSessionV5.Phase"},{"name":"moves","type":"uint256","internalType":"uint256"},{"name":"airBatches","type":"uint256","internalType":"uint256"},{"name":"points","type":"uint256","internalType":"uint256"},{"name":"queries","type":"uint256","internalType":"uint256"},{"name":"matrices","type":"uint256","internalType":"uint256"},{"name":"rounds","type":"uint256","internalType":"uint256"},{"name":"cursor","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"projectClaim","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"projectInputRow","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"row","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"queryIndex","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"i","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"reduceInputQuery","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"reduceInputRows","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"rows","type":"bytes[]","internalType":"bytes[]"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"stream","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract WithdrawalSessionStreamV5"}],"stateMutability":"view"},{"type":"function","name":"transcriptBlock","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"verifyInputQuery","inputs":[{"name":"id","type":"bytes32","internalType":"bytes32"},{"name":"proof","type":"tuple[4]","internalType":"struct BlakeMerkleV5.Opening[4]","components":[{"name":"rows","type":"bytes[][]","internalType":"bytes[][]"},{"name":"salts","type":"bytes[][]","internalType":"bytes[][]"},{"name":"siblings","type":"tuple[]","internalType":"struct BlakeMerkleV5.Digest[]","components":[{"name":"a","type":"bytes32","internalType":"bytes32"},{"name":"b","type":"bytes32","internalType":"bytes32"}]}]}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"Consumed","inputs":[{"name":"id","type":"bytes32","indexed":true,"internalType":"bytes32"}],"anonymous":false},{"type":"event","name":"Opened","inputs":[{"name":"id","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"consumer","type":"address","indexed":true,"internalType":"address"},{"name":"opener","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"Verified","inputs":[{"name":"id","type":"bytes32","indexed":true,"internalType":"bytes32"}],"anonymous":false},{"type":"error","name":"Binding","inputs":[]},{"type":"error","name":"Bounds","inputs":[]},{"type":"error","name":"ComponentCode","inputs":[]},{"type":"error","name":"FinalMismatch","inputs":[]},{"type":"error","name":"KeyState","inputs":[]},{"type":"error","name":"MoveComplete","inputs":[]},{"type":"error","name":"MoveIncomplete","inputs":[]},{"type":"error","name":"NeedsRefill","inputs":[]},{"type":"error","name":"PhaseOrder","inputs":[]},{"type":"error","name":"Progress","inputs":[]},{"type":"error","name":"Shape","inputs":[]},{"type":"error","name":"Shape","inputs":[]},{"type":"error","name":"Shape","inputs":[]},{"type":"error","name":"Unauthorized","inputs":[]}]}
+{
+  "pool": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "verifierAddress",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expectedCodeHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "CAPACITY",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "DEPTH",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "currentRoot",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "denomination",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint128",
+          "internalType": "uint128"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "deposit",
+      "inputs": [
+        {
+          "name": "commitment",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "index",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "isDeposited",
+      "inputs": [
+        {
+          "name": "commitment",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isKnownRoot",
+      "inputs": [
+        {
+          "name": "root",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isSpent",
+      "inputs": [
+        {
+          "name": "nullifier",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "nextIndex",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "verifier",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IPqWithdrawalConsumer"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "verifierCodeHash",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "withdraw",
+      "inputs": [
+        {
+          "name": "root",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "nullifier",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "internalType": "address payable"
+        },
+        {
+          "name": "relayer",
+          "type": "address",
+          "internalType": "address payable"
+        },
+        {
+          "name": "fee",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "deadline",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "sessionId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "withdrawalContext",
+      "inputs": [
+        {
+          "name": "recipient",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "relayer",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "fee",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "deadline",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "zeroAt",
+      "inputs": [
+        {
+          "name": "level",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "Deposit",
+      "inputs": [
+        {
+          "name": "commitmentHi",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "commitmentLo",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "index",
+          "type": "uint32",
+          "indexed": true,
+          "internalType": "uint32"
+        },
+        {
+          "name": "rootHi",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "rootLo",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Withdrawal",
+      "inputs": [
+        {
+          "name": "nullifierHi",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "nullifierLo",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "relayer",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "fee",
+          "type": "uint128",
+          "indexed": false,
+          "internalType": "uint128"
+        },
+        {
+          "name": "sessionId",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "DuplicateCommitment",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Expired",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidDenomination",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidFee",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidLevel",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidProof",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidRecipient",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidRelayer",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidVerifier",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NullifierSpent",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PayoutFailed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Reentrancy",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "TreeFull",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "UnknownRoot",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "VerifierCodeChanged",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "WrongDepositValue",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroCommitment",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroNullifier",
+      "inputs": []
+    }
+  ],
+  "blobs": [
+    {
+      "type": "function",
+      "name": "MAX_BLOB_BYTES",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_CHUNK_BYTES",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "append",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "data",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "location",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "begin",
+      "inputs": [
+        {
+          "name": "totalLength",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "chunk",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "index",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "location",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "size",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "info",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "owner",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "totalLength",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "written",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "complete",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "chunks",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isSealed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "length",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "nextBlobId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "read",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "readSlice",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "offset",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "size",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "seal",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "Appended",
+      "inputs": [
+        {
+          "name": "blobId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "location",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "length",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "written",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Begun",
+      "inputs": [
+        {
+          "name": "blobId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "owner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "totalLength",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Sealed",
+      "inputs": [
+        {
+          "name": "blobId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalLength",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "AlreadySealed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CreateFailed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotOwner",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotSealed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Range",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "UnknownBlob",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "WrongLength",
+      "inputs": []
+    }
+  ],
+  "session": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "a",
+          "type": "address",
+          "internalType": "contract AirProgram"
+        },
+        {
+          "name": "b",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionArithmeticV5"
+        },
+        {
+          "name": "c",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionAuthenticationV5"
+        },
+        {
+          "name": "store",
+          "type": "address",
+          "internalType": "contract ProofBlobStore"
+        },
+        {
+          "name": "st",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionStreamV5"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "AIR_CODE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ARITHMETIC_CODE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "AUTHENTICATION_CODE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "BLOB_CODE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "STREAM_CODE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "air",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract AirProgram"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "arithmetic",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionArithmeticV5"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "attachProof",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "material",
+          "type": "tuple",
+          "internalType": "struct WithdrawalVerifierSessionV5.Material",
+          "components": [
+            {
+              "name": "roots",
+              "type": "tuple[3]",
+              "internalType": "struct BlakeMerkleV5.Digest[3]",
+              "components": [
+                {
+                  "name": "a",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "b",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "fri",
+              "type": "tuple[12]",
+              "internalType": "struct BlakeMerkleV5.Digest[12]",
+              "components": [
+                {
+                  "name": "a",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "b",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            },
+            {
+              "name": "finalConstant",
+              "type": "uint256[5]",
+              "internalType": "uint256[5]"
+            },
+            {
+              "name": "proofSalt",
+              "type": "tuple",
+              "internalType": "struct BlakeMerkleV5.Digest",
+              "components": [
+                {
+                  "name": "a",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "b",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "claimsBlob",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "authenticateInputGroup",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "proof",
+          "type": "tuple",
+          "internalType": "struct BlakeMerkleV5.Opening",
+          "components": [
+            {
+              "name": "rows",
+              "type": "bytes[][]",
+              "internalType": "bytes[][]"
+            },
+            {
+              "name": "salts",
+              "type": "bytes[][]",
+              "internalType": "bytes[][]"
+            },
+            {
+              "name": "siblings",
+              "type": "tuple[]",
+              "internalType": "struct BlakeMerkleV5.Digest[]",
+              "components": [
+                {
+                  "name": "a",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "b",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "authentication",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionAuthenticationV5"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "beginTranscriptMove",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "blobs",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract ProofBlobStore"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "challenge",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "move",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[5]",
+          "internalType": "uint256[5]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "checkQuotient",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "consumeVerifiedWithdrawal",
+      "inputs": [
+        {
+          "name": "root",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "nullifier",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "context",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "deriveTranscriptKey",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "foldAirBatch",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "program",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "foldFri",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "siblings",
+          "type": "uint256[5][]",
+          "internalType": "uint256[5][]"
+        },
+        {
+          "name": "salts",
+          "type": "bytes[][]",
+          "internalType": "bytes[][]"
+        },
+        {
+          "name": "nodes",
+          "type": "tuple[]",
+          "internalType": "struct BlakeMerkleV5.Digest[]",
+          "components": [
+            {
+              "name": "a",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "b",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "nextSession",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "openSession",
+      "inputs": [
+        {
+          "name": "consumer",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "root",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "nullifier",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        },
+        {
+          "name": "context",
+          "type": "bytes32[2]",
+          "internalType": "bytes32[2]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "prepareAir",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "windowBlob",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "progress",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "phase",
+          "type": "uint8",
+          "internalType": "enum WithdrawalVerifierSessionV5.Phase"
+        },
+        {
+          "name": "moves",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "airBatches",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "points",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "queries",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "matrices",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "rounds",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "cursor",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "projectClaim",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "projectInputRow",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "row",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "queryIndex",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "i",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "reduceInputQuery",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "reduceInputRows",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "rows",
+          "type": "bytes[]",
+          "internalType": "bytes[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "stream",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract WithdrawalSessionStreamV5"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "transcriptBlock",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "verifyInputQuery",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "proof",
+          "type": "tuple[4]",
+          "internalType": "struct BlakeMerkleV5.Opening[4]",
+          "components": [
+            {
+              "name": "rows",
+              "type": "bytes[][]",
+              "internalType": "bytes[][]"
+            },
+            {
+              "name": "salts",
+              "type": "bytes[][]",
+              "internalType": "bytes[][]"
+            },
+            {
+              "name": "siblings",
+              "type": "tuple[]",
+              "internalType": "struct BlakeMerkleV5.Digest[]",
+              "components": [
+                {
+                  "name": "a",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                },
+                {
+                  "name": "b",
+                  "type": "bytes32",
+                  "internalType": "bytes32"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "Consumed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Opened",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "consumer",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "opener",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Verified",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes32",
+          "indexed": true,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "Binding",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Bounds",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ComponentCode",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "FinalMismatch",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "KeyState",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "MoveComplete",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "MoveIncomplete",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NeedsRefill",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PhaseOrder",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Progress",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Shape",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Shape",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Shape",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "Unauthorized",
+      "inputs": []
+    }
+  ],
+  "paymaster": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "implementation_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "validator_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "pool_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "verifier_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "blobs_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "DENOMINATION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_COST",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "NONCE_LIMIT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "allowedAction",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "blobs",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "implementation",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "implementationHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pay",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "supportsAccount",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "validator",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "validatorHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "verifier",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ]
+}

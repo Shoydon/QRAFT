@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "pools": [
+    {
+      "chainId": 8141,
+      "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+      "pool": "0xb67e8426D99b807065B7b6d0B35Bd403e35f5f2E",
+      "denominationWei": "1000000000000000",
+      "deploymentBlock": 714857,
+      "runtimeHash": "0x373a316087d6310b5237b8dbb5ccef8c50421d1fabe3d8097ecbd38c3af53508",
+      "paymaster": "0x6BB762973ffC78d460ac1A3BA56c34BE49d31c48",
+      "paymasterRuntimeHash": "0xf884c5ec5bf67d30185ffbbaed899fadbfe413d24fe6e0bf4c85959876ca30a7",
+      "verifier": "0xA0190d83e1928B1a2502F904b70C95EbB6a65Fe9"
+    },
+    {
+      "chainId": 8141,
+      "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+      "pool": "0xd3437892c808A42a1531fD67A52F682890d12D31",
+      "denominationWei": "10000000000000000",
+      "deploymentBlock": 714860,
+      "runtimeHash": "0x76a1bc6262f252a6ab0486c771f96f6e71faaba875eda74ab0605250f0e08b16",
+      "paymaster": "0xe305e962496C9Df65f9e049Efd5AFF78d5ddF2C7",
+      "paymasterRuntimeHash": "0xfd2afb415e3f51105a7e78e281a68d93454b9f48ecca7142e5ca3987eb79cb0c",
+      "verifier": "0xA0190d83e1928B1a2502F904b70C95EbB6a65Fe9"
+    },
+    {
+      "chainId": 8141,
+      "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+      "pool": "0x043bc5a5128D87137401299F9bC4605C912AB024",
+      "denominationWei": "100000000000000000",
+      "deploymentBlock": 714865,
+      "runtimeHash": "0xfdf47045ca318194a9cd1bc41c57f2452ca44b938966071a2880f8f9c5872de3",
+      "paymaster": "0x41bfBFa142173e4485a8bac4455C512756d43740",
+      "paymasterRuntimeHash": "0xd7d1797991c0e1e6aec7cfc46ca25c99d12ab077df0061d68166dbe6cda1f552",
+      "verifier": "0xA0190d83e1928B1a2502F904b70C95EbB6a65Fe9"
+    }
+  ]
+}

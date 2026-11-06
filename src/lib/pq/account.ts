@@ -4,12 +4,16 @@ import { bytesToHex, concat, decodeFunctionResult, encodeFunctionData, encodePac
 import { createKey, preparePublicKey, signAuthorization, verifyAuthorization, type PQKey } from '../../../packages/pq-account/src/keys';
 import { Frame, FrameMode, FrameTx, NONCE_MANAGER_LEGACY, assertSuccessfulReceipt, assertSuccessfulSimulation, decodeFrameTransaction, nonceSlot, type FrameReceipt, type FrameSimulation } from '../../../packages/frame-account/src/frametx';
 import manifest from '../../../public/pq-deployment.json';
+import { PQ_POOLS } from './registry';
 import type { ChainTransport } from '../transport/types';
 
 const VERIFY_ABI = parseAbi(['function verify(bytes data)']);
+const PAY_ABI = parseAbi(['function pay()']);
+export const PQ_FRAME_COUNT = 3;
+export const PQ_EXECUTION_FRAME = 2;
 const FACTORY_ABI = parseAbi(['function predict(address implementation,bytes args,bytes32 salt) view returns(address)']);
 const KEY_BYTES = 1312;
-const JOURNAL_VERSION = 1;
+const JOURNAL_VERSION = 2;
 const equal = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const isHex = (value: unknown, bytes: number): value is Hex => typeof value === 'string' && new RegExp(`^0x[0-9a-fA-F]{${bytes * 2}}$`).test(value);
 const wholeHex = (value: unknown): value is Hex => typeof value === 'string' && /^0x(?:[0-9a-fA-F]{2})*$/.test(value);
@@ -39,6 +43,29 @@ export interface VerifiedPqAccount {
   runtime: Hex;
 }
 
+export function pqPaymaster(deployment: PqAccountDeployment = manifest): Hex {
+  const pin = deployment.contracts.paymaster;
+  if (!pin || !isHex(pin.address, 20) || BigInt(pin.address) === 0n) failure('The QRAFT gas paymaster is not configured.');
+  return pin.address;
+}
+
+function registeredSponsor(address: Hex, deployment: PqAccountDeployment): boolean {
+  return equal(address, pqPaymaster(deployment)) || (deployment === manifest && PQ_POOLS.some(pool => equal(pool.paymaster, address)));
+}
+function transactionSponsor(tx: FrameTx, deployment: PqAccountDeployment): Hex {
+  const sponsor = tx.frames[1]?.target;
+  if (!sponsor || !registeredSponsor(sponsor, deployment)) failure('Unregistered PQ transaction paymaster.');
+  return sponsor;
+}
+
+export function assertSponsoredPqTransaction(tx: FrameTx, deployment: PqAccountDeployment = manifest): void {
+  const [authorization, payment, execution] = tx.frames;
+  if (tx.chainId !== BigInt(deployment.chainId) || tx.nonceKeys.length !== 1 || tx.nonceKeys[0] !== BigInt(deployment.contracts.validator.address) || tx.nonceSeq >= 1000n || tx.signatures.length !== 0 || tx.maxFee > 128n || tx.maxPriorityFee > 1n || tx.maxBlobFee !== 0n || tx.blobHashes.length !== 0 || tx.frames.length !== PQ_FRAME_COUNT ||
+    !authorization || authorization.mode !== FrameMode.VERIFY || authorization.flags !== 2 || authorization.target !== tx.sender || authorization.value !== 0n || authorization.gasLimit > 180000n || authorization.stateGasLimit !== 0n || authorization.data !== encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) ||
+    !payment || payment.mode !== FrameMode.VERIFY || payment.flags !== 1 || !payment.target || !registeredSponsor(payment.target, deployment) || payment.value !== 0n || payment.gasLimit > 120000n || payment.stateGasLimit > 97920n || payment.data !== encodeFunctionData({ abi: PAY_ABI, functionName: 'pay' }) ||
+    !execution || execution.mode !== FrameMode.SENDER || execution.flags !== 0 || execution.gasLimit > 14500000n || execution.stateGasLimit > 40000000n || execution.data.length > 250002) failure('Unsupported sponsored PQ transaction.');
+}
+
 /** Derive every key/configuration byte independently of the provisioning server. */
 export function derivePqAccount(publicKey: Hex, rowAddresses: readonly Hex[], descriptor: Hex,
   deployment: PqAccountDeployment = manifest,
@@ -51,7 +78,7 @@ export function derivePqAccount(publicKey: Hex, rowAddresses: readonly Hex[], de
   }));
   const descriptorRuntime = concat(['0x00', bytesToHex(prepared.slice(1, 65)), ...rows.flatMap(row => [row.address, keccak256(row.runtime)])]);
   const cloneArgs = encodePacked(['address', 'uint8', 'uint8', 'uint8', 'address', 'bytes32'],
-    [deployment.contracts.validator.address as Hex, 3, 15, 0, descriptor, keccak256(descriptorRuntime)]);
+    [deployment.contracts.validator.address as Hex, 2, 15, 0, descriptor, keccak256(descriptorRuntime)]);
   const salt = keccak256(publicKey);
   const runtime = concat(['0x363d3d373d3d3d363d73', deployment.contracts.implementation.address as Hex, '0x5af43d82803e903d91602b57fd5bf3', cloneArgs]);
   // Exact CREATE2 initcode from the pinned ERC8286AccountFactory (OZ immutable-args clone).
@@ -64,6 +91,7 @@ export function derivePqAccount(publicKey: Hex, rowAddresses: readonly Hex[], de
 
 export async function verifyPqDeployment(transport: ChainTransport, deployment: PqAccountDeployment = manifest): Promise<void> {
   if (deployment.applicationEnabled === false) failure('The QRAFT protocol requires a fresh deployment. Transactions are disabled.');
+  pqPaymaster(deployment);
   const [chainId, genesis, anchor] = await Promise.all([
     transport.request<Hex>('eth_chainId'),
     transport.request<{ hash: Hex }>('eth_getBlockByNumber', ['0x0', false]),
@@ -74,6 +102,8 @@ export async function verifyPqDeployment(transport: ChainTransport, deployment: 
     const code = await transport.request<Hex>('eth_getCode', [pin.address, 'latest']);
     if (!wholeHex(code) || code === '0x' || !equal(keccak256(code), pin.runtimeHash)) failure('A pinned PQ contract changed. Transactions are disabled.');
   }));
+  const sponsorBalance = await transport.request<Hex>('eth_getBalance', [pqPaymaster(deployment), 'latest']);
+  if (!quantityHex(sponsorBalance) || BigInt(sponsorBalance) < 1000000000000n) failure('The QRAFT paymaster needs test ETH before transactions can be sponsored.');
 }
 
 export async function verifyProvisionedPqAccount(publicKey: Hex, supplied: unknown, transport: ChainTransport,
@@ -129,7 +159,7 @@ export async function recoverProvisionedPqAccount(publicKey: Hex, address: Hex, 
 
 export interface PublicJournalStorage { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }
 interface PublicTransactionJournal {
-  version: 1; chainId: number; genesisHash: string; publicKey: Hex; account: Hex;
+  version: 2; chainId: number; genesisHash: string; publicKey: Hex; account: Hex;
   raw: Hex; hash: Hex; authorizationSignature: Hex; cacheReady: boolean;
   state: 'prepared' | 'broadcasting' | 'submitted' | 'unknown';
 }
@@ -142,7 +172,7 @@ export type PqSendResult =
   | { kind: 'failed'; hash: Hex; receipt: PqRawReceipt; reason: string }
   | { kind: 'unknown'; hash: Hex; reason: string }
   | { kind: 'not-sent'; reason: string };
-export interface PqSendOptions { to: Hex; data: Hex; value?: bigint; onProgress?: (label: string) => void; signal?: AbortSignal; timeoutMs?: number }
+export interface PqSendOptions { paymaster?: Hex; to: Hex; data: Hex; value?: bigint; onProgress?: (label: string) => void; signal?: AbortSignal; timeoutMs?: number }
 export type PqFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export interface PqAccountClientOptions {
   seed?: Uint8Array;
@@ -150,6 +180,7 @@ export interface PqAccountClientOptions {
   journalStorage?: PublicJournalStorage;
   withLock?: <T>(name: string, operation: () => Promise<T>) => Promise<T>;
   deployment?: PqAccountDeployment;
+  onProgress?: (label: string) => void;
 }
 
 function browserJournal(): PublicJournalStorage {
@@ -163,6 +194,9 @@ async function browserLock<T>(name: string, operation: () => Promise<T>): Promis
 async function postPublic(fetcher: PqFetch, path: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
   const response = await fetcher(path, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(180_000)]) : AbortSignal.timeout(180_000) });
+  return readPublicResponse(response);
+}
+async function readPublicResponse(response: Response): Promise<unknown> {
   const reader = response.body?.getReader();
   if (!reader) failure('The local PQ helper returned no response.');
   const parts: Uint8Array[] = []; let length = 0;
@@ -181,6 +215,24 @@ async function postPublic(fetcher: PqFetch, path: string, body: unknown, signal?
   return result;
 }
 
+async function finishAccountSetup(fetcher:PqFetch, initial:unknown, publicKey:Hex, onProgress?:PqAccountClientOptions['onProgress']):Promise<unknown>{
+  if(!initial||typeof initial!=='object'||!('status'in initial))return initial;
+  let job=initial as Record<string,unknown>;
+  const id=keccak256(publicKey),deadline=Date.now()+900000;
+  for(;;){
+    if(job.id!==id||job.publicKey!==publicKey)failure('The helper returned another account setup.');
+    if(typeof job.stage==='string')onProgress?.(job.stage.slice(0,200));
+    if(job.status==='ready')return job.account;
+    if(job.status==='failed')failure(typeof job.error==='string'?job.error.slice(0,240):'Account deployment stopped. Retry the same wallet setup.');
+    if(job.status!=='provisioning'||Date.now()>deadline)failure('Account setup is taking too long. Retry to resume the same wallet.');
+    await new Promise<void>(resolve=>setTimeout(resolve,1000));
+    const response=await fetcher(`/api/pq/accounts?id=${id}`,{credentials:'same-origin',signal:AbortSignal.timeout(30000)});
+    const next=await readPublicResponse(response);
+    if(!next||typeof next!=='object')failure('The helper returned an invalid account status.');
+    job=next as Record<string,unknown>;
+  }
+}
+
 export class PqAccountClient {
   private key: PQKey | null;
   private backedUp = false;
@@ -194,7 +246,7 @@ export class PqAccountClient {
     this.key = key; this.account = account;
     this.storage = options.journalStorage ?? browserJournal(); this.withLock = options.withLock ?? browserLock;
     this.fetcher = options.fetch ?? globalThis.fetch.bind(globalThis); this.deployment = options.deployment ?? manifest;
-    this.journalKey = `qraft:pq-public-tx:v1:${this.deployment.chainId}:${this.account.publicKey.toLowerCase()}`;
+    this.journalKey = `qraft:pq-public-tx:v2:${this.deployment.chainId}:${this.account.publicKey.toLowerCase()}`;
     this.readJournal();
   }
   get address(): Hex { return this.account.address; }
@@ -208,8 +260,10 @@ export class PqAccountClient {
     const key = createKey(options.seed);
     try {
       const publicKey = bytesToHex(key.publicKey);
-      const response = await postPublic(options.fetch ?? globalThis.fetch.bind(globalThis), '/api/pq/accounts', { publicKey });
-      const account = await verifyProvisionedPqAccount(publicKey, response, transport, options.deployment ?? manifest);
+      const fetcher = options.fetch ?? globalThis.fetch.bind(globalThis);
+      const response = await postPublic(fetcher, '/api/pq/accounts', { publicKey });
+      const completed = await finishAccountSetup(fetcher,response,publicKey,options.onProgress);
+      const account = await verifyProvisionedPqAccount(publicKey, completed, transport, options.deployment ?? manifest);
       return new PqAccountClient(transport, key, account, options);
     } catch (error) { key.seed.fill(0); throw error; }
   }
@@ -249,13 +303,21 @@ export class PqAccountClient {
     const entry = value as PublicTransactionJournal;
     if (entry.version !== JOURNAL_VERSION || entry.chainId !== this.deployment.chainId || entry.genesisHash !== this.deployment.genesisHash || !isHex(entry.publicKey, KEY_BYTES) || !equal(entry.publicKey, this.publicKey) || !isHex(entry.account, 20) || !equal(entry.account, this.address) || !wholeHex(entry.raw) || !isHex(entry.hash, 32) || keccak256(entry.raw) !== entry.hash || !isHex(entry.authorizationSignature, 2420) || !['prepared', 'broadcasting', 'submitted', 'unknown'].includes(entry.state) || typeof entry.cacheReady !== 'boolean') failure('The public transaction journal binding is invalid. Preserve it for reconciliation.');
     const tx = decodeFrameTransaction(entry.raw);
+    assertSponsoredPqTransaction(tx, this.deployment);
     if (tx.chainId !== BigInt(this.deployment.chainId) || !equal(tx.sender, this.address) || tx.nonceKeys.length !== 1 || tx.nonceKeys[0] !== BigInt(this.deployment.contracts.validator.address) || !verifyAuthorization(hexToBytes(this.publicKey), tx.sigHash(), entry.authorizationSignature)) failure('The saved transaction does not belong to this PQ account.');
     return entry;
   }
   private saveJournal(entry: PublicTransactionJournal): void { this.storage.setItem(this.journalKey, JSON.stringify(entry)); }
   private async nonce(): Promise<bigint> { return BigInt(await this.transport.request<Hex>('eth_getStorageAt', [NONCE_MANAGER_LEGACY, nonceSlot(this.address, BigInt(this.deployment.contracts.validator.address)), 'latest'])); }
-  private async verifyContext(): Promise<void> {
+  private async verifyContext(sponsor: Hex = pqPaymaster(this.deployment)): Promise<void> {
     await verifyPqDeployment(this.transport, this.deployment);
+    if (!registeredSponsor(sponsor, this.deployment)) failure('Unregistered PQ gas sponsor.');
+    if (!equal(sponsor, pqPaymaster(this.deployment))) {
+      const pool = PQ_POOLS.find(pool => equal(pool.paymaster, sponsor))!;
+      const code = await this.transport.request<Hex>('eth_getCode', [sponsor, 'latest']);
+      const funds = await this.transport.request<Hex>('eth_getBalance', [sponsor, 'latest']);
+      if (!wholeHex(code) || keccak256(code) !== pool.paymasterRuntimeHash || !quantityHex(funds) || BigInt(funds) < 1000000000000n) failure('The selected pool sponsor changed or needs test ETH.');
+    }
     const runtime = await this.transport.request<Hex>('eth_getCode', [this.address, 'latest']);
     if (!equal(runtime, this.account.runtime)) failure('The PQ account changed. No transaction was submitted.');
   }
@@ -265,16 +327,18 @@ export class PqAccountClient {
       if (!this.key || !this.backedUp) return { kind: 'not-sent', reason: 'Save and acknowledge your PQ wallet backup before signing.' };
       if (!isHex(options.to, 20) || !wholeHex(options.data) || (options.value ?? 0n) < 0n) return { kind: 'not-sent', reason: 'Invalid native transaction request.' };
       try {
-        options.signal?.throwIfAborted(); options.onProgress?.('Checking the PQ account and keyed nonce'); await this.verifyContext();
+        options.signal?.throwIfAborted(); options.onProgress?.('Checking the PQ account and keyed nonce'); await this.verifyContext(options.paymaster);
         const nonce = await this.nonce(); options.signal?.throwIfAborted();
         if (!this.key) failure('The PQ wallet was locked.');
         const tx = new FrameTx({ chainId: this.deployment.chainId, nonceKeys: [BigInt(this.deployment.contracts.validator.address)], nonceSeq: nonce, sender: this.address,
           maxPriorityFee: 1n, maxFee: 128n, signatures: [], frames: [
-            new Frame({ mode: FrameMode.VERIFY, flags: 3, target: this.address, gasLimit: 180000n, stateGasLimit: 97920n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
+            new Frame({ mode: FrameMode.VERIFY, flags: 2, target: this.address, gasLimit: 180000n, stateGasLimit: 0n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
+            new Frame({ mode: FrameMode.VERIFY, flags: 1, target: options.paymaster ?? pqPaymaster(this.deployment), gasLimit: 120000n, stateGasLimit: 97920n, data: encodeFunctionData({ abi: PAY_ABI, functionName: 'pay' }) }),
             new Frame({ mode: FrameMode.SENDER, target: options.to, gasLimit: 14500000n, stateGasLimit: 40000000n, value: options.value ?? 0n, data: options.data }),
           ] });
+        assertSponsoredPqTransaction(tx, this.deployment);
         const signature = signAuthorization(this.key, tx.sigHash());
-        const entry: PublicTransactionJournal = { version: 1, chainId: this.deployment.chainId, genesisHash: this.deployment.genesisHash, publicKey: this.publicKey,
+        const entry: PublicTransactionJournal = { version: 2, chainId: this.deployment.chainId, genesisHash: this.deployment.genesisHash, publicKey: this.publicKey,
           account: this.address, raw: tx.raw(), hash: tx.transactionHash(), authorizationSignature: signature, cacheReady: false, state: 'prepared' };
         this.saveJournal(entry); // No seed or witness: persist the frozen public intent before disclosure.
         return await this.resume(entry, options);
@@ -296,16 +360,16 @@ export class PqAccountClient {
   }
   private async receipt(entry: PublicTransactionJournal): Promise<PqSendResult | null> {
     const result = await this.transport.request<PqRawReceipt | null>('eth_getTransactionReceipt', [entry.hash]); if (!result) return null;
-    if (!isHex(result.transactionHash, 32) || !equal(result.transactionHash, entry.hash) || !isHex(result.from, 20) || !equal(result.from, this.address) || !result.payer || !equal(result.payer, this.address) || !isHex(result.blockHash, 32) || !quantityHex(result.blockNumber)) failure('The native receipt does not match the saved account and payer.');
+    if (!isHex(result.transactionHash, 32) || !equal(result.transactionHash, entry.hash) || !isHex(result.from, 20) || !equal(result.from, this.address) || !result.payer || !equal(result.payer, transactionSponsor(decodeFrameTransaction(entry.raw), this.deployment)) || !isHex(result.blockHash, 32) || !quantityHex(result.blockNumber)) failure('The native receipt does not match the saved account and paymaster.');
     const block = await this.transport.request<{ hash: Hex }>('eth_getBlockByNumber', [result.blockNumber, false]);
     if (!block || !equal(block.hash, result.blockHash)) failure('The native receipt is not on the current canonical chain.');
-    if (!quantityHex(result.type) || BigInt(result.type) !== 6n || !quantityHex(result.status) || !Array.isArray(result.frameReceipts) || result.frameReceipts.length !== 2 || result.frameReceipts.some(frame => !quantityHex(frame.status))) failure('The native receipt is missing complete frame evidence.');
-    let success = true; try { assertSuccessfulReceipt(result, 2); } catch { success = false; }
+    if (!quantityHex(result.type) || BigInt(result.type) !== 6n || !quantityHex(result.status) || !Array.isArray(result.frameReceipts) || result.frameReceipts.length !== PQ_FRAME_COUNT || result.frameReceipts.some(frame => !quantityHex(frame.status))) failure('The native receipt is missing complete frame evidence.');
+    let success = true; try { assertSuccessfulReceipt(result, PQ_FRAME_COUNT); } catch { success = false; }
     this.storage.removeItem(this.journalKey);
     return success ? { kind: 'confirmed', hash: entry.hash, receipt: result } : { kind: 'failed', hash: entry.hash, receipt: result, reason: 'The included native transaction has a failed or skipped frame. Check the note state before choosing another action.' };
   }
   private async resume(entry: PublicTransactionJournal, options: Pick<PqSendOptions, 'onProgress' | 'signal' | 'timeoutMs'>): Promise<PqSendResult> {
-    options.signal?.throwIfAborted(); await this.verifyContext();
+    options.signal?.throwIfAborted(); await this.verifyContext(transactionSponsor(decodeFrameTransaction(entry.raw), this.deployment));
     const existing = await this.receipt(entry); if (existing) return existing;
     const tx = decodeFrameTransaction(entry.raw);
     if (await this.nonce() !== tx.nonceSeq) failure('The saved native nonce changed without the expected receipt.');
@@ -319,8 +383,8 @@ export class PqAccountClient {
     if (await this.nonce() !== tx.nonceSeq) failure('The keyed nonce changed while the authorization was prepared.');
     options.onProgress?.('Simulating all native frames');
     const simulated = await this.transport.request<FrameSimulation>('ethrex_simulateFrameTransaction', [entry.raw, 'latest']);
-    assertSuccessfulSimulation(simulated, 2);
-    if (!simulated.payer || !equal(simulated.payer, this.address)) failure('The native simulation selected another gas payer.');
+    assertSuccessfulSimulation(simulated, PQ_FRAME_COUNT);
+    if (!simulated.payer || !equal(simulated.payer, transactionSponsor(tx, this.deployment))) failure('The native simulation selected another gas payer.');
     options.signal?.throwIfAborted();
     entry.state = 'broadcasting'; this.saveJournal(entry);
     options.onProgress?.('Submitting the exact ML-DSA-authorized native transaction');

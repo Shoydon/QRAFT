@@ -3,7 +3,7 @@ import type{Hex}from'viem';
 import{Frame,FrameTx,FrameMode}from'../packages/frame-account/src/frametx';
 import{PqPoolClient,PQ_DEPLOYMENT,type PreparedPqWithdrawal}from'../src/lib/pq/pool';
 import{createPqNote}from'../src/lib/pq/note';
-import type{PqAccountClient,PqRawReceipt}from'../src/lib/pq/account';
+import{pqPaymaster,type PqAccountClient,type PqRawReceipt}from'../src/lib/pq/account';
 import type{ChainTransport}from'../src/lib/transport/types';
 const owner=`0x${'11'.repeat(20)}`as Hex;
 const oldHash=`0x${'33'.repeat(32)}`as Hex;
@@ -11,7 +11,7 @@ function scenario(){
  const note=createPqNote(PQ_DEPLOYMENT);const recipient=`0x${'44'.repeat(20)}`as Hex;
  const statement={profile:note.profile,root:Array(64).fill(0)as number[],nullifier:Array.from(Buffer.from(note.nullifier.slice(2),'hex')),context:Array(64).fill(1)as number[],publicContext:{chainIdHex:'0x'+(8141).toString(16).padStart(64,'0'),poolHex:note.pool,recipientHex:recipient,relayerHex:`0x${'00'.repeat(20)}`,denomination:note.denominationWei,fee:'0',deadline:'1800000000'}};
  const prepared:PreparedPqWithdrawal={jobId:'a'.repeat(64),note,recipient,deadline:1800000000n,statement,signal:new AbortController().signal};
- const receipt:PqRawReceipt={type:'0x6',status:'0x1',payer:owner,from:owner,transactionHash:oldHash,blockNumber:'0x1',blockHash:`0x${'55'.repeat(32)}`,gasUsed:'0x1',frameReceipts:[{status:'0x1',gasUsed:'0x1',logs:[]},{status:'0x1',gasUsed:'0x1',logs:[]}],logs:[]};
+ const receipt:PqRawReceipt={type:'0x6',status:'0x1',payer:pqPaymaster(),from:owner,transactionHash:oldHash,blockNumber:'0x1',blockHash:`0x${'55'.repeat(32)}`,gasUsed:'0x1',frameReceipts:Array.from({length:3},()=>({status:'0x1' as const,gasUsed:'0x1' as const,logs:[]})),logs:[]};
  const rpcCalls:string[]=[];
  const transport={request:async<T>(method:string)=>{rpcCalls.push(method);if(method==='eth_getTransactionReceipt')return receipt as T;if(method==='eth_getBlockByNumber')return{hash:receipt.blockHash}as T;throw Error('Unexpected recovery read');}}as ChainTransport;
  const pool=new PqPoolClient(transport);

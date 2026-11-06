@@ -10,6 +10,7 @@ const genesis = realManifest.genesisHash;
 const blockHash = `0x${'ab'.repeat(32)}` as Hex;
 const rowAddresses = [1, 2, 3, 4].map(i => numberToHex(1000 + i, { size: 20 }));
 const descriptor = numberToHex(2000, { size: 20 });
+const sponsor = numberToHex(3000, { size: 20 });
 class MemoryJournal implements PublicJournalStorage {
   readonly values = new Map<string, string>();
   getItem(key: string) { return this.values.get(key) ?? null; }
@@ -19,16 +20,17 @@ class MemoryJournal implements PublicJournalStorage {
 function fixture() {
   const key = createKey(new Uint8Array(32).fill(44)); // Public test-only deterministic vector.
   const publicKey = bytesToHex(key.publicKey);
+  const contracts = Object.fromEntries(Object.entries(realManifest.contracts).map(([name, pin]) => [name, { address: pin.address, runtimeHash: keccak256('0x6000') }])) as PqAccountDeployment['contracts'];
   const deployment: PqAccountDeployment = {
     ...realManifest,
     applicationEnabled: true,
-    contracts: Object.fromEntries(Object.entries(realManifest.contracts).map(([name, pin]) => [name, { address: pin.address, runtimeHash: keccak256('0x6000') }])) as PqAccountDeployment['contracts'],
+    contracts: { ...contracts, paymaster: { address: sponsor, runtimeHash: keccak256('0x6000') } },
   };
   const account = derivePqAccount(publicKey, rowAddresses, descriptor, deployment);
   const codes = new Map<string, Hex>(Object.values(deployment.contracts).map(pin => [pin.address.toLowerCase(), '0x6000']));
   for (const row of account.rows) codes.set(row.address.toLowerCase(), row.runtime);
   codes.set(descriptor.toLowerCase(), account.descriptorRuntime); codes.set(account.address.toLowerCase(), account.runtime);
-  const state = { nonce: 0n, sent: [] as Hex[], receipt: false, sendFailure: false, missingFrame: false, payer: account.address, chainId: deployment.chainId, alteredFactory: false };
+  const state = { nonce: 0n, sent: [] as Hex[], receipt: false, sendFailure: false, missingFrame: false, payer: sponsor, simulationPayer: sponsor, chainId: deployment.chainId, alteredFactory: false };
   const methods: string[] = [];
   const transport: ChainTransport = {
     getStatus: () => ({ phase: 'ready', network: 'test', detail: null, code: null, lastLatencyMs: 0, requestCount: methods.length }),
@@ -41,7 +43,7 @@ function fixture() {
       if (method === 'eth_call') return encodeAbiParameters([{ type: 'address' }], [state.alteredFactory ? numberToHex(3000, { size: 20 }) : account.address]) as T;
       if (method === 'eth_getStorageAt') return numberToHex(state.nonce, { size: 32 }) as T;
       if (method === 'eth_getBalance') return '0x100000000000000' as T;
-      if (method === 'ethrex_simulateFrameTransaction') return { valid: true, prefixShape: 'test', payer: account.address, maxCost: '0x1', violation: null, gasUsed: '0x1', frames: [{ gasUsed: '0x1', succeeded: true }, { gasUsed: '0x1', succeeded: true }], executionStatus: 'success', executionError: null } as T;
+      if (method === 'ethrex_simulateFrameTransaction') return { valid: true, prefixShape: 'test', payer: state.simulationPayer, maxCost: '0x1', violation: null, gasUsed: '0x1', frames: Array.from({length:3},()=>({ gasUsed: '0x1', succeeded: true })), executionStatus: 'success', executionError: null } as T;
       if (method === 'eth_sendRawTransaction') {
         const raw = params[0] as Hex; state.sent.push(raw);
         if (state.sendFailure) throw Error('Lost network acknowledgement');
@@ -49,7 +51,7 @@ function fixture() {
       }
       if (method === 'eth_getTransactionReceipt') {
         if (!state.receipt) return null as T;
-        return { type: '0x6', status: '0x1', transactionHash: params[0], from: account.address, payer: state.payer, blockNumber: '0x123', blockHash, gasUsed: '0x100', logs: [], frameReceipts: state.missingFrame ? [{ status: '0x1' }] : [{ status: '0x1' }, { status: '0x1' }] } as T;
+        return { type: '0x6', status: '0x1', transactionHash: params[0], from: account.address, payer: state.payer, blockNumber: '0x123', blockHash, gasUsed: '0x100', logs: [], frameReceipts: state.missingFrame ? [{ status: '0x1' }] : Array.from({length:3},()=>({ status: '0x1' })) } as T;
       }
       throw Error(`Unexpected test RPC ${method}`);
     },
@@ -95,7 +97,7 @@ test('backup acknowledgement gates signing and only public material reaches the 
   expect(f.posts[0]!.body).toEqual({ publicKey: client.publicKey });
   expect(f.posts.every(post => !JSON.stringify(post.body).includes(seed))).toBe(true);
   const raw = decodeFrameTransaction(f.state.sent[0]!);
-  expect(raw.chainId).toBe(8141n); expect(raw.frames[0]!.flags).toBe(3); expect(raw.signatures.length).toBe(0);
+  expect(raw.chainId).toBe(8141n); expect(raw.frames[0]!.flags).toBe(2); expect(raw.frames[1]!.flags).toBe(1); expect(raw.frames[1]!.target).toBe(sponsor); expect(raw.frames.length).toBe(3); expect(raw.signatures.length).toBe(0);
   expect(f.journal.values.size).toBe(0); client.lock(); expect(client.isLocked).toBe(true);
   expect(() => client.backup()).toThrow('Unlock');
 });
@@ -153,4 +155,57 @@ test('a deployment awaiting the QRAFT namespace migration rejects before any RPC
   await expect(verifyPqDeployment(f.transport, { ...realManifest, applicationEnabled: false })).rejects.toThrow('fresh deployment');
   expect(f.methods).toHaveLength(0);
   expect(f.state.sent).toHaveLength(0);
+});
+
+
+test('a different simulation gas payer cannot cause a sponsored broadcast', async () => {
+  const f = fixture(); const client = await PqAccountClient.create(f.transport, f.options); client.markBackedUp();
+  f.state.simulationPayer = f.account.address;
+  const result = await client.send({ to: realManifest.pool as Hex, data: '0x1234', timeoutMs: 0 });
+  expect(result.kind).toBe('unknown');
+  expect(f.state.sent).toHaveLength(0);
+  expect(client.pending).not.toBeNull();
+});
+
+test('a receipt charging the user instead of the paymaster cannot confirm the intent', async () => {
+  const f = fixture(); const client = await PqAccountClient.create(f.transport, f.options); client.markBackedUp();
+  f.state.payer = f.account.address;
+  const result = await client.send({ to: realManifest.pool as Hex, data: '0x1234', timeoutMs: 0 });
+  expect(result.kind).toBe('unknown');
+  expect(f.state.sent).toHaveLength(1);
+  expect(client.pending).not.toBeNull();
+});
+
+
+test('account deployment polls a public setup job without submitting another key', async () => {
+  const f = fixture(); let posts = 0; let polls = 0; const stages: string[] = [];
+  const id = keccak256(f.publicKey);
+  const fetcher: PqFetch = async (_input, init) => {
+    if (init?.method === 'POST') { posts++; expect(JSON.parse(String(init.body))).toEqual({ publicKey: f.publicKey }); return Response.json({ id, publicKey: f.publicKey, status: 'provisioning', stage: 'Deploying public key row 1 of 4' }, { status: 202 }); }
+    polls++; return Response.json({ id, publicKey: f.publicKey, status: 'ready', stage: 'Smart account deployed', account: f.account });
+  };
+  const client = await PqAccountClient.create(f.transport, { ...f.options, fetch: fetcher, onProgress: stage => stages.push(stage) });
+  expect(client.address).toBe(f.account.address); expect(posts).toBe(1); expect(polls).toBe(1);
+  expect(stages).toEqual(['Deploying public key row 1 of 4', 'Smart account deployed']); client.lock();
+});
+
+test('interrupted setup can retry the same seed without changing the public key', async () => {
+  const f = fixture(); const keys: string[] = []; let failed = true;
+  const fetcher: PqFetch = async (_input, init) => {
+    keys.push(JSON.parse(String(init?.body)).publicKey);
+    return Response.json(failed ? { id: keccak256(f.publicKey), publicKey: f.publicKey, status: 'failed', error: 'Account setup was interrupted' } : f.account);
+  };
+  await expect(PqAccountClient.create(f.transport, { ...f.options, fetch: fetcher })).rejects.toThrow('interrupted');
+  failed = false; const client = await PqAccountClient.create(f.transport, { ...f.options, fetch: fetcher });
+  expect(keys).toEqual([f.publicKey, f.publicKey]); expect(f.options.seed.every(byte => byte === 44)).toBe(true); client.lock();
+});
+
+test('a queued setup for another key is rejected before polling or chain reads', async () => {
+  const f = fixture(); let requests = 0;
+  const fetcher: PqFetch = async () => {
+    requests++;
+    return Response.json({ id: numberToHex(1234, { size: 32 }), publicKey: f.publicKey, status: 'provisioning', stage: 'Waiting' }, { status: 202 });
+  };
+  await expect(PqAccountClient.create(f.transport, { ...f.options, fetch: fetcher })).rejects.toThrow('another account setup');
+  expect(requests).toBe(1); expect(f.methods).toEqual([]);
 });

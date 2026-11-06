@@ -5,6 +5,7 @@ import { readFile, writeFile, mkdir, open, rename } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createPublicClient, http, encodeFunctionData, decodeAbiParameters, parseEventLogs, bytesToHex, type Abi, type AbiParameter, type Hex } from 'viem';
 import manifest from '../../../public/pq-deployment.json';
+import { PQ_POOLS } from './registry';
 import abis from '../../../public/pq-v5/abis.json';
 import { runPublicCall, runPublicProgram } from './service';
 
@@ -25,7 +26,7 @@ export function validatePublicStatement(input:unknown):asserts input is Expected
   for(const key of ['chainIdHex','poolHex','recipientHex','relayerHex'])if(typeof fields[key]!=='string'||!new RegExp(`^(?:0x)?[0-9a-fA-F]{${key==='chainIdHex'?64:40}}$`).test(fields[key] as string))throw Error('Invalid public context field width.');
   for(const key of ['denomination','fee','deadline'])if(typeof fields[key]!=='string'||!/^(0|[1-9][0-9]*)$/.test(fields[key] as string))throw Error('Invalid public context integer.');
   const hex=(key:string)=>String(fields[key]).toLowerCase().replace(/^0x/,'');
-  if(BigInt('0x'+hex('chainIdHex'))!==8141n||hex('poolHex')!==manifest.pool.toLowerCase().slice(2)||fields.denomination!==manifest.denominationWei||fields.fee!=='0'||BigInt(fields.deadline as string)>=(1n<<64n)||BigInt('0x'+hex('recipientHex'))===0n||hex('recipientHex')===hex('poolHex')||BigInt('0x'+hex('relayerHex'))!==0n)throw Error('Public context does not describe this native ETH PQ deployment.');
+  if(BigInt('0x'+hex('chainIdHex'))!==BigInt(manifest.chainId)||!PQ_POOLS.some(pool=>hex('poolHex')===pool.pool.toLowerCase().slice(2)&&fields.denomination===pool.denominationWei)||fields.fee!=='0'||BigInt(fields.deadline as string)>=(1n<<64n)||BigInt('0x'+hex('recipientHex'))===0n||hex('recipientHex')===hex('poolHex')||BigInt('0x'+hex('relayerHex'))!==0n)throw Error('Public context does not describe this native ETH PQ deployment.');
 }
 export interface PqProofJob{id:string;phase:'encoding'|'ready'|'uploading'|'uploaded'|'verifying'|'verified'|'failed';stage:string;statement:ExpectedStatement;claimsBlob?:string;windowBlob?:string;sessionId?:Hex;done?:number;total?:number;error?:string;ownerPid?:number;encoderPid?:number;updatedAt?:number;}
 function directory(id:string){if(!/^[0-9a-f]{64}$/.test(id))throw Error('Invalid public proof ID.');return join(root,id);}

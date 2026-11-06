@@ -2,14 +2,14 @@ import { blake2b } from '@noble/hashes/blake2.js';
 import { concatBytes } from '@noble/hashes/utils.js';
 import { hexToBytes, numberToBytes, bytesToHex, type Hex } from 'viem';
 import assetManifest from '../../../public/pq-v5/manifest.json';
-import deployment from '../../../public/pq-deployment.json';
-import { PQ_PROFILE, type PqNote, type PqNoteTree } from './note';
+import defaultDeployment from '../../../public/pq-deployment.json';
+import { PQ_PROFILE, type PqDeployment, type PqNote, type PqNoteTree } from './note';
 
 export interface PublicWithdrawalStatement {
   profile:typeof PQ_PROFILE;root:number[];nullifier:number[];context:number[];
   publicContext:{chainIdHex:string;poolHex:string;recipientHex:string;relayerHex:string;denomination:string;fee:string;deadline:string};
 }
-export function withdrawalContext(recipient:Hex,deadline:bigint):{digest:Hex;publicContext:PublicWithdrawalStatement['publicContext']}{
+export function withdrawalContext(recipient:Hex,deadline:bigint,deployment: Pick<PqDeployment, 'chainId' | 'denominationWei'> & {pool: string} = defaultDeployment):{digest:Hex;publicContext:PublicWithdrawalStatement['publicContext']}{
   const chainId=numberToBytes(deployment.chainId,{size:32});const pool=hexToBytes(deployment.pool as Hex);
   const recipientBytes=hexToBytes(recipient);const zero=new Uint8Array(20);
   if(recipientBytes.length!==20||BigInt(recipient)===0n||recipient.toLowerCase()===deployment.pool.toLowerCase())throw Error('Choose a nonzero recipient outside the pool.');
@@ -30,7 +30,7 @@ async function verifiedAssets(){
 export async function browserPqProof(note:PqNote,tree:PqNoteTree,index:number,recipient:Hex,deadline:bigint,onProgress:(label:string)=>void,signal:AbortSignal):Promise<{proof:Uint8Array;statement:PublicWithdrawalStatement}>{
   signal.throwIfAborted();onProgress('Loading the hash-pinned transparent prover');
   const {moduleText,wasm}=await verifiedAssets();signal.throwIfAborted();
-  const context=withdrawalContext(recipient,deadline);
+  const context=withdrawalContext(recipient,deadline,note);
   const statement:PublicWithdrawalStatement={profile:PQ_PROFILE,root:Array.from(hexToBytes(tree.root())),nullifier:Array.from(hexToBytes(note.nullifier)),context:Array.from(hexToBytes(context.digest)),publicContext:context.publicContext};
   const moduleUrl=URL.createObjectURL(new Blob([moduleText],{type:'text/javascript'}));
   const workerSource=`import init,*as b from ${JSON.stringify(moduleUrl)};self.onmessage=async({data})=>{try{await init({module_or_path:data.wasm});const s=JSON.stringify(data.statement);const p=b.prove_withdrawal_v5(s,JSON.stringify(data.witness));self.postMessage({stage:'Checking the transparent proof locally'});if(!b.verify_withdrawal_v5(s,p))throw Error();self.postMessage({proof:p},[p.buffer]);}catch{self.postMessage({error:'The local PQ proof failed. Your note is unchanged.'});}self.close();};`;
