@@ -57,7 +57,13 @@ const STEPS = ["Amount", "Note", "Confirm", "Receipt"] as const;
 const WITHDRAW_STEPS = ["Note", "Recipient", "Prove", "Receipt"] as const;
 type Tab = "deposit" | "withdraw";
 type DepositStage =
-  "amount" | "note" | "confirm" | "busy" | "receipt" | "unknown" | "failed";
+  | "amount"
+  | "note"
+  | "confirm"
+  | "busy"
+  | "receipt"
+  | "unknown"
+  | "failed";
 type WithdrawStage =
   | "import"
   | "checking"
@@ -390,8 +396,21 @@ export function PqApp() {
           "Restore the PQ wallet that submitted this deposit before reconciling it.",
         );
       const result = reconcile
-        ? await pool.reconcileDeposit(client, depositNote, depositResult && "hash" in depositResult ? depositResult.hash : undefined, updateProgress, controller.signal)
-        : await pool.deposit(client, depositNote, updateProgress, controller.signal);
+        ? await pool.reconcileDeposit(
+            client,
+            depositNote,
+            depositResult && "hash" in depositResult
+              ? depositResult.hash
+              : undefined,
+            updateProgress,
+            controller.signal,
+          )
+        : await pool.deposit(
+            client,
+            depositNote,
+            updateProgress,
+            controller.signal,
+          );
       if (mounted.current) acceptDeposit(result);
       if (result.kind === "confirmed") void refreshPool();
       await refreshBalance(client);
@@ -700,16 +719,20 @@ export function PqApp() {
       <header className="px-4 py-3.5 sm:px-6">
         <div className="mx-auto flex max-w-[34rem] items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" aria-label="Back to the QRAFT home page" className="inline-flex size-9 shrink-0 items-center justify-center rounded-pill bg-sunk text-ink-60 shadow-[inset_0_0_0_1px_rgb(13_13_15/0.07)] transition-colors hover:bg-rule/60 hover:text-ink">
+            <Link
+              href="/"
+              aria-label="Back to the QRAFT home page"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-pill bg-sunk text-ink-60 shadow-[inset_0_0_0_1px_rgb(13_13_15/0.07)] transition-colors hover:bg-rule/60 hover:text-ink"
+            >
               <ArrowLeftIcon width={17} height={17} />
             </Link>
-          <span className="relative text-sm font-semibold tracking-[0.16em]">
-            {WORDMARK}
-            <span
-              className="spectral-bar absolute -bottom-[5px] left-0 h-[2px] w-full rounded-full"
-              aria-hidden="true"
-            />
-          </span>
+            <span className="relative text-sm font-semibold tracking-[0.16em]">
+              {WORDMARK}
+              <span
+                className="spectral-bar absolute -bottom-[5px] left-0 h-[2px] w-full rounded-full"
+                aria-hidden="true"
+              />
+            </span>
           </div>
           <Button size="sm" disabled={busy} onClick={() => setWalletOpen(true)}>
             {account
@@ -721,7 +744,7 @@ export function PqApp() {
           {TAGLINE}
         </h1>
       </header>
-      <main className="flex flex-1 flex-col justify-center px-4 py-5 sm:px-6">
+      <main className="flex flex-1 flex-col px-4 pb-6 sm:pt-5 sm:px-6">
         <div className="mx-auto w-full max-w-[34rem]">
           {serviceEnabled === false ? (
             <div className="mb-4">
@@ -780,554 +803,584 @@ export function PqApp() {
               </button>
             ))}
           </div>
-          <div
-            className="mt-5"
-            role="tabpanel"
-            id="pq-panel-deposit"
-            aria-labelledby="pq-tab-deposit"
-            hidden={tab !== "deposit"}
-          >
-            <Card as="section" className="overflow-hidden">
-              <div className="border-b border-rule px-5 py-4 sm:px-6">
-                <StepRail steps={STEPS} current={depositStep} />
+          <div className="-mx-8 -my-12 mt-0 overflow-hidden px-8 py-8 sm:py-12">
+            <div
+              className="flex items-start gap-20 transition-transform duration-[380ms] ease-[var(--ease-out-expo)] motion-reduce:transition-none"
+              style={{
+                transform:
+                  tab === "deposit"
+                    ? "translateX(0)"
+                    : "translateX(calc(-100% - 5rem))",
+              }}
+            >
+              <div
+                className="w-full shrink-0"
+                role="tabpanel"
+                id="pq-panel-deposit"
+                aria-labelledby="pq-tab-deposit"
+                inert={tab !== "deposit"}
+              >
+                <Card as="section" className="overflow-hidden">
+                  <div className="border-b border-rule px-5 py-4 sm:px-6">
+                    <StepRail steps={STEPS} current={depositStep} />
+                  </div>
+                  <div className="p-5 sm:p-6">
+                    {depositStage === "amount" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption={
+                            unspent === null
+                              ? "Reading the anonymity set…"
+                              : `${unspent} unspent ${AMOUNT} ETH ${unspent === 1 ? "note" : "notes"}`
+                          }
+                        />
+                        <p className="text-center text-sm leading-relaxed text-ink-60">
+                          A fixed native ETH deposit, protected by a SHA3-512
+                          note and a transparent withdrawal proof.
+                        </p>
+                        <RowGroup>
+                          <Row label="Network">Ethrex devnet · 8141</Row>
+                          <Row label="Denomination">{AMOUNT} native ETH</Row>
+                          <Row label="Withdrawal proof">
+                            Transparent V5 · no trusted setup
+                          </Row>
+                        </RowGroup>
+                        <p className="text-xs leading-relaxed text-ink-60">
+                          Anonymity depends on other notes, timing and gas
+                          payment. A single deposit does not provide useful
+                          unlinkability.
+                        </p>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full"
+                          iconAfter={<ArrowRightIcon width={17} height={17} />}
+                          onClick={generateNote}
+                        >
+                          Generate a PQ note
+                        </Button>
+                      </div>
+                    ) : null}
+                    {depositStage === "note" && depositNote ? (
+                      <div className="space-y-5">
+                        <div>
+                          <h1 className="text-xl font-semibold tracking-tight">
+                            Save your PQ note
+                          </h1>
+                          <p className="mt-2 text-sm leading-relaxed text-ink-60">
+                            This file is the only thing that can withdraw this
+                            deposit. It is a bearer secret, not a receipt to
+                            share.
+                          </p>
+                        </div>
+                        <div className="border-y border-rule py-4">
+                          <span className="text-xs text-ink-60">
+                            Public commitment
+                          </span>
+                          <p className="mt-2">
+                            <Mono>{noteReference(depositNote)}</Mono>
+                          </p>
+                        </div>
+                        <Button
+                          variant={noteDownloaded ? "secondary" : "primary"}
+                          className="w-full"
+                          icon={<DownloadIcon width={17} height={17} />}
+                          onClick={downloadNote}
+                        >
+                          {noteDownloaded
+                            ? "Download note again"
+                            : "Download PQ note file"}
+                        </Button>
+                        <label className="flex gap-3 rounded-control border border-rule p-3.5 text-sm leading-relaxed">
+                          <input
+                            type="checkbox"
+                            className="mt-1 size-4 shrink-0 accent-[var(--color-ink)]"
+                            disabled={!noteDownloaded}
+                            checked={noteAcknowledged}
+                            onChange={(event) =>
+                              setNoteAcknowledged(event.target.checked)
+                            }
+                          />
+                          <span>
+                            I saved this note file somewhere I can find it
+                            again. Losing it means losing access to this
+                            deposit.
+                          </span>
+                        </label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            icon={<ArrowLeftIcon width={17} height={17} />}
+                            onClick={() => setDepositStage("amount")}
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            disabled={!noteDownloaded || !noteAcknowledged}
+                            onClick={() => setDepositStage("confirm")}
+                          >
+                            Continue
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                    {depositStage === "confirm" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption="Native ETH into the PQ pool"
+                        />
+                        <RowGroup>
+                          <Row label="From">
+                            {account ? (
+                              <Mono>
+                                {truncateMiddle(account.address, 10, 8)}
+                              </Mono>
+                            ) : (
+                              "No PQ wallet open"
+                            )}
+                          </Row>
+                          <Row label="Wallet balance">
+                            {balance === null
+                              ? "Unreadable"
+                              : `${formatEth(balance)} ETH`}
+                          </Row>
+                          <Row label="Gas">Paid by your PQ account</Row>
+                          <Row label="User authorization">ML-DSA-44</Row>
+                        </RowGroup>
+                        {renderWalletGate()}
+                        {accountReady ? (
+                          <Notice
+                            tone="neutral"
+                            title="Your funding account is public"
+                          >
+                            Reusing this account to pay withdrawal gas can link
+                            both actions. For privacy, withdraw using a separate
+                            funded PQ account.
+                          </Notice>
+                        ) : null}
+                        {depositInsufficient ? (
+                          <Notice tone="bad" title="Not enough native ETH">
+                            This account needs {AMOUNT} ETH plus transaction
+                            gas. Fund the public address on chain 8141 before
+                            depositing.
+                          </Notice>
+                        ) : null}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setDepositStage("note")}
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            disabled={
+                              !accountReady ||
+                              !readReady ||
+                              serviceEnabled !== true ||
+                              depositInsufficient ||
+                              !!account?.pending
+                            }
+                            onClick={() => void submitDeposit()}
+                          >
+                            Deposit {AMOUNT} ETH
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                    {depositStage === "busy" ? renderProgress() : null}
+                    {depositStage === "receipt" &&
+                    depositResult?.kind === "confirmed"
+                      ? renderReceipt(depositResult, false)
+                      : null}
+                    {depositStage === "unknown" || depositStage === "failed" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption={
+                            depositStage === "unknown"
+                              ? "Deposit outcome unknown"
+                              : "Deposit did not complete"
+                          }
+                          tone={depositStage === "unknown" ? "unknown" : "bad"}
+                        />
+                        <Notice
+                          tone={depositStage === "unknown" ? "unknown" : "bad"}
+                          title="Keep the saved note"
+                        >
+                          {depositError ??
+                            "The transaction could not be confirmed. Check its saved hash before another action."}
+                        </Notice>
+                        {depositResult && "hash" in depositResult ? (
+                          <RowGroup>
+                            <Row label="Transaction">
+                              <TransactionReference hash={depositResult.hash} />
+                            </Row>
+                          </RowGroup>
+                        ) : null}
+                        {depositOwner ? (
+                          <p className="text-xs leading-relaxed text-ink-60">
+                            Submitting PQ wallet:{" "}
+                            <Mono>{truncateMiddle(depositOwner, 10, 8)}</Mono>
+                          </p>
+                        ) : null}
+                        {!account ? renderWalletGate() : null}
+                        <Button
+                          variant="primary"
+                          className="w-full"
+                          icon={<RetryIcon width={16} height={16} />}
+                          disabled={!accountReady || !readReady}
+                          onClick={() =>
+                            depositStage === "unknown"
+                              ? void submitDeposit(true)
+                              : setDepositStage("confirm")
+                          }
+                        >
+                          {depositStage === "unknown"
+                            ? "Reconcile this deposit"
+                            : "Review the same saved note"}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                </Card>
               </div>
-              <div className="p-5 sm:p-6">
-                {depositStage === "amount" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption={
-                        unspent === null
-                          ? "Reading the anonymity set…"
-                          : `${unspent} unspent ${AMOUNT} ETH ${unspent === 1 ? "note" : "notes"}`
-                      }
-                    />
-                    <p className="text-center text-sm leading-relaxed text-ink-60">
-                      A fixed native ETH deposit, protected by a SHA3-512 note
-                      and a transparent withdrawal proof.
-                    </p>
-                    <RowGroup>
-                      <Row label="Network">Ethrex devnet · 8141</Row>
-                      <Row label="Denomination">{AMOUNT} native ETH</Row>
-                      <Row label="Withdrawal proof">
-                        Transparent V5 · no trusted setup
-                      </Row>
-                    </RowGroup>
-                    <p className="text-xs leading-relaxed text-ink-60">
-                      Anonymity depends on other notes, timing and gas payment.
-                      A single deposit does not provide useful unlinkability.
-                    </p>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full"
-                      iconAfter={<ArrowRightIcon width={17} height={17} />}
-                      onClick={generateNote}
-                    >
-                      Generate a PQ note
-                    </Button>
+              <div
+                className="w-full shrink-0"
+                role="tabpanel"
+                id="pq-panel-withdraw"
+                aria-labelledby="pq-tab-withdraw"
+                inert={tab !== "withdraw"}
+              >
+                <Card as="section" className="overflow-hidden">
+                  <div className="border-b border-rule px-5 py-4 sm:px-6">
+                    <StepRail steps={WITHDRAW_STEPS} current={withdrawStep} />
                   </div>
-                ) : null}
-                {depositStage === "note" && depositNote ? (
-                  <div className="space-y-5">
-                    <div>
-                      <h1 className="text-xl font-semibold tracking-tight">
-                        Save your PQ note
-                      </h1>
-                      <p className="mt-2 text-sm leading-relaxed text-ink-60">
-                        This file is the only thing that can withdraw this
-                        deposit. It is a bearer secret, not a receipt to share.
-                      </p>
-                    </div>
-                    <div className="border-y border-rule py-4">
-                      <span className="text-xs text-ink-60">
-                        Public commitment
-                      </span>
-                      <p className="mt-2">
-                        <Mono>{noteReference(depositNote)}</Mono>
-                      </p>
-                    </div>
-                    <Button
-                      variant={noteDownloaded ? "secondary" : "primary"}
-                      className="w-full"
-                      icon={<DownloadIcon width={17} height={17} />}
-                      onClick={downloadNote}
-                    >
-                      {noteDownloaded
-                        ? "Download note again"
-                        : "Download PQ note file"}
-                    </Button>
-                    <label className="flex gap-3 rounded-control border border-rule p-3.5 text-sm leading-relaxed">
-                      <input
-                        type="checkbox"
-                        className="mt-1 size-4 shrink-0 accent-[var(--color-ink)]"
-                        disabled={!noteDownloaded}
-                        checked={noteAcknowledged}
-                        onChange={(event) =>
-                          setNoteAcknowledged(event.target.checked)
-                        }
-                      />
-                      <span>
-                        I saved this note file somewhere I can find it again.
-                        Losing it means losing access to this deposit.
-                      </span>
-                    </label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        icon={<ArrowLeftIcon width={17} height={17} />}
-                        onClick={() => setDepositStage("amount")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="flex-1"
-                        disabled={!noteDownloaded || !noteAcknowledged}
-                        onClick={() => setDepositStage("confirm")}
-                      >
-                        Continue
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-                {depositStage === "confirm" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption="Native ETH into the PQ pool"
-                    />
-                    <RowGroup>
-                      <Row label="From">
-                        {account ? (
-                          <Mono>{truncateMiddle(account.address, 10, 8)}</Mono>
+                  <div className="p-5 sm:p-6">
+                    {withdrawStage === "import" ? (
+                      <div className="space-y-5">
+                        <div>
+                          <h1 className="text-xl font-semibold tracking-tight">
+                            Import your PQ note
+                          </h1>
+                          <p className="mt-2 text-sm leading-relaxed text-ink-60">
+                            The file is read on this device and stays in memory.
+                            No wallet is needed to check the note.
+                          </p>
+                        </div>
+                        <input
+                          ref={noteInput}
+                          type="file"
+                          accept=".txt,text/plain"
+                          className="sr-only"
+                          aria-label="PQ note file"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            event.target.value = "";
+                            void importNote(file);
+                          }}
+                        />
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full"
+                          icon={<FileIcon width={17} height={17} />}
+                          disabled={busy}
+                          onClick={() => noteInput.current?.click()}
+                        >
+                          Choose PQ note file
+                        </Button>
+                        {withdrawError ? (
+                          <p role="alert" className="text-sm text-state-bad">
+                            {withdrawError}
+                          </p>
+                        ) : null}
+                        <p className="text-xs leading-relaxed text-ink-60">
+                          Only notes for this SHA3-512 pool are accepted. Older
+                          classical notes cannot be migrated by changing their
+                          label.
+                        </p>
+                      </div>
+                    ) : null}
+                    {withdrawStage === "checking" ? renderProgress() : null}
+                    {withdrawStage === "status" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption={
+                            noteCheck === "spent"
+                              ? "This PQ note has already been withdrawn"
+                              : noteCheck === "pending"
+                                ? "No confirmed deposit found"
+                                : "This note cannot be checked right now"
+                          }
+                          tone={
+                            noteCheck === "spent"
+                              ? "spent"
+                              : noteCheck === "pending"
+                                ? "pending"
+                                : "unknown"
+                          }
+                        />
+                        <p className="text-sm leading-relaxed text-ink-60">
+                          {noteCheck === "spent"
+                            ? "Its nullifier is already spent onchain. This file no longer controls funds."
+                            : (withdrawError ??
+                              "Keep the note file and check its original deposit. Nothing has been submitted.")}
+                        </p>
+                        {withdrawNote ? (
+                          <RowGroup>
+                            <Row label="Public commitment">
+                              <Mono>{noteReference(withdrawNote)}</Mono>
+                            </Row>
+                          </RowGroup>
+                        ) : null}
+                        {noteCheck !== "spent" && withdrawNote ? (
+                          <Button
+                            variant="primary"
+                            className="w-full"
+                            disabled={busy || !readReady}
+                            onClick={() =>
+                              withdrawNote && void checkNote(withdrawNote)
+                            }
+                          >
+                            Check again
+                          </Button>
+                        ) : null}
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            setWithdrawStage("import");
+                            setWithdrawError(null);
+                          }}
+                        >
+                          Use a different PQ note
+                        </Button>
+                      </div>
+                    ) : null}
+                    {withdrawStage === "recipient" ? (
+                      <div className="space-y-5">
+                        <div className="flex justify-center">
+                          <StatusLine tone="good">Ready to withdraw</StatusLine>
+                        </div>
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption="Where should the native ETH go?"
+                        />
+                        <label className="block text-sm font-medium">
+                          Recipient address
+                          <input
+                            value={recipient}
+                            onChange={(event) =>
+                              setRecipient(event.target.value)
+                            }
+                            placeholder="0x…"
+                            autoComplete="off"
+                            spellCheck={false}
+                            className="mt-2 h-12 w-full rounded-control border border-rule-strong bg-surface px-3.5 font-mono text-sm"
+                          />
+                        </label>
+                        {recipient.trim() && !recipientCheck.ok ? (
+                          <p role="alert" className="text-sm text-state-bad">
+                            {recipientCheck.reason}
+                          </p>
                         ) : (
-                          "No PQ wallet open"
+                          <p className="text-xs leading-relaxed text-ink-60">
+                            Use a fresh address with no public link to the
+                            account that funded your deposit. Use a PQ account
+                            recipient to keep post-quantum authorization after
+                            payout; ordinary wallet recipients use their own
+                            signature scheme.
+                          </p>
                         )}
-                      </Row>
-                      <Row label="Wallet balance">
-                        {balance === null
-                          ? "Unreadable"
-                          : `${formatEth(balance)} ETH`}
-                      </Row>
-                      <Row label="Gas">Paid by your PQ account</Row>
-                      <Row label="User authorization">ML-DSA-44</Row>
-                    </RowGroup>
-                    {renderWalletGate()}
-                    {accountReady ? (
-                      <Notice
-                        tone="neutral"
-                        title="Your funding account is public"
-                      >
-                        Reusing this account to pay withdrawal gas can link both
-                        actions. For privacy, withdraw using a separate funded
-                        PQ account.
-                      </Notice>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setWithdrawStage("import")}
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            disabled={!recipientCheck.ok}
+                            onClick={() => setWithdrawStage("review")}
+                          >
+                            Review withdrawal
+                          </Button>
+                        </div>
+                      </div>
                     ) : null}
-                    {depositInsufficient ? (
-                      <Notice tone="bad" title="Not enough native ETH">
-                        This account needs {AMOUNT} ETH plus transaction gas.
-                        Fund the public address on chain 8141 before depositing.
-                      </Notice>
+                    {withdrawStage === "review" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption={`To ${truncateMiddle(recipient, 10, 8)}`}
+                        />
+                        <RowGroup>
+                          <Row label="Recipient">
+                            <Mono>{truncateMiddle(recipient, 10, 8)}</Mono>
+                          </Row>
+                          <Row label="Privacy proof">
+                            Transparent V5 · hash / FRI
+                          </Row>
+                          <Row label="Account authorization">ML-DSA-44</Row>
+                          <Row label="Native transaction gas">
+                            Your PQ account pays
+                          </Row>
+                        </RowGroup>
+                        {renderWalletGate()}
+                        <Notice
+                          tone="neutral"
+                          title="The complete proof takes time"
+                        >
+                          The proof is generated and checked on this device. Its
+                          public encoding is about 10 MB; full onchain
+                          verification uses hundreds of bounded calls. Use
+                          desktop Chromium with sufficient memory, and keep this
+                          page open.
+                        </Notice>
+                        <p className="text-xs leading-relaxed text-ink-60">
+                          The local helper receives only the public proof and
+                          pays for permissionless verification. It cannot
+                          authorize spending your note. Using the deposit
+                          account again for gas can publicly link both actions.
+                        </p>
+                        {withdrawError ? (
+                          <p
+                            role="alert"
+                            className="text-sm text-state-unknown"
+                          >
+                            {withdrawError}
+                          </p>
+                        ) : null}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setWithdrawStage("recipient")}
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            variant="primary"
+                            className="flex-1"
+                            disabled={
+                              !accountReady ||
+                              !readReady ||
+                              serviceEnabled !== true ||
+                              !!account?.pending
+                            }
+                            onClick={() => void runWithdrawal()}
+                          >
+                            Generate PQ proof and withdraw
+                          </Button>
+                        </div>
+                      </div>
                     ) : null}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setDepositStage("note")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="flex-1"
-                        disabled={
-                          !accountReady ||
-                          !readReady ||
-                          serviceEnabled !== true ||
-                          depositInsufficient ||
-                          !!account?.pending
-                        }
-                        onClick={() => void submitDeposit()}
-                      >
-                        Deposit {AMOUNT} ETH
-                      </Button>
-                    </div>
+                    {withdrawStage === "busy" ? (
+                      <div className="space-y-5">
+                        {renderProgress()}
+                        <p className="text-xs leading-relaxed text-ink-60">
+                          Keep this page open. No note secret or signing seed is
+                          sent to the RPC or the helper.
+                        </p>
+                        {withdrawCancelable ? (
+                          <Button
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => abort.current?.abort()}
+                          >
+                            Cancel proof preparation
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {withdrawStage === "receipt" &&
+                    withdrawResult?.kind === "confirmed"
+                      ? renderReceipt(withdrawResult, true)
+                      : null}
+                    {withdrawStage === "unknown" ||
+                    withdrawStage === "failed" ? (
+                      <div className="space-y-5">
+                        <Hero
+                          value={AMOUNT}
+                          unit="ETH"
+                          caption={
+                            withdrawStage === "unknown"
+                              ? "Withdrawal outcome unknown"
+                              : "Withdrawal stopped"
+                          }
+                          tone={withdrawStage === "unknown" ? "unknown" : "bad"}
+                        />
+                        <Notice
+                          tone={withdrawStage === "unknown" ? "unknown" : "bad"}
+                          title="Keep your note and saved intent"
+                        >
+                          {withdrawError ??
+                            "The complete withdrawal has not been confirmed. Do not create a replacement transaction while its outcome is unknown."}
+                        </Notice>
+                        {withdrawResult && "hash" in withdrawResult ? (
+                          <RowGroup>
+                            <Row label="Native transaction">
+                              <TransactionReference
+                                hash={withdrawResult.hash}
+                              />
+                            </Row>
+                          </RowGroup>
+                        ) : null}
+                        {renderWalletGate()}
+                        {prepared ? (
+                          <RowGroup>
+                            <Row label="Fixed recipient">
+                              <Mono>
+                                {truncateMiddle(prepared.recipient, 10, 8)}
+                              </Mono>
+                            </Row>
+                          </RowGroup>
+                        ) : null}
+                        {prepared ? (
+                          <Button
+                            variant="primary"
+                            className="w-full"
+                            disabled={
+                              !accountReady ||
+                              !readReady ||
+                              serviceEnabled !== true
+                            }
+                            onClick={() => void runWithdrawal(true)}
+                          >
+                            Resume the same withdrawal
+                          </Button>
+                        ) : withdrawStage === "failed" ? (
+                          <Button
+                            className="w-full"
+                            onClick={() => setWithdrawStage("review")}
+                          >
+                            Review before preparing again
+                          </Button>
+                        ) : (
+                          <p className="text-sm text-ink-60">
+                            Restore the submitting PQ wallet and reconcile its
+                            saved transaction before continuing.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-                {depositStage === "busy" ? renderProgress() : null}
-                {depositStage === "receipt" &&
-                depositResult?.kind === "confirmed"
-                  ? renderReceipt(depositResult, false)
-                  : null}
-                {depositStage === "unknown" || depositStage === "failed" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption={
-                        depositStage === "unknown"
-                          ? "Deposit outcome unknown"
-                          : "Deposit did not complete"
-                      }
-                      tone={depositStage === "unknown" ? "unknown" : "bad"}
-                    />
-                    <Notice
-                      tone={depositStage === "unknown" ? "unknown" : "bad"}
-                      title="Keep the saved note"
-                    >
-                      {depositError ??
-                        "The transaction could not be confirmed. Check its saved hash before another action."}
-                    </Notice>
-                    {depositResult && "hash" in depositResult ? (
-                      <RowGroup>
-                        <Row label="Transaction">
-                          <TransactionReference hash={depositResult.hash} />
-                        </Row>
-                      </RowGroup>
-                    ) : null}
-                    {depositOwner ? (
-                      <p className="text-xs leading-relaxed text-ink-60">
-                        Submitting PQ wallet:{" "}
-                        <Mono>{truncateMiddle(depositOwner, 10, 8)}</Mono>
-                      </p>
-                    ) : null}
-                    {!account ? renderWalletGate() : null}
-                    <Button
-                      variant="primary"
-                      className="w-full"
-                      icon={<RetryIcon width={16} height={16} />}
-                      disabled={!accountReady || !readReady}
-                      onClick={() =>
-                        depositStage === "unknown"
-                          ? void submitDeposit(true)
-                          : setDepositStage("confirm")
-                      }
-                    >
-                      {depositStage === "unknown"
-                        ? "Reconcile this deposit"
-                        : "Review the same saved note"}
-                    </Button>
-                  </div>
-                ) : null}
+                </Card>
               </div>
-            </Card>
-          </div>
-          <div
-            className="mt-5"
-            role="tabpanel"
-            id="pq-panel-withdraw"
-            aria-labelledby="pq-tab-withdraw"
-            hidden={tab !== "withdraw"}
-          >
-            <Card as="section" className="overflow-hidden">
-              <div className="border-b border-rule px-5 py-4 sm:px-6">
-                <StepRail steps={WITHDRAW_STEPS} current={withdrawStep} />
-              </div>
-              <div className="p-5 sm:p-6">
-                {withdrawStage === "import" ? (
-                  <div className="space-y-5">
-                    <div>
-                      <h1 className="text-xl font-semibold tracking-tight">
-                        Import your PQ note
-                      </h1>
-                      <p className="mt-2 text-sm leading-relaxed text-ink-60">
-                        The file is read on this device and stays in memory. No
-                        wallet is needed to check the note.
-                      </p>
-                    </div>
-                    <input
-                      ref={noteInput}
-                      type="file"
-                      accept=".txt,text/plain"
-                      className="sr-only"
-                      aria-label="PQ note file"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        void importNote(file);
-                      }}
-                    />
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full"
-                      icon={<FileIcon width={17} height={17} />}
-                      disabled={busy}
-                      onClick={() => noteInput.current?.click()}
-                    >
-                      Choose PQ note file
-                    </Button>
-                    {withdrawError ? (
-                      <p role="alert" className="text-sm text-state-bad">
-                        {withdrawError}
-                      </p>
-                    ) : null}
-                    <p className="text-xs leading-relaxed text-ink-60">
-                      Only notes for this SHA3-512 pool are accepted. Older
-                      classical notes cannot be migrated by changing their
-                      label.
-                    </p>
-                  </div>
-                ) : null}
-                {withdrawStage === "checking" ? renderProgress() : null}
-                {withdrawStage === "status" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption={
-                        noteCheck === "spent"
-                          ? "This PQ note has already been withdrawn"
-                          : noteCheck === "pending"
-                            ? "No confirmed deposit found"
-                            : "This note cannot be checked right now"
-                      }
-                      tone={
-                        noteCheck === "spent"
-                          ? "spent"
-                          : noteCheck === "pending"
-                            ? "pending"
-                            : "unknown"
-                      }
-                    />
-                    <p className="text-sm leading-relaxed text-ink-60">
-                      {noteCheck === "spent"
-                        ? "Its nullifier is already spent onchain. This file no longer controls funds."
-                        : (withdrawError ??
-                          "Keep the note file and check its original deposit. Nothing has been submitted.")}
-                    </p>
-                    {withdrawNote ? (
-                      <RowGroup>
-                        <Row label="Public commitment">
-                          <Mono>{noteReference(withdrawNote)}</Mono>
-                        </Row>
-                      </RowGroup>
-                    ) : null}
-                    {noteCheck !== "spent" && withdrawNote ? (
-                      <Button
-                        variant="primary"
-                        className="w-full"
-                        disabled={busy || !readReady}
-                        onClick={() =>
-                          withdrawNote && void checkNote(withdrawNote)
-                        }
-                      >
-                        Check again
-                      </Button>
-                    ) : null}
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        setWithdrawStage("import");
-                        setWithdrawError(null);
-                      }}
-                    >
-                      Use a different PQ note
-                    </Button>
-                  </div>
-                ) : null}
-                {withdrawStage === "recipient" ? (
-                  <div className="space-y-5">
-                    <div className="flex justify-center">
-                      <StatusLine tone="good">Ready to withdraw</StatusLine>
-                    </div>
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption="Where should the native ETH go?"
-                    />
-                    <label className="block text-sm font-medium">
-                      Recipient address
-                      <input
-                        value={recipient}
-                        onChange={(event) => setRecipient(event.target.value)}
-                        placeholder="0x…"
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="mt-2 h-12 w-full rounded-control border border-rule-strong bg-surface px-3.5 font-mono text-sm"
-                      />
-                    </label>
-                    {recipient.trim() && !recipientCheck.ok ? (
-                      <p role="alert" className="text-sm text-state-bad">
-                        {recipientCheck.reason}
-                      </p>
-                    ) : (
-                      <p className="text-xs leading-relaxed text-ink-60">
-                        Use a fresh address with no public link to the account
-                        that funded your deposit. Use a PQ account recipient to keep
-                        post-quantum authorization after payout; ordinary wallet
-                        recipients use their own signature scheme.
-                      </p>
-                    )}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setWithdrawStage("import")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="flex-1"
-                        disabled={!recipientCheck.ok}
-                        onClick={() => setWithdrawStage("review")}
-                      >
-                        Review withdrawal
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-                {withdrawStage === "review" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption={`To ${truncateMiddle(recipient, 10, 8)}`}
-                    />
-                    <RowGroup>
-                      <Row label="Recipient">
-                        <Mono>{truncateMiddle(recipient, 10, 8)}</Mono>
-                      </Row>
-                      <Row label="Privacy proof">
-                        Transparent V5 · hash / FRI
-                      </Row>
-                      <Row label="Account authorization">ML-DSA-44</Row>
-                      <Row label="Native transaction gas">
-                        Your PQ account pays
-                      </Row>
-                    </RowGroup>
-                    {renderWalletGate()}
-                    <Notice
-                      tone="neutral"
-                      title="The complete proof takes time"
-                    >
-                      The proof is generated and checked on this device. Its
-                      public encoding is about 10 MB; full onchain verification
-                      uses hundreds of bounded calls. Use desktop Chromium with
-                      sufficient memory, and keep this page open.
-                    </Notice>
-                    <p className="text-xs leading-relaxed text-ink-60">
-                      The local helper receives only the public proof and pays
-                      for permissionless verification. It cannot authorize
-                      spending your note. Using the deposit account again for
-                      gas can publicly link both actions.
-                    </p>
-                    {withdrawError ? (
-                      <p role="alert" className="text-sm text-state-unknown">
-                        {withdrawError}
-                      </p>
-                    ) : null}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setWithdrawStage("recipient")}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="flex-1"
-                        disabled={
-                          !accountReady ||
-                          !readReady ||
-                          serviceEnabled !== true ||
-                          !!account?.pending
-                        }
-                        onClick={() => void runWithdrawal()}
-                      >
-                        Generate PQ proof and withdraw
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-                {withdrawStage === "busy" ? (
-                  <div className="space-y-5">
-                    {renderProgress()}
-                    <p className="text-xs leading-relaxed text-ink-60">
-                      Keep this page open. No note secret or signing seed is
-                      sent to the RPC or the helper.
-                    </p>
-                    {withdrawCancelable ? (
-                      <Button
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() => abort.current?.abort()}
-                      >
-                        Cancel proof preparation
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null}
-                {withdrawStage === "receipt" &&
-                withdrawResult?.kind === "confirmed"
-                  ? renderReceipt(withdrawResult, true)
-                  : null}
-                {withdrawStage === "unknown" || withdrawStage === "failed" ? (
-                  <div className="space-y-5">
-                    <Hero
-                      value={AMOUNT}
-                      unit="ETH"
-                      caption={
-                        withdrawStage === "unknown"
-                          ? "Withdrawal outcome unknown"
-                          : "Withdrawal stopped"
-                      }
-                      tone={withdrawStage === "unknown" ? "unknown" : "bad"}
-                    />
-                    <Notice
-                      tone={withdrawStage === "unknown" ? "unknown" : "bad"}
-                      title="Keep your note and saved intent"
-                    >
-                      {withdrawError ??
-                        "The complete withdrawal has not been confirmed. Do not create a replacement transaction while its outcome is unknown."}
-                    </Notice>
-                    {withdrawResult && "hash" in withdrawResult ? (
-                      <RowGroup>
-                        <Row label="Native transaction">
-                          <TransactionReference hash={withdrawResult.hash} />
-                        </Row>
-                      </RowGroup>
-                    ) : null}
-                    {renderWalletGate()}
-                    {prepared ? (
-                      <RowGroup>
-                        <Row label="Fixed recipient">
-                          <Mono>
-                            {truncateMiddle(prepared.recipient, 10, 8)}
-                          </Mono>
-                        </Row>
-                      </RowGroup>
-                    ) : null}
-                    {prepared ? (
-                      <Button
-                        variant="primary"
-                        className="w-full"
-                        disabled={
-                          !accountReady || !readReady || serviceEnabled !== true
-                        }
-                        onClick={() => void runWithdrawal(true)}
-                      >
-                        Resume the same withdrawal
-                      </Button>
-                    ) : withdrawStage === "failed" ? (
-                      <Button
-                        className="w-full"
-                        onClick={() => setWithdrawStage("review")}
-                      >
-                        Review before preparing again
-                      </Button>
-                    ) : (
-                      <p className="text-sm text-ink-60">
-                        Restore the submitting PQ wallet and reconcile its saved
-                        transaction before continuing.
-                      </p>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            </Card>
+            </div>
           </div>
           <div className="mt-5 flex justify-center">
             <button
@@ -1345,7 +1398,8 @@ export function PqApp() {
                 }
                 pulse={status.phase === "starting"}
               >
-                Ethrex devnet · {status.network} reads{TRANSPORT.worker.anonymizing ? '' : ' (not anonymous)'} ·{" "}
+                Ethrex devnet · {status.network} reads
+                {TRANSPORT.worker.anonymizing ? "" : " (not anonymous)"} ·{" "}
                 {readReady
                   ? "worker ready"
                   : status.phase === "starting"
@@ -1521,13 +1575,19 @@ export function PqApp() {
       >
         <div className="space-y-5">
           <p className="text-sm leading-relaxed text-ink-60">
-            Browser pool and account reads use the hash-pinned {status.network} worker.
-            {TRANSPORT.worker.anonymizing ? ' This worker routes reads through its anonymizing network.' : ' This configured diagnostic worker does not anonymize reads.'}
+            Browser pool and account reads use the hash-pinned {status.network}{" "}
+            worker.
+            {TRANSPORT.worker.anonymizing
+              ? " This worker routes reads through its anonymizing network."
+              : " This configured diagnostic worker does not anonymize reads."}
             There is no silent direct-read fallback. Worker readiness does not
             guarantee that every RPC request succeeds.
           </p>
           <RowGroup>
-            <Row label="Worker">{status.network}{TRANSPORT.worker.anonymizing ? '' : ' · not anonymous'}</Row>
+            <Row label="Worker">
+              {status.network}
+              {TRANSPORT.worker.anonymizing ? "" : " · not anonymous"}
+            </Row>
             <Row label="Successful reads">{status.requestCount}</Row>
             <Row label="Bootstrap">Direct public specifier lookups</Row>
             <Row label="Notes">SHA3-512 · 64-byte secret</Row>
@@ -1540,12 +1600,12 @@ export function PqApp() {
             </Notice>
           ) : null}
           <p className="text-sm leading-relaxed text-ink-60">
-            The local helper sends public account, authorization and proof-computation
-            traffic directly to RPC from this machine. Those requests are not anonymized.
-            Its test gas carrier does not own your PQ account or note.
-            Consensus, browser delivery, TLS and Nym have separate trust
-            assumptions; this is not a claim that all infrastructure is
-            post-quantum.
+            The local helper sends public account, authorization and
+            proof-computation traffic directly to RPC from this machine. Those
+            requests are not anonymized. Its test gas carrier does not own your
+            PQ account or note. Consensus, browser delivery, TLS and Nym have
+            separate trust assumptions; this is not a claim that all
+            infrastructure is post-quantum.
           </p>
           <Button
             className="w-full"
