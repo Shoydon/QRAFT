@@ -2,10 +2,13 @@ import {bytesToHex,encodeFunctionData,hexToBytes,parseAbi,type Hex} from 'viem';
 import {Frame,FrameSig,FrameTx,assertSuccessfulReceipt,decodeFrameTransaction} from '../../../packages/frame-account/src/frametx';
 import {createKey,preparePublicKey,signAuthorization,type PQKey} from '../../../packages/pq-account/src/keys';
 import {submitToSidecar,type SidecarRpc} from '../../../packages/frame-account/src/alt-mempool';
+/** Pinned by the deployed paymaster, not by us: AtomicPaymaster.pay() reverts with "fees"
+ *  unless maxPriorityFee <= 1 and maxFee <= 128. Raising these needs a paymaster redeploy. */
+export const ATOMIC_MAX_FEE=128n,ATOMIC_MAX_PRIORITY_FEE=1n;
 export const accountAbi=parseAbi(['function verify(bytes key)','function keyCommitment() view returns(bytes32)']);
 export const poolAbi=parseAbi(['function deposit(bytes32 commitment) payable','function withdraw(bytes32 root,bytes32 nullifierHash,address recipient,uint64 expiry,uint256[8] proof)','function denomination() view returns(uint256)','function currentRoot() view returns(bytes32)','function spent(bytes32) view returns(bool)','event Deposit(bytes32 indexed commitment,uint32 leafIndex,bytes32 root)']);
 export function atomicPlan(address:Hex,key:PQKey,nonce:bigint,paymaster:Hex,pool:Hex,data:Hex,value=0n){
- return new FrameTx({chainId:1337,sender:address,nonceKeys:[0],nonceSeq:nonce,maxFee:128,maxPriorityFee:1,signatures:[new FrameSig({scheme:0,signer:null,signature:`0x${'00'.repeat(2420)}`})],frames:[
+ return new FrameTx({chainId:1337,sender:address,nonceKeys:[0],nonceSeq:nonce,maxFee:ATOMIC_MAX_FEE,maxPriorityFee:ATOMIC_MAX_PRIORITY_FEE,signatures:[new FrameSig({scheme:0,signer:null,signature:`0x${'00'.repeat(2420)}`})],frames:[
  new Frame({mode:1,flags:2,target:address,gasLimit:4000000,data:encodeFunctionData({abi:accountAbi,functionName:'verify',args:[bytesToHex(preparePublicKey(key.publicKey).subarray(1))]})}),
  new Frame({mode:1,flags:1,target:paymaster,gasLimit:120000,stateGasLimit:97920,data:'0x1b9265b8'}),
  new Frame({mode:2,target:pool,gasLimit:3000000,stateGasLimit:4000000,data,value}),
