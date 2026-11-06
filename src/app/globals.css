@@ -177,6 +177,12 @@
 }
 
 /* The connector travelling down to the next step. */
+/* A connector travelling left to right between steps. */
+@utility fill-row {
+  transform-origin: left;
+  animation: fill-row var(--fill-duration, 700ms) linear both;
+}
+
 @utility fill-column {
   transform-origin: top;
   animation: fill-column var(--fill-duration, 700ms) linear both;
@@ -285,6 +291,15 @@
 }
 
 /* The active step's marker ring closing, as its timer runs. */
+@keyframes fill-row {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @keyframes fill-column {
   from {
     transform: scaleY(0);
