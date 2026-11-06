@@ -1,0 +1,98 @@
+{
+  "account": "0x4711f7625CB4831D6CB75e447eF6BEE46d61b5d8",
+  "deposits": [
+    {
+      "pool": "0x66Ff71F39c9b6d46556769C479FFe29C0ad85854",
+      "amountWei": "100000000000000",
+      "hash": "0xb035f9d2f6436c84c00c36e9c87996cda1eac689d8bd9be2d10af86b10b6a9cd",
+      "payer": "0xeb3ee7b120452c83be9c5b3f30cf5937748a1191",
+      "frames": 3
+    },
+    {
+      "pool": "0xb67e8426D99b807065B7b6d0B35Bd403e35f5f2E",
+      "amountWei": "1000000000000000",
+      "hash": "0xdbd39a1b1a535e7679bffbcf9ebeca848606d27d16a114a3bdf298082fc183b3",
+      "payer": "0x6bb762973ffc78d460ac1a3ba56c34be49d31c48",
+      "frames": 3
+    },
+    {
+      "pool": "0xd3437892c808A42a1531fD67A52F682890d12D31",
+      "amountWei": "10000000000000000",
+      "hash": "0x5aef137bcc5cf46730188850a3798c8c1cb813e8da313544ead071218936bfe2",
+      "payer": "0xe305e962496c9df65f9e049efd5aff78d5ddf2c7",
+      "frames": 3
+    },
+    {
+      "pool": "0x043bc5a5128D87137401299F9bC4605C912AB024",
+      "amountWei": "100000000000000000",
+      "hash": "0x742f0caf69a8d3b674426ae56449d0bdc235dab0d69836f6d62488b7ad34ae5f",
+      "payer": "0x41bfbfa142173e4485a8bac4455c512756d43740",
+      "frames": 3
+    }
+  ],
+  "checkedAt": "2026-11-06T12:03:49.233380+00:00",
+  "chainId": 8141,
+  "scope": "Direct RPC disposable-devnet integration; not an anonymous connectivity or unlinkability claim",
+  "confirmedSponsoredDeposits": 4,
+  "exactPrincipalDebits": true,
+  "registeredNoteRecovery": true,
+  "authenticatedDepositHistories": true,
+  "fullOnchainWithdrawalsRetested": false,
+  "browserProofs": [
+    {
+      "amount": "100000000000000",
+      "verified": true,
+      "bytes": 10299183
+    },
+    {
+      "amount": "1000000000000000",
+      "verified": true,
+      "bytes": 10298683
+    },
+    {
+      "amount": "10000000000000000",
+      "verified": true,
+      "bytes": 10308718
+    },
+    {
+      "amount": "100000000000000000",
+      "verified": true,
+      "bytes": 10313260
+    }
+  ],
+  "proofScope": "Separate synthetic one-leaf trees for each denomination; not proofs for the funded deposit notes and not onchain withdrawals.",
+  "nativePublicExports": [
+    {
+      "amountWei": "100000000000000",
+      "complete": true,
+      "nativeVerified": true,
+      "publicOnly": true,
+      "contextIndependentlyDerived": true,
+      "envelopeSha256": "0f058d8d81a9fae910740c1b06091202d12ca6a8032317f198d3aceac7129504"
+    },
+    {
+      "amountWei": "1000000000000000",
+      "complete": true,
+      "nativeVerified": true,
+      "publicOnly": true,
+      "contextIndependentlyDerived": true,
+      "envelopeSha256": "3873665d504979714a0fb7604b1bad9014e7eb65181b2ac0e4c9c05f8123580c"
+    },
+    {
+      "amountWei": "10000000000000000",
+      "complete": true,
+      "nativeVerified": true,
+      "publicOnly": true,
+      "contextIndependentlyDerived": true,
+      "envelopeSha256": "72b3896ee144609d8645ecf4e31bfd32c16df3835492d7efa0c9d4480bdf4b14"
+    },
+    {
+      "amountWei": "100000000000000000",
+      "complete": true,
+      "nativeVerified": true,
+      "publicOnly": true,
+      "contextIndependentlyDerived": true,
+      "envelopeSha256": "d4fa47cdb7c4aab62e7cb1ca5474b84b49d4135204e73b4160cea520b58f5ba6"
+    }
+  ]
+}

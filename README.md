@@ -1,14 +1,16 @@
 # QRAFT
 
-**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application. Deposit **0.0001 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
+**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application. Choose **0.0001, 0.001, 0.01, or 0.1 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
 
 The active application uses ML-DSA-44 account authorization, SHA3-512 notes and Merkle commitments, and the transparent V5 withdrawal proof. User signing seeds and note witnesses stay in the browser. This is experimental devnet software: the proof construction has a conditional security argument, not an independently established quantum-security certificate or a production audit. See [security boundaries](docs/pq/application-security.md).
 
 ## Deployment status
 
-The current source and browser prover use the QRAFT namespace. The previous contract addresses are retained only as historical pins, with `applicationEnabled: false` in `public/pq-deployment.json`. Deploy and verify fresh contracts before enabling transactions; the current application refuses to submit against the earlier protocol. Saved notes from the earlier profile are incompatible with this namespace.
+The active QRAFT namespace account, native-frame paymaster, and V5 contracts are deployed on Ethrex chain 8141. The default pool is pinned in [pq-deployment.json](public/pq-deployment.json); three additional pool/sponsor pairs are pinned in [pq-pools.json](public/pq-pools.json). Each amount has a separate anonymity set. See [fixed ETH pools](docs/pq/pools.md).
 
-Native and browser proof tests run locally without a live deployment. The recorded onchain lifecycle evidence predates this namespace migration and does not validate the current contracts.
+Wallet creation follows a public provisioning job and independently verifies ownership through Nym before opening. Creation can take several minutes. Local helper requests queue behind one shared gas-carrier lock across processes; interrupted locks require journal reconciliation.
+
+The historical full withdrawal evidence predates this deployment. Current wallet, deposit, proof, and withdrawal checks must be described separately; deployment alone does not establish a complete withdrawal lifecycle.
 
 ## Run locally
 
@@ -34,14 +36,14 @@ QRAFT_DEPLOYER_KEY_FILE=.local/deployer.json
 
 Supply a funded, disposable **chain 8141** gas-carrier key in that protected JSON file, with fields `chainId` (8141) and `privateKey` (0x-prefixed 32-byte key). Protect it with `chmod 600 .local/deployer.json`. Never use a mainnet key. No key is shipped. This workspace already has local test configuration; restart after changing environment variables.
 
-The helper provisions public ML-DSA account data, bootstraps 0.0003 test ETH, caches already signed authorizations and pays for public proof computation. It cannot produce an ML-DSA authorization or withdraw from the pool without a valid note proof. It uses direct RPC, so this local configuration does **not** provide anonymity for all traffic. Keep it bound to loopback; it is not an authenticated public faucet or hosted service.
+The helper provisions public ML-DSA account data, funds 0.0001 test ETH as initial deposit principal, caches already signed authorizations and pays for public proof computation. It cannot produce an ML-DSA authorization or withdraw from the pool without a valid note proof. It uses direct RPC, so this local configuration does **not** provide anonymity for all traffic. Keep it bound to loopback; it is not an authenticated public faucet or hosted service.
 
 ## Try the flow
 
 1. Create a PQ wallet. Download its backup and acknowledge that it is saved.
-2. Generate a deposit note. Download it separately and acknowledge the backup.
-3. Deposit 0.0001 ETH. The ML-DSA account signs the native frame transaction.
-4. Open Withdraw, import the note, and enter a fresh recipient address. Use a separate PQ account for withdrawal gas if you want to avoid directly linking both actions; save its backup too. The default account is not automatically rotated.
+2. Choose the amount, generate a note, and copy it into a safely saved text file. Acknowledge the note backup.
+3. Deposit the selected amount. The ML-DSA account signs the native frame transaction; that pool’s paymaster pays its gas. The account must hold the deposit principal.
+4. Open Withdraw, import the note, and enter a fresh recipient address. Use a separate PQ account for withdrawing if you want to avoid directly linking both actions; save its backup too. The default account is not automatically rotated.
 5. Generate the proof and withdraw. The browser proves and verifies locally, then sends only the public proof and statement to the helper. Native ML-DSA transactions open and attach the verification session; the helper executes the public computation, and the account authorizes the final withdrawal.
 
 Keep **both** backups. The wallet file contains its private signing seed; the note is a bearer secret needed to recover the deposit. Neither is saved in browser local storage or sent to the local helper. Import a wallet backup to restore signing access; import the note to recover a withdrawal. Public transaction and workflow journals support resuming interrupted operations. An unknown transaction outcome must be reconciled before a new action; do not delete journals to bypass it. A receipt proves inclusion, not irreversible finality.
@@ -50,7 +52,7 @@ Desktop Chromium is recommended. V5 proving currently uses approximately **2.04 
 
 ## Network and verification
 
-The historical deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
+The default deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x66Ff71F39c9b6d46556769C479FFe29C0ad85854`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
 
 Browser chain requests use the official Nym Anon-RPC worker by default and stop on failure, with no automatic direct fallback. The worker lookup uses a direct Ethereum bootstrap RPC. Explicit passthrough mode is labelled non-anonymous. The local helper and CLI diagnostics use direct RPC. See [.env.example](.env.example).
 
