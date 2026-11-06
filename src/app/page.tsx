@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="px-6 pt-8 sm:px-10 sm:pt-10 lg:px-16 lg:pt-12">
+      <header className="px-6 pt-6 sm:px-10 sm:pt-8 lg:px-16">
         <nav
           aria-label="Main navigation"
           className="mx-auto flex w-full max-w-[80rem] items-center justify-between"
