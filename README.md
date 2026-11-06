@@ -68,6 +68,15 @@ The historical [live integration evidence](docs/pq/application-checks.json) reco
 
 If Nym reads time out, open the read-path footer, reconnect anonymous reads, and retry the same backup or saved workflow. Never discard an unresolved signed intent or switch to a replacement nonce to work around a timeout.
 
+## CROPS
+
+- **Censorship resistance:** wallet backups restore ownership without the provisioning helper. Reads still depend on available Nym infrastructure and RPC providers; creation and public proof processing currently depend on the local helper.
+- **Open source:** source, pinned proving dependencies, and build instructions are included. Dependency licenses and required notices are listed in [NOTICE.md](NOTICE.md).
+- **Privacy:** signing seeds and note witnesses stay in the browser. Default chain reads use Nym. The bootstrap provider sees the worker lookup, and the helper sees public account/proof data and uses direct RPC. Timing, gas funding, pool size, and recipient reuse can link activity. No third-party analytics are configured.
+- **Security:** ML-DSA authorization, deployment pins, local proof verification, and recoverable transaction journals protect the application flow. The proof is experimental; external consensus and transport are outside its post-quantum claim. Keep both backups.
+
+For exact EF endpoints, deployment prerequisites, and implemented versus pending features, see [EF track status](docs/pq/ef-track.md). The active pool is on chain 8141; the EF alternative mempool target is chain 1337. A paymaster and sidecar integration are still pending.
+
 ## Source and license information
 
 Source attribution and dependency licensing are recorded in [NOTICE.md](NOTICE.md). Historical Groth16 contracts and scripts remain for development reference; the active `AppShell` loads the PQ application. Legacy `protocol:*`, `prepare:proving` and `test:protocol` scripts do not exercise the active PQ path.
