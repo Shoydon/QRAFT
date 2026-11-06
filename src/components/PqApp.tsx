@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { Hex } from "viem";
 import Link from "next/link";
-import { WORDMARK } from "@/config/brand";
+import { WORDMARK, TAGLINE } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
 import { checkRecipient, formatEth, truncateMiddle } from "@/lib/format";
 import { createAnonRpcTransport } from "@/lib/transport/anon-rpc";
@@ -717,6 +717,9 @@ export function PqApp() {
               : "Create or import PQ wallet"}
           </Button>
         </div>
+        <h1 className="mx-auto mt-5 max-w-[34rem] text-balance text-center text-sm font-medium leading-relaxed text-ink-60 sm:text-base">
+          {TAGLINE}
+        </h1>
       </header>
       <main className="flex flex-1 flex-col justify-center px-4 py-5 sm:px-6">
         <div className="mx-auto w-full max-w-[34rem]">

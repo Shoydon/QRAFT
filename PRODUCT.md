@@ -12,4 +12,4 @@ Do not describe the entire environment as post-quantum or all traffic as anonymo
 
 The active interface has no ordinary-wallet, Groth16 or wrapped-token fallback. Historical implementation files are reference only. The local helper must remain loopback-only and requires a protected disposable gas key. It is not a publicly deployable authenticated service.
 
-The landing page at `/` introduces the project with interactive diagrams; `/app` hosts the PQ deposit and withdrawal interface and links back home. Preserve the updated landing-page design and shared visual system. Support both cold evaluators and people following the native ETH journey.
+The landing page at `/` centers the full QRAFT name and presents EIP-8141, Anon-RPC and the post-quantum wallet stack; `/app` hosts the PQ deposit and withdrawal interface and links back home. Preserve the updated landing-page design and shared visual system. Support both cold evaluators and people following the native ETH journey.
