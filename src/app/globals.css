@@ -163,6 +163,13 @@
   animation: rail-travel 2.1s linear infinite;
 }
 
+@utility line-draw {
+  stroke-dasharray: 1;
+  /* `both` holds the hidden start state through the delay, so a staggered
+     line stays invisible until its turn rather than flashing in. */
+  animation: draw-line 320ms var(--ease-out-expo) var(--draw-delay, 0ms) both;
+}
+
 @utility step-enter {
   animation: step-enter 320ms var(--ease-out-expo) both;
 }
@@ -240,6 +247,17 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+/* A lit line draws along its own direction, so each side can follow the money:
+   deposits run toward the pool, withdrawals away from it. */
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
