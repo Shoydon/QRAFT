@@ -6,6 +6,7 @@ import { WORDMARK } from '@/config/brand';
 import { DEPLOYMENT } from '@/config/pool';
 import { useAccountState, useBackend, useTransportStatus } from '@/hooks/useAdapters';
 import { AccountButton } from './AccountButton';
+import { ArrowLeftIcon } from './icons';
 import { DepositPanel } from './DepositPanel';
 import { ReadPathLine } from './DetailSheet';
 import { WithdrawPanel } from './WithdrawPanel';
@@ -51,16 +52,24 @@ export function AppShell() {
     <div className="flex min-h-dvh flex-col">
       <header className="px-4 py-3.5 sm:px-6">
         <div className="mx-auto flex max-w-[32rem] items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="relative shrink-0 rounded text-[0.875rem] font-semibold uppercase tracking-[0.16em] text-ink"
-          >
-            {WORDMARK}
-            <span
-              className="spectral-bar absolute -bottom-[5px] left-0 h-[2px] w-full rounded-full"
-              aria-hidden="true"
-            />
-          </Link>
+          <div className="flex min-w-0 items-center gap-3">
+            {/* The only link home. The wordmark beside it stays plain text, so
+                assistive tech is not read two adjacent links to one place. */}
+            <Link
+              href="/"
+              aria-label="Back to the QRAFT home page"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-pill bg-sunk text-ink-60 shadow-[inset_0_0_0_1px_rgb(13_13_15/0.07)] transition-colors hover:bg-rule/60 hover:text-ink"
+            >
+              <ArrowLeftIcon width={17} height={17} />
+            </Link>
+            <span className="relative shrink-0 text-[0.875rem] font-semibold uppercase tracking-[0.16em] text-ink">
+              {WORDMARK}
+              <span
+                className="spectral-bar absolute -bottom-[5px] left-0 h-[2px] w-full rounded-full"
+                aria-hidden="true"
+              />
+            </span>
+          </div>
           <AccountButton account={account} backend={backend} />
         </div>
       </header>
