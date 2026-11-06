@@ -1,12 +1,13 @@
-import type { Metadata } from 'next';
-import { AppShell } from '@/components/AppShell';
-import { WORDMARK, SHIPPED_DESCRIPTION } from '@/config/brand';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: `ERC-8286 PQ wallet — ${WORDMARK}`,
-  description: SHIPPED_DESCRIPTION,
-};
-
+/**
+ * The wallet moved to the root. This route stays because /app is the address
+ * in the README, the local run instructions and anything already shared, and
+ * those should land on the wallet rather than a 404.
+ *
+ * Temporary rather than permanent: a permanent redirect is cached by the
+ * browser and would be awkward to undo if the routes move again.
+ */
 export default function Page() {
-  return <AppShell />;
+  redirect('/');
 }

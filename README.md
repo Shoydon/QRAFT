@@ -45,7 +45,7 @@ npm run prepare:proving
 npm run dev
 ```
 
-Use `http://localhost:3000/app` for passkeys. IP-address origins do not support wallet passkey registration. The funded devnet operator must be configured in `ATOMIC_OPERATOR_FILE` or `.local/alt-mempool-deployment/operator.json`, with mode 0600. Never commit its key. Deployment/staking requires funded devnet ETH; the paymaster sponsors gas, not deposit principal.
+Use `http://localhost:3000` for passkeys. IP-address origins do not support wallet passkey registration. The funded devnet operator must be configured in `ATOMIC_OPERATOR_FILE` or `.local/alt-mempool-deployment/operator.json`, with mode 0600. Never commit its key. Deployment/staking requires funded devnet ETH; the paymaster sponsors gas, not deposit principal.
 
 ```sh
 npm test

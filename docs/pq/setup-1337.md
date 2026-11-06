@@ -1,6 +1,6 @@
 # Post-quantum proof setup on chain 1337
 
-Use **`/pq`** for V5 hiding-STARK proof creation and verification. `/app` is the separate, conventional Groth16 withdrawal application with ML-DSA wallet authorization. They use different pools, notes and deployment manifests; do not mix their backups or proof formats.
+Use **`/pq`** for V5 hiding-STARK proof creation and verification. `/` is the separate, conventional Groth16 withdrawal application with ML-DSA wallet authorization. They use different pools, notes and deployment manifests; do not mix their backups or proof formats.
 
 The PQ route uses `public/pq-deployment.json`: chain 1337, pinned genesis and runtime code hashes. Proving and first verification run inside a browser worker. The helper receives the public proof and public statement, never the note secret or Merkle witness. It independently verifies and encodes the proof, publishes public data and submits every staged verifier operation through the alternative mempool. Final withdrawal requires all proof gates to pass and consumes the bound session and nullifier once.
 

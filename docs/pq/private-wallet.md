@@ -1,6 +1,6 @@
 # Qraft private wallet
 
-The application at `/app` now uses a native ETH join/split pool. Wallets discover encrypted incoming payments, display one private balance, select up to four inputs, and return private change. Users manage one encrypted recovery file instead of individual notes.
+The application at `/` now uses a native ETH join/split pool. Wallets discover encrypted incoming payments, display one private balance, select up to four inputs, and return private change. Users manage one encrypted recovery file instead of individual notes.
 
 The approved architecture and written flows are in [the design](../superpowers/specs/2026-11-07-private-wallet-design.md). The implementation plan is [here](../plans/2026-11-07-private-wallet.md).
 
