@@ -15,6 +15,7 @@ import { TRANSPORT } from "@/config/transport";
 import { checkRecipient, formatEth, truncateMiddle } from "@/lib/format";
 import { createAnonRpcTransport } from "@/lib/transport/anon-rpc";
 import type { TransportStatus } from "@/lib/transport/types";
+import { DEFAULT_PQ_POOL, PQ_POOLS, registeredPqPool, parseRegisteredPqNote } from '@/lib/pq/registry';
 import { PqAccountClient, type PqSendResult } from "@/lib/pq/account";
 import { createPqNote, serializePqNote, type PqNote } from "@/lib/pq/note";
 import {
@@ -46,7 +47,6 @@ import {
   RetryIcon,
 } from "./icons";
 
-const AMOUNT = formatEth(BigInt(PQ_DEPLOYMENT.denominationWei));
 const IDLE: TransportStatus = {
   phase: "idle",
   network: TRANSPORT.worker.label,
@@ -139,9 +139,10 @@ export function PqApp() {
     () => (typeof window === "undefined" ? null : createAnonRpcTransport()),
     [],
   );
+  const [selectedPool, setSelectedPool] = useState(DEFAULT_PQ_POOL);
   const pool = useMemo(
-    () => (transport ? new PqPoolClient(transport) : null),
-    [transport],
+    () => (transport ? new PqPoolClient(transport, selectedPool) : null),
+    [transport, selectedPool],
   );
   const subscribe = useMemo(
     () => (listener: () => void) =>
@@ -156,6 +157,7 @@ export function PqApp() {
   const mounted = useRef(true);
   const busyRef = useRef(false);
   const accountRef = useRef<PqAccountClient | null>(null);
+  const creationSeed = useRef<Uint8Array | null>(null);
   const abort = useRef<AbortController | null>(null);
   const tabButtons = useRef<Record<Tab, HTMLButtonElement | null>>({
     deposit: null,
@@ -172,7 +174,9 @@ export function PqApp() {
   const [walletAcknowledged, setWalletAcknowledged] = useState(false);
   const [walletBackedUp, setWalletBackedUp] = useState(false);
   const [serviceEnabled, setServiceEnabled] = useState<boolean | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [serviceReason, setServiceReason] = useState<string | null>(null);
+  const [busy, setBusy] = useState<false | "transaction" | "wallet:create" | "wallet:import">(false);
+  const isBusy = Boolean(busy);
   const [progress, setProgress] = useState("");
   const [walletError, setWalletError] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
@@ -187,6 +191,11 @@ export function PqApp() {
   const [depositError, setDepositError] = useState<string | null>(null);
   const [withdrawStage, setWithdrawStage] = useState<WithdrawStage>("import");
   const [withdrawNote, setWithdrawNote] = useState<PqNote | null>(null);
+  const withdrawalPool = useMemo(() => transport && withdrawNote
+    ? new PqPoolClient(transport, registeredPqPool(withdrawNote.pool)) : pool,
+    [transport, withdrawNote, pool]);
+  const AMOUNT = formatEth(BigInt(tab === "withdraw" && withdrawNote
+    ? withdrawNote.denominationWei : selectedPool.denominationWei));
   const [noteCheck, setNoteCheck] = useState<NoteCheck>("unknown");
   const [recipient, setRecipient] = useState("");
   const [prepared, setPrepared] = useState<PreparedPqWithdrawal | null>(null);
@@ -202,19 +211,25 @@ export function PqApp() {
     const controller = new AbortController();
     void fetch("/api/pq/accounts", { signal: controller.signal })
       .then(async (response) => {
-        const result = (await response.json()) as { enabled?: unknown };
-        if (mounted.current)
+        const result = (await response.json()) as { enabled?: unknown; reason?: unknown };
+        if (mounted.current) {
           setServiceEnabled(response.ok && result.enabled === true);
+          setServiceReason(typeof result.reason === "string" ? result.reason : null);
+        }
       })
       .catch(() => {
-        if (mounted.current && !controller.signal.aborted)
+        if (mounted.current && !controller.signal.aborted) {
           setServiceEnabled(false);
+          setServiceReason("The wallet service could not be reached. Refresh the page to retry.");
+        }
       });
     return () => {
       mounted.current = false;
       controller.abort();
       abort.current?.abort();
       accountRef.current?.lock();
+      creationSeed.current?.fill(0);
+      creationSeed.current = null;
       transport?.stop();
     };
   }, [transport]);
@@ -268,10 +283,10 @@ export function PqApp() {
         );
     }
   }
-  function begin(label: string): boolean {
+  function begin(label: string, operation: "transaction" | "wallet:create" | "wallet:import" = "transaction"): boolean {
     if (busyRef.current) return false;
     busyRef.current = true;
-    setBusy(true);
+    setBusy(operation);
     setProgress(label);
     return true;
   }
@@ -284,6 +299,7 @@ export function PqApp() {
       !transport ||
       !begin(
         file ? "Checking the saved PQ wallet" : "Preparing your ML-DSA account",
+        file ? "wallet:import" : "wallet:create",
       )
     )
       return;
@@ -300,14 +316,17 @@ export function PqApp() {
           throw Error(`This wallet requires chain ${PQ_DEPLOYMENT.chainId}. The configured RPC reports another network.`);
       }
       updateProgress(file ? "Verifying saved PQ account ownership" : "Provisioning and verifying your ML-DSA account");
+      if (!file && !creationSeed.current) creationSeed.current = crypto.getRandomValues(new Uint8Array(32));
       const client = file
         ? await PqAccountClient.restore(await file.text(), transport)
-        : await PqAccountClient.create(transport);
+        : await PqAccountClient.create(transport, { seed: creationSeed.current!, onProgress: updateProgress });
       if (!mounted.current) {
         client.lock();
         return;
       }
       accountRef.current?.lock();
+      creationSeed.current?.fill(0);
+      creationSeed.current = null;
       accountRef.current = client;
       setAccount(client);
       setWalletDownloaded(false);
@@ -362,7 +381,7 @@ export function PqApp() {
   }
   function generateNote() {
     if (busyRef.current) return;
-    setDepositNote(createPqNote(PQ_DEPLOYMENT));
+    setDepositNote(createPqNote(selectedPool));
     setNoteCopied(false);
     setNoteCopyFailed(false);
     setNoteAcknowledged(false);
@@ -455,16 +474,17 @@ export function PqApp() {
   }
   async function checkNote(note: PqNote) {
     if (!pool || !begin("Checking the PQ note onchain")) return;
+    const notePool = new PqPoolClient(transport!, registeredPqPool(note.pool));
     setWithdrawNote(note);
     setWithdrawStage("checking");
     setWithdrawError(null);
     try {
-      const result = await pool.noteStatus(note);
+      const result = await notePool.noteStatus(note);
       if (!mounted.current) return;
       if (!result.spent && result.leaf) {
         const controller = new AbortController();
         abort.current = controller;
-        const saved = await pool.restorePrepared(note, controller.signal);
+        const saved = await notePool.restorePrepared(note, controller.signal);
         if (!mounted.current) return;
         if (saved) {
           setPrepared(saved);
@@ -495,7 +515,7 @@ export function PqApp() {
     try {
       if (file.size > 8192)
         throw Error("That file is too large to be a PQ note.");
-      const note = pool.parseNote(await file.text());
+      const { note } = parseRegisteredPqNote(await file.text());
       if (!mounted.current || busyRef.current) return;
       setPrepared(null);
       setRecipient("");
@@ -509,7 +529,7 @@ export function PqApp() {
   async function runWithdrawal(resume = false) {
     const checked = checkRecipient(recipient);
     if (
-      !pool ||
+      !withdrawalPool ||
       !account ||
       !withdrawNote ||
       !checked.ok ||
@@ -530,7 +550,7 @@ export function PqApp() {
       let current = prepared;
       if (!resume || !current) {
         setWithdrawCancelable(true);
-        current = await pool.prepare(
+        current = await withdrawalPool.prepare(
           withdrawNote,
           checked.address,
           updateProgress,
@@ -540,7 +560,7 @@ export function PqApp() {
       } else current = { ...current, signal: controller.signal };
       controller.signal.throwIfAborted();
       if (mounted.current) setWithdrawCancelable(false);
-      const result = await pool.withdraw(client, current, updateProgress);
+      const result = await withdrawalPool.withdraw(client, current, updateProgress);
       if (!mounted.current) return;
       setWithdrawResult(result);
       if (result.kind === "confirmed") void refreshPool();
@@ -631,7 +651,7 @@ export function PqApp() {
   const accountReady = !!account && walletBackedUp;
   const accountNeedsBackup = !!account && !walletBackedUp;
   const depositInsufficient =
-    balance !== null && balance <= BigInt(PQ_DEPLOYMENT.denominationWei);
+    balance !== null && balance < BigInt(selectedPool.denominationWei);
   const recipientCheck = checkRecipient(recipient);
   const depositStep =
     depositStage === "amount"
@@ -667,7 +687,7 @@ export function PqApp() {
         }
       >
         Your private note controls the deposit. The separate ML-DSA wallet signs
-        native transactions and pays their gas.
+        native transactions. The QRAFT paymaster pays transaction gas.
       </Notice>
     ) : null;
   }
@@ -759,10 +779,16 @@ export function PqApp() {
               />
             </span>
           </div>
-          <Button size="sm" disabled={busy} onClick={() => setWalletOpen(true)}>
+          <Button
+            variant="primary"
+            size="md"
+            className="min-w-34 max-w-[calc(100vw-9rem)] bg-black! font-semibold text-white! hover:bg-neutral-800! sm:min-w-36 sm:max-w-none"
+            disabled={isBusy}
+            onClick={() => setWalletOpen(true)}
+          >
             {account
               ? `${truncateMiddle(account.address)} · PQ`
-              : "Create or import PQ wallet"}
+              : "Connect wallet"}
           </Button>
         </div>
       </header>
@@ -802,7 +828,7 @@ export function PqApp() {
                 aria-controls={`pq-panel-${item}`}
                 aria-selected={tab === item}
                 tabIndex={tab === item ? 0 : -1}
-                disabled={busy}
+                disabled={isBusy}
                 onClick={() => setTab(item)}
                 className={`relative h-9 rounded-pill text-sm font-medium capitalize transition-colors disabled:cursor-wait ${tab === item ? "bg-surface text-ink shadow-sm" : "text-ink-60 hover:text-ink"}`}
               >
@@ -816,7 +842,7 @@ export function PqApp() {
               </button>
             ))}
           </div>
-          <div className="-mx-8 -my-12 mt-0 overflow-hidden px-8 py-8 sm:py-12">
+          <div className="-mx-4 -my-12 mt-0 overflow-hidden px-4 py-8 sm:-mx-8 sm:px-8 sm:py-12">
             <div
               className="flex items-start gap-20 transition-transform duration-[380ms] ease-[var(--ease-out-expo)] motion-reduce:transition-none"
               style={{
@@ -849,21 +875,22 @@ export function PqApp() {
                               : `${unspent} unspent ${AMOUNT} ETH ${unspent === 1 ? "note" : "notes"}`
                           }
                         />
+                        <fieldset disabled={!!busy || !!account?.pending} className="space-y-2">
+                          <legend className="mb-2 text-sm font-medium">Deposit amount</legend>
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {PQ_POOLS.map(option => (
+                              <label key={option.pool} className={`cursor-pointer rounded-pill border px-3 py-2.5 text-center text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 ${selectedPool.pool === option.pool ? "border-ink bg-ink text-paper" : "border-rule hover:bg-sunk"}`}>
+                                <input type="radio" name="deposit-amount" className="sr-only"
+                                  checked={selectedPool.pool === option.pool}
+                                  onChange={() => { if (!busyRef.current && !account?.pending) { setSelectedPool(option); setUnspent(null); setReadError(null); } }} />
+                                {formatEth(BigInt(option.denominationWei))} ETH
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
                         <p className="text-center text-sm leading-relaxed text-ink-60">
                           A fixed native ETH deposit, protected by a SHA3-512
                           note and a transparent withdrawal proof.
-                        </p>
-                        <RowGroup>
-                          <Row label="Network">Ethrex devnet · 8141</Row>
-                          <Row label="Denomination">{AMOUNT} native ETH</Row>
-                          <Row label="Withdrawal proof">
-                            Transparent V5 · no trusted setup
-                          </Row>
-                        </RowGroup>
-                        <p className="text-xs leading-relaxed text-ink-60">
-                          Anonymity depends on other notes, timing and gas
-                          payment. A single deposit does not provide useful
-                          unlinkability.
                         </p>
                         <Button
                           variant="primary"
@@ -990,15 +1017,14 @@ export function PqApp() {
                             tone="neutral"
                             title="Your funding account is public"
                           >
-                            Reusing this account to pay withdrawal gas can link
-                            both actions. For privacy, withdraw using a separate
-                            funded PQ account.
+                            Reusing this account for withdrawal can link both actions.
+                            For privacy, withdraw using a separate PQ wallet.
                           </Notice>
                         ) : null}
                         {depositInsufficient ? (
                           <Notice tone="bad" title="Not enough native ETH">
-                            This account needs {AMOUNT} ETH plus transaction
-                            gas. Fund the public address on chain 8141 before
+                            This account needs {AMOUNT} ETH for the deposit. The
+                            paymaster covers gas. Fund its address on chain 8141 before
                             depositing.
                           </Notice>
                         ) : null}
@@ -1124,7 +1150,7 @@ export function PqApp() {
                           size="lg"
                           className="w-full"
                           icon={<FileIcon width={17} height={17} />}
-                          disabled={busy}
+                          disabled={isBusy}
                           onClick={() => noteInput.current?.click()}
                         >
                           Choose PQ note file
@@ -1135,7 +1161,7 @@ export function PqApp() {
                           </p>
                         ) : null}
                         <p className="text-xs leading-relaxed text-ink-60">
-                          Only notes for this SHA3-512 pool are accepted. Older
+                          The note selects its registered ETH pool automatically. Older
                           classical notes cannot be migrated by changing their
                           label.
                         </p>
@@ -1179,7 +1205,7 @@ export function PqApp() {
                           <Button
                             variant="primary"
                             className="w-full"
-                            disabled={busy || !readReady}
+                            disabled={isBusy || !readReady}
                             onClick={() =>
                               withdrawNote && void checkNote(withdrawNote)
                             }
@@ -1268,7 +1294,7 @@ export function PqApp() {
                           </Row>
                           <Row label="Account authorization">ML-DSA-44</Row>
                           <Row label="Native transaction gas">
-                            Your PQ account pays
+                            QRAFT paymaster
                           </Row>
                         </RowGroup>
                         {renderWalletGate()}
@@ -1286,7 +1312,7 @@ export function PqApp() {
                           The local helper receives only the public proof and
                           pays for permissionless verification. It cannot
                           authorize spending your note. Using the deposit
-                          account again for gas can publicly link both actions.
+                          account again can publicly link both actions.
                         </p>
                         {withdrawError ? (
                           <p
@@ -1478,15 +1504,16 @@ export function PqApp() {
             <Button
               variant="primary"
               className="w-full"
-              busy={busy}
-              disabled={serviceEnabled !== true}
+              busy={isBusy && busy !== "wallet:import"}
+              disabled={isBusy || serviceEnabled !== true}
               onClick={() => void connectWallet()}
             >
               Create PQ wallet
             </Button>
             <Button
               className="w-full"
-              busy={busy}
+              busy={busy === "wallet:import"}
+              disabled={isBusy}
               onClick={() => walletInput.current?.click()}
             >
               Import PQ wallet backup
@@ -1510,7 +1537,7 @@ export function PqApp() {
               ) : null}
               {serviceEnabled === null ? <p className="text-xs text-ink-60">Checking the local gas helper…</p> : null}
               {serviceEnabled === false ? (
-                <p className="text-xs leading-relaxed text-ink-60">Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server. You can still import an existing backup.</p>
+                <p className="text-xs leading-relaxed text-ink-60">{serviceReason ?? "Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server. You can still import an existing backup."}</p>
               ) : null}
             </div>
             {!busy && (!readReady || !!walletError) ? (
@@ -1544,7 +1571,7 @@ export function PqApp() {
             <Button
               variant={walletDownloaded ? "secondary" : "primary"}
               className="w-full"
-              disabled={busy}
+              disabled={isBusy}
               icon={<DownloadIcon width={17} height={17} />}
               onClick={downloadWallet}
             >
@@ -1557,7 +1584,7 @@ export function PqApp() {
                 <label className="flex gap-3 text-sm leading-relaxed">
                   <input
                     type="checkbox"
-                    disabled={!walletDownloaded || busy}
+                    disabled={!walletDownloaded || isBusy}
                     checked={walletAcknowledged}
                     onChange={(event) =>
                       setWalletAcknowledged(event.target.checked)
@@ -1572,7 +1599,7 @@ export function PqApp() {
                 <Button
                   variant="primary"
                   className="w-full"
-                  disabled={!walletDownloaded || !walletAcknowledged || busy}
+                  disabled={!walletDownloaded || !walletAcknowledged || isBusy}
                   onClick={confirmWalletBackup}
                 >
                   I saved my PQ wallet backup
@@ -1582,7 +1609,7 @@ export function PqApp() {
             {account.pending ? (
               <Button
                 className="w-full"
-                busy={busy}
+                busy={isBusy}
                 onClick={() => void reconcileWallet()}
               >
                 Reconcile saved transaction
@@ -1591,7 +1618,7 @@ export function PqApp() {
             <Button
               variant="ghost"
               className="w-full"
-              disabled={busy}
+              disabled={isBusy}
               onClick={lockWallet}
             >
               Lock PQ wallet
@@ -1648,7 +1675,7 @@ export function PqApp() {
           </p>
           <Button
             className="w-full"
-            disabled={busy}
+            disabled={isBusy}
             onClick={reconnectReads}
           >
             Reconnect anonymous reads

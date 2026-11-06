@@ -17,10 +17,10 @@ try {
       status: 503, body: 'Controlled bootstrap failure',
     }));
     await page.goto(`${origin}/app`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Create or import PQ wallet', exact: true }).click();
+    await page.getByRole('button', { name: 'Connect wallet', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'PQ wallet', exact: true });
     const create = dialog.getByRole('button', { name: 'Create PQ wallet', exact: true });
-    await dialog.getByText(helperEnabled ? /could not start/ : /local gas helper is unavailable/).waitFor();
+    await dialog.getByText(helperEnabled ? /could not start/ : /local account service is unavailable/).waitFor();
     assert.equal(await create.isEnabled(), helperEnabled);
     assert.equal(await dialog.getByRole('button', { name: 'Import PQ wallet backup', exact: true }).isEnabled(), true);
     if (helperEnabled) {

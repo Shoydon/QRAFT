@@ -2,18 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WORDMARK, TAGLINE, SHIPPED_DESCRIPTION } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
-import { formatEth } from "@/lib/format";
-import deployment from "../../public/pq-deployment.json";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { GitHubIcon } from "@/components/icons";
 
 const REPO = "https://github.com/Shoydon/QRAFT";
-const AMOUNT = formatEth(BigInt(deployment.denominationWei));
 
 const STEPS = [
   {
     title: 'Deposit',
-    body: `You send exactly ${AMOUNT} ETH. Everyone sends the same amount, so no single deposit stands out.`,
+    body: "Choose a fixed ETH amount. Each amount has its own pool, where every deposit has the same value.",
   },
   {
     title: 'Keep the note',
@@ -66,7 +63,7 @@ export default function LandingPage() {
             {TAGLINE}
           </h1>
           <p className="mx-auto mt-6 max-w-[36ch] text-base leading-relaxed text-ink-60 sm:text-lg">
-            Deposit {AMOUNT} native ETH. Keep your note. Withdraw to a new
+            Choose a fixed native ETH amount. Keep your note. Withdraw to a new
             address.
           </p>
           <Link

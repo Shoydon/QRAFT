@@ -90,3 +90,14 @@ test('reconnecting during response decoding rejects stale data and counters', as
   expect((await rejected as Error).name).toBe('AbortError');
   expect(transport.getStatus().requestCount).toBe(1); transport.stop();
 });
+
+
+test('closing a timed-out worker preserves the timeout reason instead of worker-closed', async () => {
+  const ready = deferred<void>();
+  const stuck = worker(ready.promise);
+  stuck.close = () => { ready.reject(Error('worker closed')); };
+  const transport = createAnonRpcTransport({ loadWorker: async () => () => stuck, bootTimeoutMs: 10 });
+  await expect(transport.request('eth_chainId')).rejects.toThrow('boot-timeout');
+  expect(transport.getStatus().detail).toContain('did not become ready');
+  transport.stop();
+});

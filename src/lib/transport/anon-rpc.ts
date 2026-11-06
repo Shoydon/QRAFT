@@ -35,7 +35,7 @@ type AnonWorker = {
  * is what Tor does when no gateway will relay: it retries with escalating
  * backoff and `ready` never settles either way.
  */
-const BOOT_TIMEOUT_MS = 150_000;
+const BOOT_TIMEOUT_MS = 240_000;
 
 const GATEWAY_DETAIL =
   `${TRANSPORT.worker.label} reaches its network through KPS relays, because browsers cannot open ` +
@@ -129,8 +129,8 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
     let rejectAbort: () => void = () => {};
     const aborted = new Promise<never>((_, reject) => {
       rejectAbort = () => {
-        try { instance?.close(); } catch { /* already closed */ }
         reject(controller.signal.reason);
+        try { instance?.close(); } catch { /* already closed */ }
       };
       controller.signal.addEventListener('abort', rejectAbort, { once: true });
     });
@@ -142,7 +142,11 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
       if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       instance = createWorker({
         address: TRANSPORT.worker.specifier,
-        config: TRANSPORT.gateways.length ? { gateways: TRANSPORT.gateways } : undefined,
+        // Bound each Nym tunnel attempt so one unreachable gateway does not
+        // consume the entire startup window. Cover traffic stays enabled.
+        config: TRANSPORT.worker.label === 'Nym'
+          ? { connectTimeoutMs: 20_000 }
+          : TRANSPORT.gateways.length ? { gateways: TRANSPORT.gateways } : undefined,
         preExisting: { rpcProvider: bootstrapProvider(TRANSPORT.bootstrapRpcUrl as string) },
       });
       await Promise.race([instance.ready, aborted]);
@@ -150,6 +154,7 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
       set({ phase: 'ready', detail: null, code: null });
       return instance;
     } catch (error) {
+      if (controller.signal.aborted) error = controller.signal.reason;
       if (!controller.signal.aborted) {
         try { instance?.close(); } catch { /* already closed */ }
       }
