@@ -1,0 +1,253 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>QRAFT | Three-minute product demo</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><style>
+  :root {
+    --ink: #0a0a0a;
+    --muted: #6b6b6b;
+    --line: #e6e6e6;
+    --placeholder-bg: #fafafa;
+    --accent: #0a0a0a; /* swap to brand color if requested */
+  }
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometryPrecision;
+  }
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    padding: 120px 160px;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  .num {
+    position: absolute;
+    top: 80px;
+    left: 160px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .label {
+    position: absolute;
+    top: 80px;
+    right: 160px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .footer {
+    position: absolute;
+    bottom: 80px;
+    left: 160px;
+    right: 160px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+
+  /* Title slide */
+  .title-wrap {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .wordmark {
+    font-size: 128px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .tagline {
+    margin-top: 40px;
+    font-size: 40px;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+  .byline {
+    margin-top: 80px;
+    font-size: 20px;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Generic content slide */
+  h1.head {
+    font-size: 88px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    margin: 0;
+    max-width: 1400px;
+  }
+  p.body {
+    font-size: 28px;
+    line-height: 1.4;
+    color: var(--ink);
+    max-width: 1100px;
+    font-weight: 400;
+    margin: 32px 0 0 0;
+  }
+  p.body.muted { color: var(--muted); }
+  .lead {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  /* Three-step row */
+  .steps {
+    display: flex;
+    gap: 80px;
+    margin-top: 80px;
+  }
+  .step {
+    flex: 1;
+    border-top: 1px solid var(--ink);
+    padding-top: 28px;
+  }
+  .step .n {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+  }
+  .step .t {
+    margin-top: 24px;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .step .d {
+    margin-top: 16px;
+    font-size: 20px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  /* Stat rows */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px 80px;
+    margin-top: 64px;
+  }
+  .stat {
+    border-top: 1px solid var(--ink);
+    padding-top: 24px;
+  }
+  .stat .big {
+    font-size: 64px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .stat .small {
+    margin-top: 12px;
+    font-size: 22px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Product screenshot */
+  .img-ph {
+    margin-top: 56px;
+    flex: 1;
+    border: 1px dashed #cccccc;
+    border-radius: 4px;
+    background: var(--placeholder-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b3b3b3;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  img.product-shot {
+    margin-top: 56px;
+    flex: 1;
+    width: 100%;
+    object-fit: contain;
+    object-position: center;
+    background: var(--placeholder-bg);
+    border-radius: 4px;
+  }
+
+  /* Competition 2x2 */
+  .grid2x2 {
+    margin-top: 56px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr;
+    grid-template-rows: 60px 1fr 1fr;
+    border-top: 1px solid var(--ink);
+    border-left: 1px solid var(--ink);
+  }
+  .grid2x2 > div {
+    border-right: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 24px 28px;
+    font-size: 22px;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+  .axis-h, .axis-v {
+    background: #ffffff;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+  }
+  .axis-corner { background: #ffffff; border-right: 1px solid var(--ink) !important; }
+  .cell-name { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .cell-desc { font-size: 18px; color: var(--muted); margin-top: 10px; line-height: 1.35; }
+  .cell-us { background: #ffffff; }
+  .cell-us .cell-name::after { content: " \2190"; color: var(--accent); }
+
+  /* Contact */
+  .contact-list {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .contact-list .line {
+    font-size: 56px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .contact-list .line + .line { margin-top: 28px; }
+
+  .todo {
+    color: #b3b3b3;
+    font-style: italic;
+  }
+
+.slide{padding:150px 160px 140px}.head{max-width:1550px!important}.kicker{font-size:23px;letter-spacing:.12em;text-transform:uppercase;color:#6b6b6b;margin-bottom:28px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:55px}.triple{grid-template-columns:repeat(3,1fr)}.card{border:1px solid #d4d4d4;border-radius:24px;padding:38px}.card h2{font-size:35px;font-weight:500;margin:0 0 20px;letter-spacing:-.02em}.card p{font-size:27px;line-height:1.45;margin:14px 0 0;color:#6b6b6b}.metric{font-size:86px;font-weight:500;letter-spacing:-.045em;line-height:1.1;margin:20px 0}.unit{font-size:30px;color:#6b6b6b;letter-spacing:0}.small{font-size:21px!important;color:#6b6b6b}.rule{border-top:1px solid #e6e6e6;margin:28px 0}.row{display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:27px;padding:15px 0}.pill{border:1px solid #d4d4d4;border-radius:50px;padding:14px 28px;font-size:23px}.black{background:#0a0a0a;color:white;border-color:#0a0a0a}.flow{display:flex;align-items:center;gap:24px;margin-top:50px}.flow .card{flex:1}.arrow{font-size:38px;color:#777}.note{font-size:23px;color:#6b6b6b;margin-top:30px;line-height:1.4}.balance{display:flex;align-items:baseline;gap:14px}.mono{font-family:ui-monospace,SFMono-Regular,monospace}.bigurl{font-size:48px;letter-spacing:-.02em;margin-top:45px}.title-mark{font-size:150px;line-height:1;font-weight:600;letter-spacing:-.045em}.title-sub{font-size:54px;line-height:1.15;letter-spacing:-.025em;max-width:1450px;margin-top:35px}.num,.label{top:75px}.footer{bottom:65px;font-size:18px}.split{display:grid;grid-template-columns:1.1fr 1fr;gap:70px;align-items:center;margin-top:45px}.split .card{margin:0}.screen-label{font-size:20px;text-transform:uppercase;letter-spacing:.12em;color:#6b6b6b;margin-bottom:30px}.note-stack{display:flex;gap:18px;margin-top:35px}.note-stack .card{flex:1;font-size:27px}.check{font-size:28px;border-top:1px solid #ddd;padding:25px 0}.check:first-child{border-top:0}.muted{color:#6b6b6b}a{color:inherit;text-decoration:none} .title-slide{justify-content:center}.title-slide .kicker{margin-top:-35px}
+</style></head><body><section class="slide"><div class="num">01</div><div class="label">PRODUCT DEMO · 03:00</div><div class="lead"><div class="title-mark">QRAFT</div><div class="title-sub">Quantum-Resistant<br>Anonymous Frame Transactions</div><p class="body muted">Private ETH payments from an ERC-8286 PQ wallet.</p><div class="flow"><span class="pill">Local proofs</span><span class="pill">Encrypted receiving</span><span class="pill">EIP-8141 transactions</span></div></div><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>01 / 10</span></footer></section><section class="slide"><div class="num">02</div><div class="label">01 · THE PRODUCT</div><h1 class="head">Two balances.<br>Different visibility.</h1><div class="grid"><div class="card"><h2>Public smart-account balance</h2><p>ETH held by your ERC-8286 PQ account.<br>The address and balance are public.</p><div class="rule"></div><p class="small">Faucet funding arrives here.</p></div><div class="card"><h2>Private pool balance</h2><p>Encrypted notes belonging to you.<br>Your device calculates the available total.</p><div class="rule"></div><p class="small">Deposit to enter. Withdraw to a public address.</p></div></div><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>02 / 10</span></footer></section><section class="slide"><div class="num">03</div><div class="label">02 · THE EXPERIENCE</div><h1 class="head">Separate notes.<br>One private balance.</h1><div class="split"><div><p class="body">The ERC-8286 PQ wallet finds your notes, tracks spends and selects payment inputs.</p><div class="note-stack"><div class="card">0.00002 ETH<br><span class="small">Deposit one</span></div><div class="card">0.00002 ETH<br><span class="small">Deposit two</span></div></div></div><div class="card"><div class="screen-label">Available privately</div><div class="balance"><span class="metric">0.00004</span><span class="unit">ETH</span></div><div class="rule"></div><div class="row"><span>+ Add ETH</span><span>↗ Send</span><span>↙ Receive</span></div><p class="small">Illustrated from the verified demo flow.</p></div></div><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>03 / 10</span></footer></section><section class="slide"><div class="num">04</div><div class="label">03 · KEYS</div><h1 class="head">One passkey unlocks<br>the ERC-8286 PQ wallet.</h1><div class="grid triple"><div class="card"><h2>ML-DSA-44</h2><p>Signs the public account’s EIP-8141 transactions.</p></div><div class="card"><h2>ML-KEM-768</h2><p>Encrypts incoming notes for the receiving key.</p></div><div class="card"><h2>Spending secret</h2><p>Proves note ownership and derives nullifiers.</p></div></div><p class="note">Derived from one master secret. The encrypted backup still requires the original passkey.</p><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>04 / 10</span></footer></section><section class="slide"><div class="num">05</div><div class="label">04 · DEMO: DEPOSIT</div><h1 class="head">Add ETH to<br>the private balance.</h1><div class="split"><div><div class="check">Open the ERC-8286 PQ wallet dialog.</div><div class="check">Check the public address and ETH balance.</div><div class="check">Deposit 0.00002 ETH twice.</div><p class="note">Gas is sponsored. The deposit address and amount remain public.</p></div><div class="card"><div class="screen-label">Two confirmed deposits</div><div class="row"><span>Deposit 1</span><span>0.00002 ETH</span></div><div class="row"><span>Deposit 2</span><span>0.00002 ETH</span></div><div class="rule"></div><p class="small">Available privately</p><div class="metric">0.00004 <span class="unit">ETH</span></div></div></div><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>05 / 10</span></footer></section><section class="slide"><div class="num">06</div><div class="label">05 · DEMO: PRIVATE SEND</div><h1 class="head">Send an exact amount.<br>Keep the change private.</h1><div class="flow"><div class="card"><h2>Alice’s two notes</h2><div class="metric">0.00004 <span class="unit">ETH</span></div><p>Selected automatically.</p></div><div class="arrow">→</div><div class="card"><div class="row"><span>Bob receives</span><strong>0.00003 ETH</strong></div><div class="rule"></div><div class="row"><span>Alice’s change</span><strong>0.00001 ETH</strong></div><p class="small">Two new encrypted notes replace the inputs.</p></div></div><p class="note">Bob shares a qraft1.… receiving address. His ERC-8286 PQ account need not be deployed to receive.</p><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>06 / 10</span></footer></section><section class="slide"><div class="num">07</div><div class="label">06 · DEMO: RECEIVE + WITHDRAW</div><h1 class="head">Receive privately.<br>Withdraw to a public address.</h1><div class="grid triple"><div class="card"><h2>Bob’s private balance</h2><div class="metric">0.00003</div><p>ETH discovered and decrypted locally.</p></div><div class="card"><h2>Public withdrawal</h2><div class="metric">0.00001</div><p>ETH sent to the chosen 0x address.</p></div><div class="card"><h2>Private remainder</h2><div class="metric">0.00002</div><p>ETH retained as a change note.</p></div></div><p class="note">The withdrawal address and amount are public. The private remainder stays encrypted.</p><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>07 / 10</span></footer></section><section class="slide"><div class="num">08</div><div class="label">07 · EXECUTION</div><h1 class="head">Three frames.<br>One EIP-8141 transaction.</h1><div class="grid triple"><div class="card"><div class="screen-label">01 · VERIFY</div><h2>PQ authorization</h2><p>Check the submitting ERC-8286 account’s ML-DSA signature.</p></div><div class="card"><div class="screen-label">02 · VERIFY</div><h2>Gas sponsorship</h2><p>Validate the permitted transaction shape and gas limits.</p></div><div class="card"><div class="screen-label">03 · SENDER</div><h2>Pool settlement</h2><p>Verify the proof, consume nullifiers and create outputs or pay out.</p></div></div><p class="note">Private sends use a shared carrier. Deposits use the user’s account. The external faucet is a type-2 exception.</p><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>08 / 10</span></footer></section><section class="slide"><div class="num">09</div><div class="label">08 · VERIFIED SCOPE</div><h1 class="head">A tested prototype.<br>A defined security boundary.</h1><div class="grid"><div class="card"><h2>Verified</h2><p>90 tests and a live UI-to-chain flow.</p><p>Replay rejection, failed-payout rollback,<br>lost-response recovery and exact balances.</p></div><div class="card"><h2>Current limits</h2><p>Groth16 proofs use conventional cryptography and a development setup.</p><p>Nym covers reads and deposits. The HTTPS relay can observe IP and timing.</p></div></div><p class="note">Live E2E uses direct test reads. Full uninterrupted Nym E2E is not yet verified. No production-security claim.</p><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>09 / 10</span></footer></section><section class="slide"><div class="num">10</div><div class="label">09 · QRAFT</div><div class="lead"><h1 class="head">Private ETH payments.<br>ERC-8286 PQ accounts.<br>EIP-8141 execution.</h1><p class="body muted">Unified private balance. Local proofs. Encrypted receiving.</p><div class="bigurl mono"><a href="https://github.com/Shoydon/QRAFT">github.com/Shoydon/QRAFT</a></div><p class="note">Next: anonymize relay submission and complete independent security review.</p></div><footer class="footer"><span>QRAFT · ERC-8286 PQ wallet</span><span>10 / 10</span></footer></section></body></html>
