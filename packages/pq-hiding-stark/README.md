@@ -1,6 +1,6 @@
 # QRAFT direct hiding-STARK withdrawal proof
 
-The QRAFT namespace requires a fresh contract deployment. The previous live evidence below describes the earlier protocol; transactions are disabled pending new verified pins.
+Active QRAFT deployment pins are recorded in `public/pq-deployment.json` and checked before transaction submission. The earlier protocol evidence below is historical. Current native service checks are recorded in `docs/pq/native-frame-service-checks.json` from the repository root.
 
 The current **v5** profile proves knowledge of a64-byte secret and a hidden depth32
 SHA3-512 Merkle path. It constrains the nullifier to SHA3-512 of the first32 secret

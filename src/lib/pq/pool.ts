@@ -8,6 +8,7 @@ import { PqNoteTree, parsePqNote, splitDigest, type PqDeployment, type PqNote } 
 import { browserPqProof, withdrawalContext, type PublicWithdrawalStatement } from './proof';
 import { assertSuccessfulReceipt, decodeFrameTransaction } from '../../../packages/frame-account/src/frametx';
 import type { PqRawReceipt } from './account';
+import type { WithdrawalPhase } from './progress';
 
 export const PQ_DEPLOYMENT:PqDeployment={chainId:manifest.chainId,genesisHash:manifest.genesisHash as Hex,pool:manifest.pool as Hex,denominationWei:manifest.denominationWei};
 export const pqPoolAbi=parseAbi([
@@ -108,12 +109,14 @@ export class PqPoolClient{
  private async waitJob(id:string,phases:string[],onProgress:(label:string)=>void,signal:AbortSignal){
   for(;;){signal.throwIfAborted();const job=await this.job(`/${id}`,{signal});onProgress(job.stage);if(job.phase==='failed')throw Error(job.error??'The public verifier stopped. Keep your note and proof journal.');if(phases.includes(job.phase))return job;await new Promise<void>(resolve=>setTimeout(resolve,1500));}
  }
- async prepare(note:PqNote,recipient:Hex,onProgress:(label:string)=>void,signal:AbortSignal):Promise<PreparedPqWithdrawal>{
+ async prepare(note:PqNote,recipient:Hex,onProgress:(label:string)=>void,signal:AbortSignal,onPhase?:(phase:WithdrawalPhase)=>void):Promise<PreparedPqWithdrawal>{
+  onPhase?.('checking-note');
   const status=await this.noteStatus(note);signal.throwIfAborted();if(status.spent)throw Error('This PQ note has already been withdrawn.');if(!status.leaf)throw Error('This PQ note has no confirmed deposit.');
   const deadline=status.block.timestamp+86400n;const context=withdrawalContext(recipient,deadline,this.deployment);
   const live=await this.client.readContract({address:this.deployment.pool,abi:pqPoolAbi,functionName:'withdrawalContext',args:[recipient,ZERO,0n,deadline]});
   if(concat(live).toLowerCase()!==context.digest.toLowerCase())throw Error('The withdrawal context does not match the PQ pool.');
-  const {proof,statement}=await browserPqProof(note,status.tree,status.leaf.index,recipient,deadline,onProgress,signal);
+  const {proof,statement}=await browserPqProof(note,status.tree,status.leaf.index,recipient,deadline,onProgress,signal,onPhase);
+  onPhase?.('publishing');
   signal.throwIfAborted();onProgress('Encoding the public proof; your secret stays on this device');
   const uploaded=await this.job('',{method:'POST',headers:{'content-type':'application/octet-stream','x-qraft-public-statement':JSON.stringify(statement)},body:new Uint8Array(proof).buffer,signal});proof.fill(0);
   await this.waitJob(uploaded.id,['ready','uploaded'],onProgress,signal);
@@ -148,7 +151,8 @@ export class PqPoolClient{
   });
   if(!matched)throw Error('The native receipt does not establish this exact PQ withdrawal.');return result;
  }
- async withdraw(account:PqAccountClient,prepared:PreparedPqWithdrawal,onProgress:(label:string)=>void):Promise<PqSendResult>{
+ async withdraw(account:PqAccountClient,prepared:PreparedPqWithdrawal,onProgress:(label:string)=>void,onPhase?:(phase:WithdrawalPhase)=>void):Promise<PqSendResult>{
+  onPhase?.('verifying');
   const {signal,jobId,note,recipient,deadline}=prepared;signal.throwIfAborted();await this.check();
   if(note.pool.toLowerCase()!==this.deployment.pool.toLowerCase()||note.denominationWei!==this.deployment.denominationWei||prepared.statement.publicContext.poolHex.toLowerCase()!==this.deployment.pool.toLowerCase()||prepared.statement.publicContext.denomination!==this.deployment.denominationWei)throw Error('This withdrawal belongs to another pool or amount.');
   const binding=JSON.stringify([prepared.statement.root,prepared.statement.nullifier,prepared.statement.context,recipient,String(deadline)]);
@@ -182,6 +186,7 @@ export class PqPoolClient{
    return result;
   };
   if(flow.pending){
+   onPhase?.(flow.pending==='withdraw'?'submitting':'verifying');
    expected=await stageCall(flow.pending);
    const entry=ownIntent();if(entry&&!flow.pendingHash){flow.pendingHash=entry.hash;this.saveFlow(jobId,flow);}
    const result=remember(entry?await account.reconcile({onProgress:notify,signal,expectedHash:entry.hash}):await this.workflowReceipt(flow));
@@ -203,7 +208,7 @@ export class PqPoolClient{
   await this.waitJob(jobId,['verified'],onProgress,signal);
   const progress=await this.client.readContract({address:session,abi:abis.session as Abi,functionName:'progress',args:[flow.sessionId]})as readonly bigint[];
   if(progress.map(String).join(',')!=='9,16,93,21,320,6080,12,0')throw Error('Anonymous reads have not confirmed the full PQ proof.');
-  signal.throwIfAborted();const result=await sendStage('withdraw');this.withdrawalReceipt(result,prepared,flow.sessionId);flow.result=result;flow.pending=undefined;this.saveFlow(jobId,flow);return result;
+  signal.throwIfAborted();onPhase?.('submitting');const result=await sendStage('withdraw');this.withdrawalReceipt(result,prepared,flow.sessionId);flow.result=result;flow.pending=undefined;this.saveFlow(jobId,flow);return result;
  }
 
 }

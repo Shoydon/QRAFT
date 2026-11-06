@@ -86,13 +86,11 @@ test('provisioning refuses a different chain or changed pinned infrastructure', 
   f.state.chainId = 8141; f.codes.set(f.deployment.contracts.validator.address.toLowerCase(), '0x6001');
   await expect(verifyProvisionedPqAccount(f.publicKey, f.account, f.transport, f.deployment)).rejects.toThrow('pinned');
 });
-test('backup acknowledgement gates signing and only public material reaches the helper/journal', async () => {
+test('an unlocked wallet signs without backup acknowledgement and sends only public material', async () => {
   const f = fixture(); const client = await PqAccountClient.create(f.transport, f.options);
   const request = { to: realManifest.pool as Hex, data: '0x1234' as Hex, value: 10n };
-  expect((await client.send(request)).kind).toBe('not-sent');
-  expect(f.state.sent.length).toBe(0);
   const backup = client.backup(); const seed = JSON.parse(backup).seed as string;
-  client.markBackedUp(); const result = await client.send(request);
+  const result = await client.send(request);
   expect(result.kind).toBe('confirmed');
   expect(f.posts[0]!.body).toEqual({ publicKey: client.publicKey });
   expect(f.posts.every(post => !JSON.stringify(post.body).includes(seed))).toBe(true);
@@ -136,15 +134,31 @@ test('wallet backup restores from immutable chain bytes without a provisioning s
   expect(f.posts.length).toBe(calls);
 });
 
-test('wallet recovery reports completed reads and never provisions another account', async () => {
+test('wallet recovery shows one simple status and never provisions another account', async () => {
   const f = fixture(); const original = await PqAccountClient.create(f.transport, f.options);
   const stages: string[] = []; const posts = f.posts.length;
   const restored = await PqAccountClient.restore(original.backup(), f.transport, { ...f.options, onProgress: stage => stages.push(stage) });
-  const total = Object.keys(f.deployment.contracts).length + 13;
-  expect(stages[0]).toBe(`Passkey accepted. Verifying wallet: 0 of ${total} checks complete.`);
-  expect(stages.at(-1)).toBe(`Passkey accepted. Verifying wallet: ${total} of ${total} checks complete.`);
-  expect(stages.length).toBe(total + 1);
+  expect(stages).toEqual(['Opening your wallet…']);
   expect(f.posts.length).toBe(posts); original.lock(); restored.lock();
+});
+
+test('local passkey unlock does no RPC reads but rejects a substituted account before signing', async () => {
+  const f = fixture(); const original = await PqAccountClient.create(f.transport, f.options);
+  const before = f.methods.length;
+  const restored = await PqAccountClient.restore(original.backup(), f.transport, { ...f.options, deferNetworkVerification: true });
+  expect(restored.address).toBe(original.address);
+  expect(f.methods.length).toBe(before);
+  f.codes.set(f.account.address.toLowerCase(), '0x6000');
+  expect((await restored.send({ to: sponsor, data: '0x' })).kind).toBe('not-sent');
+  expect(f.state.sent.length).toBe(0); original.lock(); restored.lock();
+});
+
+test('deployment transaction metadata is exposed without changing the derived account', async () => {
+  const f = fixture(); const hash = `0x${'ab'.repeat(32)}` as Hex;
+  const account = await verifyProvisionedPqAccount(f.publicKey, { ...f.account, deploymentTransactionHash: hash }, f.transport, f.deployment);
+  expect(account.deploymentTransactionHash).toBe(hash);
+  expect(account.address).toBe(f.account.address);
+  await expect(verifyProvisionedPqAccount(f.publicKey, { ...f.account, deploymentTransactionHash: 'bad' }, f.transport, f.deployment)).rejects.toThrow('transaction hash');
 });
 
 test('stalled wallet recovery times out and ignores a late RPC response', async () => {
@@ -234,11 +248,11 @@ test('a queued setup for another key is rejected before polling or chain reads',
   expect(requests).toBe(1); expect(f.methods).toEqual([]);
 });
 
-test('unlocking a vault after reload preserves an unacknowledged backup', async () => {
+test('legacy backup acknowledgement metadata does not block unlocked signing', async () => {
   const f = fixture(); const original = await PqAccountClient.create(f.transport, f.options);
   const restored = await PqAccountClient.restore(original.backup(), f.transport, { ...f.options, backupAcknowledged: false });
   expect(restored.isBackedUp).toBe(false);
-  expect((await restored.send({ to: sponsor, data: '0x' })).kind).toBe('not-sent');
-  expect(f.state.sent.length).toBe(0);
+  expect((await restored.send({ to: sponsor, data: '0x' })).kind).toBe('confirmed');
+  expect(f.state.sent.length).toBe(1);
   original.lock(); restored.lock();
 });

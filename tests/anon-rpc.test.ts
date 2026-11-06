@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { createAnonRpcTransport } from '../src/lib/transport/anon-rpc';
+import { sharedPageTransport } from '../src/lib/transport/page-transport';
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -8,6 +9,12 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 const tick = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+test('component refreshes reuse the page connection without closing or rebuilding it', () => {
+  const scope = {}; let created = 0;
+  const first = sharedPageTransport(scope, () => { created++; return createAnonRpcTransport(); });
+  expect(sharedPageTransport(scope, () => { throw Error('Refresh must reuse the existing connection'); })).toBe(first);
+  expect(created).toBe(1); expect(first.getStatus().phase).toBe('idle');
+});
 function worker(ready: Promise<void> = Promise.resolve()) {
   const calls: string[] = []; let closed = 0;
   return {

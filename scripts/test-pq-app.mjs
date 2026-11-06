@@ -37,15 +37,15 @@ try{
  await backup.or(creationError).first().waitFor({timeout:1000000});
  if(await creationError.isVisible())throw Error('Wallet creation stopped: '+await creationError.innerText());
  await page.getByRole('dialog',{name:'Your wallet is ready',exact:true}).getByRole('button',{name:'Continue to wallet',exact:true}).click();
+ await page.getByRole('button',{name:/^0x/}).first().click();
  await download(page.getByRole('button',{name:'Download PQ wallet backup',exact:true}),walletPath);
  wallet=JSON.parse(await readFile(walletPath));
  assert.equal(wallet.kind,'qraft-passkey-wallet');assert.equal(wallet.seed,undefined);assert.ok(wallet.ciphertext);
  for(const text of [wallet.seed,wallet.seed?.replace(/^0x/,'')])if(text)needles.push(Buffer.from(text));
  if(wallet.seed)needles.push(Buffer.from(wallet.seed.replace(/^0x/,''),'hex'));
  for(const body of requests)if(needles.some(needle=>body.includes(needle)))sensitiveRequests++;
- await page.getByRole('checkbox',{name:/I saved the encrypted wallet backup securely/}).check();
- await page.getByRole('button',{name:'I saved my PQ wallet backup',exact:true}).click();
- console.log('PASS fresh ML-DSA account provisioning, independent ownership checks and explicit wallet backup');
+ await page.getByRole('dialog',{name:'PQ wallet',exact:true}).getByRole('button',{name:'Close',exact:true}).click();
+ console.log('PASS fresh ML-DSA account provisioning, independent ownership checks and optional encrypted wallet export');
  await page.getByRole('button',{name:'Generate a PQ note',exact:true}).click();
  await page.getByRole('button',{name:'Copy note',exact:true}).click();
  await writeFile(notePath,await page.evaluate(()=>navigator.clipboard.readText()),{mode:0o600});
@@ -71,7 +71,7 @@ try{
  // Keep the virtual authenticator across reload, as a real passkey provider would.
  if(reloading)await page.reload();else await newPage();
  await page.getByRole('button',{name:'Connect wallet',exact:true}).click();
- if(reloading)await page.getByRole('button',{name:'Unlock with passkey',exact:true}).click();
+ if(reloading)await page.getByRole('button',{name:'Wallet found · Unlock with passkey',exact:true}).click();
  for(let attempt=0;;attempt++){
   const sheet=page.getByRole('dialog',{name:'PQ wallet',exact:true});
   await sheet.waitFor({state:'visible'});

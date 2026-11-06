@@ -156,6 +156,22 @@
   background-image: var(--spectrum);
 }
 
+.wallet-name-input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--color-ink-60);
+  background: var(--color-surface);
+}
+
+dialog.sheet:focus-visible,
+.sheet-close:focus-visible {
+  outline: none;
+}
+
+.sheet-close:focus-visible {
+  box-shadow: none;
+  background: var(--color-sunk);
+}
+
 /* Indeterminate progress: the gradient travels, the hues never change. */
 @utility spectral-rail {
   background-image: var(--spectrum);

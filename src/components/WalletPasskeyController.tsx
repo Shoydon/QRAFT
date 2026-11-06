@@ -7,6 +7,7 @@ import manifest from '../../public/pq-deployment.json';
 import { PqAccountClient } from '@/lib/pq/account';
 import type { ChainTransport } from '@/lib/transport/types';
 import { WALLET_VAULT_KEY, parseWalletVault, parseWalletSecrets, registerWalletPasskey, unlockWalletVault, unsealWallet, sealWallet, storeWalletVault, type VaultSession, type WalletVault, type WalletSecrets } from '@/lib/pq/vault';
+import { WALLET_COLLECTION_KEY, readWalletCollection, upsertWallet, walletName } from '@/lib/pq/wallet-collection';
 
 const CHANGE = 'qraft-wallet-vault-change';
 function subscribe(listener: () => void) {
@@ -14,6 +15,7 @@ function subscribe(listener: () => void) {
   return () => { window.removeEventListener('storage', listener); window.removeEventListener(CHANGE, listener); };
 }
 const snapshot = () => localStorage.getItem(WALLET_VAULT_KEY);
+const collectionSnapshot = () => localStorage.getItem(WALLET_COLLECTION_KEY);
 const serverSnapshot = () => null;
 function localhostSnapshot() {
   if (window.location.hostname !== '127.0.0.1' && window.location.hostname !== '[::1]') return null;
@@ -27,7 +29,9 @@ export interface WalletConnection {
 interface Actions {
   hasVault: boolean; protected: boolean; primaryLabel: string; localhostUrl: string | null;
   create(): Promise<void>; importFile(file: File): Promise<void>;
-  download(): void; confirmBackup(): Promise<void>; lock(): void;
+  download(): void; lock(): void;
+  wallets: { id: string; name: string; address: Hex | null; selected: boolean; connected: boolean }[];
+  createAnother(): Promise<void>; selectWallet(id: string): void; renameWallet(id: string, name: string): void;
 }
 interface Props {
   account: PqAccountClient | null; transport: ChainTransport | null;
@@ -35,7 +39,7 @@ interface Props {
   begin(label: string, operation?: 'transaction' | 'wallet:create' | 'wallet:import'): boolean;
   end(): void; show(): void; error(message: string | null): void;
   connect(file?: File, options?: WalletConnection): Promise<PqAccountClient | null>;
-  exportEncrypted(text: string): void; confirm(): void; lock(): void;
+  exportEncrypted(text: string): void; lock(): void;
   requireProtection(): void;
   onSetupStart?(): void;
   children(actions: Actions): ReactNode;
@@ -43,16 +47,25 @@ interface Props {
 
 export function WalletPasskeyController(props: Props) {
   const text = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
+  const collectionText = useSyncExternalStore(subscribe, collectionSnapshot, serverSnapshot);
   const localhostUrl = useSyncExternalStore(subscribe, localhostSnapshot, serverSnapshot);
   const parsed = useMemo(() => {
     try { return { vault: text ? parseWalletVault(text) : null, error: null }; }
     catch { return { vault: null, error: 'The saved encrypted wallet could not be read. Import its encrypted backup.' }; }
   }, [text]);
+  const collection = useMemo(() => {
+    try { return { wallets: readWalletCollection(collectionText, parsed.vault), error: null }; }
+    catch { return { wallets: [], error: 'The saved wallet list could not be read. Your encrypted wallets have not been replaced.' }; }
+  }, [collectionText, parsed.vault]);
   const session = useRef<VaultSession | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
+  const cleanupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function store(vault: WalletVault) {
+    const active = localStorage.getItem(WALLET_VAULT_KEY);
+    const wallets = readWalletCollection(localStorage.getItem(WALLET_COLLECTION_KEY), active ? parseWalletVault(active) : null);
+    localStorage.setItem(WALLET_COLLECTION_KEY, JSON.stringify(upsertWallet(wallets, vault)));
     storeWalletVault(vault); window.dispatchEvent(new Event(CHANGE));
   }
   async function run(action: 'wallet:create' | 'wallet:import', work: (signal: AbortSignal) => Promise<void>) {
@@ -89,17 +102,19 @@ export function WalletPasskeyController(props: Props) {
     signal.throwIfAborted(); session.current = unlocked.session;
     await connect(unlocked.secrets, unlocked.session, file ? true : vault.backupAcknowledged, signal, file);
   }
-  async function create() {
+  async function create(forceNew = false) {
     await run('wallet:create', async signal => {
       if (parsed.error) throw Error(parsed.error);
-      if (!props.account && !parsed.vault?.address) props.onSetupStart?.();
-      if (props.account && !parsed.vault) {
+      if (collection.error) throw Error(collection.error);
+      if (forceNew || !props.account && !parsed.vault?.address) props.onSetupStart?.();
+      if (!forceNew && props.account && !parsed.vault) {
         const active = await registerWalletPasskey(signal);
         store(await sealWallet(parseWalletSecrets(props.account.backup()), active, false)); session.current = active; return;
       }
-      if (parsed.vault) { await unlock(parsed.vault, signal); return; }
+      if (!forceNew && parsed.vault) { await unlock(parsed.vault, signal); return; }
       const active = await registerWalletPasskey(signal);
-      const seed = props.getPendingSeed() ?? crypto.getRandomValues(new Uint8Array(32));
+      if (forceNew) { props.getPendingSeed()?.fill(0); props.lock(); }
+      const seed = (!forceNew && props.getPendingSeed()) || crypto.getRandomValues(new Uint8Array(32));
       props.setPendingSeed(seed);
       const key = createKey(seed);
       const secrets: WalletSecrets = { version: 1, algorithm: 'ML-DSA-44', chainId: manifest.chainId, genesisHash: manifest.genesisHash as Hex, publicKey: bytesToHex(key.publicKey), address: null, seed: bytesToHex(seed) };
@@ -128,27 +143,36 @@ export function WalletPasskeyController(props: Props) {
     if (!parsed.vault || !props.account || parsed.vault.address?.toLowerCase() !== props.account.address.toLowerCase()) { props.error('Protect this wallet with a passkey before exporting its backup.'); return; }
     props.exportEncrypted(JSON.stringify(parsed.vault));
   }
-  async function confirmBackup() {
-    if (!props.account || !parsed.vault) return;
-    await run('wallet:create', async signal => {
-      const active = session.current ?? (await unlockWalletVault(parsed.vault!, signal)).session;
-      store(await sealWallet(parseWalletSecrets(props.account!.backup()), active, true)); session.current = active;
-      props.confirm();
-    });
-  }
   function lock() {
     controller.current?.abort(); session.current = null; props.getPendingSeed()?.fill(0); props.setPendingSeed(null); props.lock();
   }
+  function selectWallet(id: string) {
+    const selected = collection.wallets.find(wallet => wallet.vault.publicKey === id);
+    if (!selected) return;
+    lock(); storeWalletVault(selected.vault); window.dispatchEvent(new Event(CHANGE)); props.show();
+  }
+  function renameWallet(id: string, name: string) {
+    if (collection.error) { props.error(collection.error); return; }
+    const wallets = collection.wallets.map(wallet => wallet.vault.publicKey === id ? { ...wallet, name: walletName(name, wallet.name) } : wallet);
+    try { localStorage.setItem(WALLET_COLLECTION_KEY, JSON.stringify(wallets)); window.dispatchEvent(new Event(CHANGE)); }
+    catch { props.error('The wallet name could not be saved.'); }
+  }
   const requireProtection = useEffectEvent(() => { if (props.account && !parsed.vault) props.requireProtection(); });
   useEffect(() => {
+    if (cleanupTimer.current) clearTimeout(cleanupTimer.current);
     mounted.current = true;
-    return () => { mounted.current = false; controller.current?.abort(); session.current = null; };
+    return () => {
+      mounted.current = false;
+      cleanupTimer.current = setTimeout(() => { controller.current?.abort(); session.current = null; }, 0);
+    };
   }, [props.transport]);
   useEffect(() => { requireProtection(); }, [props.account, text]);
 
   // These callbacks access refs only when invoked by child event handlers.
   // eslint-disable-next-line react-hooks/refs
   return props.children({ localhostUrl, hasVault: !!text, protected: !!parsed.vault && !!props.account && parsed.vault.address?.toLowerCase() === props.account.address.toLowerCase(),
-    primaryLabel: parsed.vault ? parsed.vault.address ? 'Unlock with passkey' : 'Resume wallet setup' : props.account ? 'Protect with passkey' : 'Create PQ wallet',
-    create, importFile, download, confirmBackup, lock });
+    wallets: collection.wallets.map(wallet => ({ id: wallet.vault.publicKey, name: wallet.name, address: wallet.vault.address,
+      selected: wallet.vault.publicKey === parsed.vault?.publicKey, connected: wallet.vault.publicKey === props.account?.publicKey })),
+    primaryLabel: parsed.vault ? parsed.vault.address ? 'Wallet found · Unlock with passkey' : 'Resume wallet setup' : props.account ? 'Protect with passkey' : 'Create PQ wallet',
+    create: () => create(), createAnother: () => create(true), selectWallet, renameWallet, importFile, download, lock });
 }

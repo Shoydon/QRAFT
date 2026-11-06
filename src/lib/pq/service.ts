@@ -8,7 +8,8 @@ import { join, resolve } from 'node:path';
 import { createPublicClient, createWalletClient, defineChain, encodeFunctionData, encodePacked, hexToBytes, bytesToHex, concat, keccak256, parseAbi, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { preparePublicKey, verifyAuthorization } from '../../../packages/pq-account/src/keys';
-import { decodeFrameTransaction } from '../../../packages/frame-account/src/frametx';
+import { decodeFrameTransaction, nonceSlot, NONCE_MANAGER_LEGACY, assertSuccessfulReceipt, assertSuccessfulSimulation, type FrameReceipt, type FrameSimulation } from '../../../packages/frame-account/src/frametx';
+import { DEPLOYMENT_PROXY, DEPLOYMENT_PROXY_HASH, SERVICE_NONCE_KEY, serviceFramePlan, signServiceFrame, serviceFrameSigner, verifyServiceFrame } from './service-frames';
 import manifest from '../../../public/pq-deployment.json';
 import { recoverProvisionedPqAccount, assertSponsoredPqTransaction } from './account';
 import type { ChainTransport } from '../transport/types';
@@ -26,6 +27,7 @@ const accountAbi=parseAbi(['function cacheAuthorization(bytes32 sigHash,bytes si
 export interface PublicPqAccount {
   publicKey:Hex;address:Hex;descriptor:Hex;descriptorRuntime:Hex;rows:{address:Hex;runtime:Hex}[];
   cloneArgs:Hex;salt:Hex;runtime:Hex;
+  deploymentTransactionHash?:Hex;
 }
 export function serviceStatus():{enabled:boolean;reason:string|null}{
   if(!manifest.applicationEnabled)return{enabled:false,reason:'Wallet creation is paused until the QRAFT contracts are deployed and verified.'};
@@ -51,32 +53,58 @@ async function singleWriter<T>(fn:()=>Promise<T>,onWait?:()=>Promise<void>):Prom
   return withCarrierLock(root,fn,{onWait});
 }
 interface GasRecord{hash:Hex;raw:Hex;nonce:number;inputHash:Hex;chainId:number;}
-export async function gasCall(label:string,data:Hex,to?:Hex,value=0n):Promise<Hex|null>{
+export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed?:(hash:Hex)=>void):Promise<Hex|null>{
   const wallet=await carrier();
+  const operatorCode=await client.getCode({address:wallet.account.address});
+  if(operatorCode&&operatorCode!=='0x')throw Error('The native service operator must use the protocol default EOA verification code.');
+  if(!to){const code=await client.getCode({address:DEPLOYMENT_PROXY});if(!code||keccak256(code)!==DEPLOYMENT_PROXY_HASH)throw Error('Deterministic deployment proxy code changed.');}
   const operation=keccak256(bytesToHex(new TextEncoder().encode(label)));
   const file=join(root,`${operation}.json`);
   const inputHash=keccak256(concat([to??'0x',data,bytesToHex(new TextEncoder().encode(String(value)))]));
   let record=await load<GasRecord>(file);
-  if(record&&record.inputHash!==inputHash)throw Error('Saved local gas operation differs from this request.');
+  if(record&&record.inputHash!==inputHash)throw Error('Saved public operation differs from this request.');
+  const nonce=async()=>BigInt(await client.getStorageAt({address:NONCE_MANAGER_LEGACY,slot:nonceSlot(wallet.account.address,SERVICE_NONCE_KEY)})??'0x0');
   if(!record){
-    const nonce=await client.getTransactionCount({address:wallet.account.address});
-    if(nonce!==await client.getTransactionCount({address:wallet.account.address,blockTag:'pending'}))throw Error('Reconcile the local carrier’s pending transaction first.');
-    const block=await client.getBlock();
-    const request=await wallet.prepareTransactionRequest({...(to?{to}:{}),data,value,nonce,maxFeePerGas:(block.baseFeePerGas??7n)*2n+1n,maxPriorityFeePerGas:1n});
-    const raw=await wallet.signTransaction(request);record={hash:keccak256(raw),raw,nonce,inputHash,chainId:8141};await save(file,record);
+    const current=await nonce();if(current>BigInt(Number.MAX_SAFE_INTEGER))throw Error('Service nonce exceeds journal range.');
+    const plan=serviceFramePlan({operator:wallet.account.address,nonce:current,data,to,value,salt:operation});
+    const tx=signServiceFrame(plan.tx,await wallet.account.sign({hash:plan.tx.sigHash()}));
+    const simulation=await client.request({method:'ethrex_simulateFrameTransaction',params:[tx.raw(),'latest']} as never) as unknown as FrameSimulation;
+    assertSuccessfulSimulation(simulation,2);
+    if(simulation.payer?.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Native service simulation charged another payer.');
+    record={chainId:8141,nonce:Number(current),raw:tx.raw(),hash:tx.transactionHash(),inputHash};
+    await save(file,record);
   }
-  if(keccak256(record.raw)!==record.hash||record.chainId!==8141)throw Error('Invalid saved gas transaction.');
-  let receipt=await client.getTransactionReceipt({hash:record.hash}).catch(e=>{if(e.name==='TransactionReceiptNotFoundError')return null;throw e;});
-  if(!receipt){
-    const known=await client.getTransaction({hash:record.hash}).catch(e=>{if(e.name==='TransactionNotFoundError')return null;throw e;});
+  if(keccak256(record.raw)!==record.hash||record.chainId!==8141)throw Error('Invalid saved public operation.');
+  type Receipt=FrameReceipt&{contractAddress:Hex|null;from:Hex};
+  const receipt=()=>client.request({method:'eth_getTransactionReceipt',params:[record!.hash]}) as unknown as Promise<Receipt|null>;
+  let confirmed=await receipt();
+  // Historical completed work is retained. An ordinary transaction is never submitted again.
+  if(!record.raw.startsWith('0x06')){
+    if(!confirmed||confirmed.status!=='0x1')throw Error('Reconcile the historical ordinary transaction before resuming this operation. No ordinary transaction was broadcast.');
+    onConfirmed?.(record.hash);
+    return confirmed.contractAddress??null;
+  }
+  const tx=verifyServiceFrame(record.raw,{operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation});
+  if((await serviceFrameSigner(tx)).toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Saved native service signature does not belong to this operator.');
+  if(!confirmed){
+    const known=await client.request({method:'eth_getTransactionByHash',params:[record.hash]});
     if(!known){
-      if(await client.getTransactionCount({address:wallet.account.address})!==record.nonce)throw Error('The saved carrier nonce changed. Reconcile this hash before continuing.');
-      await client.sendRawTransaction({serializedTransaction:record.raw});
+      if(await nonce()!==BigInt(record.nonce))throw Error('The saved native service nonce changed. Reconcile this hash before continuing.');
+      const returned=await client.sendRawTransaction({serializedTransaction:record.raw});if(returned!==record.hash)throw Error('Native service broadcast returned another hash.');
     }
-    receipt=await client.waitForTransactionReceipt({hash:record.hash,timeout:180000});
+    const deadline=Date.now()+180000;
+    while(!confirmed&&Date.now()<deadline){
+      confirmed=await receipt();
+      if(!confirmed)await new Promise<void>(resolve=>setTimeout(resolve,1000));
+    }
   }
-  if(receipt.status!=='success')throw Error('The local gas operation reverted.');
-  return receipt.contractAddress??null;
+  if(!confirmed)throw Error('Native service receipt is unavailable. Preserve the saved transaction.');
+  assertSuccessfulReceipt(confirmed,2);
+  if(confirmed.payer?.toLowerCase()!==wallet.account.address.toLowerCase()||confirmed.from.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Native service receipt sender or payer changed.');
+  const deployment=serviceFramePlan({operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation}).deployment;
+  if(deployment){const code=await client.getCode({address:deployment});if(!code||code==='0x')throw Error('Native data deployment did not install code.');}
+  onConfirmed?.(record.hash);
+  return deployment;
 }
 
 /** Fixed public verifier calls only; these grants cannot authorize a withdrawal. */
@@ -88,33 +116,20 @@ export async function runPublicProgram(label:string,calls:{to:Hex;data:Hex}[],pr
     const binding=keccak256(bytesToHex(new TextEncoder().encode(JSON.stringify(calls))));
     let journal=await load<{binding:Hex;from:Hex;records:GasRecord[]}>(file);
     if(journal&&(journal.binding!==binding||journal.from!==wallet.account.address))throw Error('Frozen public program differs.');
-    journal??={binding,from:wallet.account.address,records:[]};
-    for(let start=0;start<calls.length;start+=12){
-      const end=Math.min(start+12,calls.length);
-      if(journal.records.length<end){
-        const nonce=await client.getTransactionCount({address:wallet.account.address});
-        if(nonce!==await client.getTransactionCount({address:wallet.account.address,blockTag:'pending'}))throw Error('Reconcile pending public computation before planning another window.');
-        const block=await client.getBlock();
-        for(let i=journal.records.length;i<end;i++){
-          const call=calls[i]!;const raw=await wallet.signTransaction({chainId:8141,type:'eip1559',nonce:nonce+i-start,to:call.to,data:call.data,value:0n,gas:16700000n,maxFeePerGas:(block.baseFeePerGas??7n)*2n+1n,maxPriorityFeePerGas:1n});
-          journal.records.push({chainId:8141,nonce:nonce+i-start,raw,hash:keccak256(raw),inputHash:keccak256(call.data)});
-          await save(file,journal);
-        }
+    if(!journal){journal={binding,from:wallet.account.address,records:[]};await save(file,journal);}
+    if(journal){
+      if(journal.records.length>calls.length)throw Error('Historical program exceeds its bound.');
+      for(const [index,record] of journal.records.entries()){
+        if(record.chainId!==8141||keccak256(record.raw)!==record.hash||record.inputHash!==keccak256(calls[index]!.data))throw Error('Invalid historical public operation.');
+        const receipt=await client.request({method:'eth_getTransactionReceipt',params:[record.hash]}) as {status:Hex}|null;
+        if(!receipt||receipt.status!=='0x1')throw Error('Reconcile the historical public program before native-frame recovery. No ordinary transaction was broadcast.');
       }
-      for(let i=start;i<end;i++){
-        const record=journal.records[i]!;
-        if(keccak256(record.raw)!==record.hash||record.inputHash!==keccak256(calls[i]!.data))throw Error('Invalid saved public operation.');
-        const receipt=await client.getTransactionReceipt({hash:record.hash}).catch(e=>{if(e.name==='TransactionReceiptNotFoundError')return null;throw e;});
-        if(!receipt){
-          const known=await client.getTransaction({hash:record.hash}).catch(e=>{if(e.name==='TransactionNotFoundError')return null;throw e;});
-          if(!known){const current=await client.getTransactionCount({address:wallet.account.address});if(current>record.nonce)throw Error('Unresolved public operation nonce changed.');await client.sendRawTransaction({serializedTransaction:record.raw});}
-        }
-      }
-      for(let i=start;i<end;i++){
-        const record=journal.records[i]!;const receipt=await client.waitForTransactionReceipt({hash:record.hash,timeout:180000});
-        if(receipt.status!=='success')throw Error(`Public verifier step ${i+1} reverted. Keep the exact proof and journal.`);
-        await progress(i+1);
-      }
+    }
+    const completed=journal?.records.length??0;
+    if(completed>calls.length)throw Error('Historical program exceeds its bound.');
+    for(let i=0;i<calls.length;i++){
+      if(i>=completed)await gasCall(`${label}:native:${i}`,calls[i]!.data,calls[i]!.to);
+      await progress(i+1);
     }
   });
 }
@@ -155,11 +170,12 @@ export async function provisionPqAccount(publicKey:Hex,onProgress:(label:string)
     const address=await client.readContract({address:manifest.contracts.factory.address as Hex,abi:factoryAbi,functionName:'predict',args:[manifest.contracts.implementation.address as Hex,cloneArgs,salt]});
     const runtime=concat(['0x363d3d373d3d3d363d73',manifest.contracts.implementation.address as Hex,'0x5af43d82803e903d91602b57fd5bf3',cloneArgs]);
     await onProgress('Deploying your smart account');
-    await gasCall(`${keyId}:account`,encodeFunctionData({abi:factoryAbi,functionName:'createAccount',args:[manifest.contracts.implementation.address as Hex,cloneArgs,salt]}),manifest.contracts.factory.address as Hex);
+    let deploymentTransactionHash:Hex|undefined;
+    await gasCall(`${keyId}:account`,encodeFunctionData({abi:factoryAbi,functionName:'createAccount',args:[manifest.contracts.implementation.address as Hex,cloneArgs,salt]}),manifest.contracts.factory.address as Hex,0n,hash=>{deploymentTransactionHash=hash;});
     if((await client.getCode({address}))?.toLowerCase()!==runtime.toLowerCase())throw Error('PQ account runtime/configuration mismatch.');
     await onProgress('Funding the devnet deposit balance');
     await gasCall(`${keyId}:test-principal`, '0x', address, 100000000000000n);
-    const result={publicKey,address,descriptor,descriptorRuntime,rows,cloneArgs,salt,runtime};await save(path,result);return result;
+    const result={publicKey,address,descriptor,descriptorRuntime,rows,cloneArgs,salt,runtime,deploymentTransactionHash};await save(path,result);return result;
   },()=>onProgress('Waiting for the local account deployment queue'));
 }
 

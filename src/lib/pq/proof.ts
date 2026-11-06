@@ -3,6 +3,7 @@ import { concatBytes } from '@noble/hashes/utils.js';
 import { hexToBytes, numberToBytes, bytesToHex, type Hex } from 'viem';
 import assetManifest from '../../../public/pq-v5/manifest.json';
 import defaultDeployment from '../../../public/pq-deployment.json';
+import type { WithdrawalPhase } from './progress';
 import { PQ_PROFILE, type PqDeployment, type PqNote, type PqNoteTree } from './note';
 
 export interface PublicWithdrawalStatement {
@@ -27,7 +28,8 @@ async function verifiedAssets(){
     const [js,wasm]=await Promise.all([fetchOne('qraft_hiding_wasm_feasibility.js'),fetchOne('qraft_hiding_wasm_feasibility_bg.wasm')]);return{moduleText:new TextDecoder().decode(js),wasm};
   })();assets.catch(()=>{assets=null;});}return assets;
 }
-export async function browserPqProof(note:PqNote,tree:PqNoteTree,index:number,recipient:Hex,deadline:bigint,onProgress:(label:string)=>void,signal:AbortSignal):Promise<{proof:Uint8Array;statement:PublicWithdrawalStatement}>{
+export async function browserPqProof(note:PqNote,tree:PqNoteTree,index:number,recipient:Hex,deadline:bigint,onProgress:(label:string)=>void,signal:AbortSignal,onPhase?:(phase:WithdrawalPhase)=>void):Promise<{proof:Uint8Array;statement:PublicWithdrawalStatement}>{
+  onPhase?.('proving');
   signal.throwIfAborted();onProgress('Loading the hash-pinned transparent prover');
   const {moduleText,wasm}=await verifiedAssets();signal.throwIfAborted();
   const context=withdrawalContext(recipient,deadline,note);
@@ -44,10 +46,10 @@ export async function browserPqProof(note:PqNote,tree:PqNoteTree,index:number,re
       signal.addEventListener('abort',cancel,{once:true});
       worker.onerror=()=>{cleanup();reject(Error('The browser could not run the PQ prover. Use a desktop Chromium browser with sufficient memory.'));};
       worker.onmessage=({data}:MessageEvent<{stage?:string;proof?:Uint8Array;error?:string}>)=>{
-        if(data.stage){onProgress(data.stage);return;}cleanup();if(data.error){reject(Error(data.error));return;}
+        if(data.stage){onPhase?.('checking-proof');onProgress(data.stage);return;}cleanup();if(data.error){reject(Error(data.error));return;}
         if(!(data.proof instanceof Uint8Array)||data.proof.length<72||data.proof.length>16*1024*1024){reject(Error('Invalid PQ proof envelope.'));return;}resolve(data.proof);
       };
-      onProgress('Generating the transparent withdrawal proof on this device');
+      onProgress('Generating zero-knowledge proof locally in your browser');
       worker.postMessage({wasm,statement:{root:statement.root,nullifier:statement.nullifier,context:statement.context},witness:tree.witness(note,index)});
       if(signal.aborted)cancel();
     });return{proof,statement};

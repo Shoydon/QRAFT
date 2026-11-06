@@ -47,7 +47,7 @@ export function Sheet({
         <button
           type="button"
           onClick={onClose}
-          className="-mr-1.5 rounded-pill p-1.5 text-ink-60 transition-colors hover:bg-sunk hover:text-ink"
+          className="sheet-close -mr-1.5 rounded-pill p-1.5 text-ink-60 transition-colors hover:bg-sunk hover:text-ink"
           aria-label="Close"
         >
           <CloseIcon width={18} height={18} />

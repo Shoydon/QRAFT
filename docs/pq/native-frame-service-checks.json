@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-11-06T12:49:57.675Z",
+  "chainId": 8141,
+  "scope": "Direct RPC devnet checks; not a fresh full V5 withdrawal run",
+  "wallet": {
+    "account": "0x6d3fe04EdE78386F95c762E877ee4682974DC557",
+    "deploymentTransactionHash": "0x43ff15f327ec9ed0ebeff276c7606847a3522506741856fb3cbf2d8c28c1bf54",
+    "operationTransactionHash": "0x3860456034c1a71609e419d46f72d7874bf38c6f2902a905465c9205abd61390",
+    "type": "0x6",
+    "payer": "0xeb3ee7b120452c83be9c5b3f30cf5937748a1191"
+  },
+  "publicProgram": [
+    {
+      "hash": "0x185a0291f925a8a2335dfdf478073f59a2f8d8f52049d36de216bc2d4d8c1efd",
+      "type": "0x6",
+      "frames": 2,
+      "payer": "0xca00dee69a9356071e5908116256241ad306bf4c"
+    },
+    {
+      "hash": "0x2f17c0069c19471970a24adb6eeb791daf2297cc2e2758fd305df689724ac90f",
+      "type": "0x6",
+      "frames": 2,
+      "payer": "0xca00dee69a9356071e5908116256241ad306bf4c"
+    }
+  ]
+}

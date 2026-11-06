@@ -42,6 +42,6 @@ The current workshop documents a faucet; the generated devnet guide still descri
 
 The active chain-8141 application has recorded a native 0.0001 ETH deposit, browser V5 proof, 663 public verifier calls, recovery after a browser restart, and exact native ETH withdrawal. See [recorded integration evidence](application-checks.json). That prior run is not a fresh sidecar test.
 
-The account currently pays its own gas. The local helper funds it and performs public computation using a disposable operator key. **An integrated paymaster and chain-1337 alternative mempool submission are not implemented.** No ERC-4337 paymaster or bundler endpoint is interchangeable with this EIP-8141 sidecar.
+The active chain-8141 pools have bounded paymasters for native deposit and withdrawal gas. The helper uses native operator frames for public setup and computation, including factory account creation and test principal funding. **Chain-1337 alternative mempool submission is not implemented.** No ERC-4337 paymaster or bundler endpoint is interchangeable with this EIP-8141 sidecar.
 
 ML-DSA authorization, SHA3-512 notes, and the transparent proof are the application security scope. The proof remains experimental. Ethereum/devnet consensus, Nym, TLS, operator gas keys, and availability have separate limits. See [security boundaries](application-security.md).
