@@ -5,6 +5,7 @@ import type { WithdrawalPhase } from "@/lib/pq/progress";
 import { Sheet } from "./Sheet";
 import { Button } from "./primitives";
 import { CheckIcon } from "./icons";
+import { TransactionRoute } from "./TransactionRoute";
 
 const steps: readonly [WithdrawalPhase, string][] = [
   ["checking-note", "Checking note"],
@@ -35,6 +36,7 @@ export function WithdrawalProgress({ open, phase, complete, progress, error, tra
         </li>;
       })}
     </ol>
+    {phase === "submitting" ? <div className="mt-4"><TransactionRoute /></div> : null}
     {transaction ? <div className="mt-4 text-xs">{transaction}</div> : null}
     {!complete && (error || !['checking-note', 'proving', 'checking-proof'].includes(phase)) ? <p role="status" aria-live="polite" className="mt-4 text-xs leading-relaxed text-ink-60">{error ?? progress}</p> : null}
     <Button className="mt-5 w-full" onClick={onClose}>{complete ? "Done" : error ? "Back to withdrawal" : "Continue in background"}</Button>

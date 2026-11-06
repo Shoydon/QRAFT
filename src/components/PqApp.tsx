@@ -40,6 +40,7 @@ import { WalletSetup, walletSetupStep, WALLET_SETUP_STEPS } from "./WalletSetup"
 import { DeploymentReceipt } from "./DeploymentReceipt";
 import { WalletPicker } from "./WalletPicker";
 import { WithdrawalProgress } from "./WithdrawalProgress";
+import { TransactionRoute } from "./TransactionRoute";
 import type { WithdrawalPhase } from "@/lib/pq/progress";
 import { WalletPasskeyController, type WalletConnection } from "./WalletPasskeyController";
 import {
@@ -106,8 +107,19 @@ function noteReference(note: PqNote) {
   return truncateMiddle(note.commitment, 10, 8);
 }
 
-function TransactionReference({ hash, copyLabel = "Copy hash" }: { hash: Hex; copyLabel?: string }) {
+function TransactionReference({ hash, copyLabel }: { hash: Hex; copyLabel?: string }) {
   const [copied, setCopied] = useState(false);
+  if (!copyLabel) return (
+    <a
+      href={`https://dora.privacy.ethrex.xyz/tx/${hash}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="View transaction on Ethrex explorer"
+      className="text-sm text-ink-60 underline underline-offset-4 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
+    >
+      dora.privacy.ethrex.xyz ↗
+    </a>
+  );
   return (
     <div className="flex items-center justify-end gap-2">
       <Mono>{truncateMiddle(hash, 10, 8)}</Mono>
@@ -126,16 +138,6 @@ function TransactionReference({ hash, copyLabel = "Copy hash" }: { hash: Hex; co
         {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
       </button>
     </div>
-  );
-}
-
-function InclusionNotice() {
-  return (
-    <Notice tone="neutral" title="Keep your note securely">
-      This receipt confirms inclusion, not finality. Keep the file through final
-      settlement. A reorg can restore an unspent note; a leaked note can link a
-      withdrawal to its deposit.
-    </Notice>
   );
 }
 
@@ -674,6 +676,15 @@ export function PqApp() {
   const recipientCheck = checkRecipient(recipient);
 
   function renderProgress() {
+    const detail = progress === "Authorizing your transaction…"
+      ? "The helper is preparing onchain verification of your ML-DSA-44 signature. Its operator pays for this preparation."
+      : progress === "Checking your transaction…"
+        ? "Simulating all three frames and checking that the paymaster covers gas."
+        : progress === "Submitting your transaction…"
+          ? "Broadcasting your saved frame transaction through anonymous RPC."
+          : progress === "Waiting for confirmation…"
+            ? "Waiting for an onchain receipt and checking every frame’s result."
+            : "Checking your smart account, paymaster funding and keyed nonce before signing locally.";
     return (
       <div className="space-y-4">
         <div role="status" aria-live="polite">
@@ -685,6 +696,21 @@ export function PqApp() {
         />
         </div>
         <Rail fraction={null} label="Transaction progress" />
+        <p className="text-xs leading-relaxed text-ink-60">{detail}</p>
+        <TransactionRoute />
+        <div className="border-t border-rule pt-4">
+          <p className="mb-2 text-xs text-ink-60">EIP-8141 · 3 frames in one transaction</p>
+          <ol className="divide-y divide-rule text-sm">
+            <li className="flex justify-between gap-4 py-2"><span>1 · VERIFY · Your smart account</span><span className="text-right text-xs text-ink-60">Check cached PQ authorization</span></li>
+            <li className="flex justify-between gap-4 py-2"><span>2 · VERIFY · QRAFT paymaster</span><span className="text-right text-xs text-ink-60">Approve gas payment</span></li>
+            <li className="flex justify-between gap-4 py-2"><span>3 · SENDER · Pool deposit</span><span className="text-right text-xs text-ink-60">Transfer {AMOUNT} ETH into the pool</span></li>
+          </ol>
+          <RowGroup>
+            <Row label="Gas paid by"><span>QRAFT paymaster</span></Row>
+            <Row label="Paymaster address"><TransactionReference hash={selectedPool.paymaster} copyLabel="Copy paymaster address" /></Row>
+            <Row label="Deposit paid by"><span>Your smart account</span></Row>
+          </RowGroup>
+        </div>
       </div>
     );
   }
@@ -711,11 +737,26 @@ export function PqApp() {
             <TransactionReference hash={result.hash} />
           </Row>
           <Row label="Authorization">ML-DSA-44 · native frames</Row>
+          {result.receipt.payer ? <Row label="Gas paid by · QRAFT paymaster">
+            <TransactionReference hash={result.receipt.payer} copyLabel="Copy gas payer address" />
+          </Row> : null}
           <Row label={withdrawal ? "Recipient receives" : "Asset"}>
             Native ETH
           </Row>
         </RowGroup>
-        <InclusionNotice />
+        <div>
+          <p className="mb-2 text-xs text-ink-60">EIP-8141 · Confirmed frames</p>
+          <ol className="divide-y divide-rule">
+            {result.receipt.frameReceipts?.map((frame, index) => (
+              <li key={index} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <span>{index + 1} · {index === 0 ? "VERIFY · PQ authorization" : index === 1 ? "VERIFY · Gas sponsorship" : withdrawal ? "SENDER · Pool withdrawal" : "SENDER · Pool deposit"}</span>
+                <span className="inline-flex shrink-0 items-center gap-2 text-xs text-[var(--state-good)]">
+                  {BigInt(frame.status) === 1n ? <><CheckIcon width={16} height={16} aria-hidden="true" /> Confirmed</> : "Not completed"}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
         <Button
           className="w-full"
           onClick={() => {
