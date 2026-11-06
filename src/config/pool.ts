@@ -97,7 +97,7 @@ export const ANON_WORKERS = {
      * Requests travel as Sphinx packets through the Nym mixnet and leave at a
      * Nym IP Packet Router, so the RPC endpoint sees the router rather than
      * the browser. Needs no relay of our own, which is why it is the default:
-     * a gateway we do not run is a dependency that can be down on demo day.
+     * a gateway we do not run is a dependency that can be down when it matters.
      */
     needsGateways: false,
   },

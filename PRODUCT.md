@@ -22,9 +22,9 @@ arrive.
 
 Two audiences, in this order:
 
-1. **ETHGlobal judges on demo day.** They need to see the whole journey work
-   end to end in three minutes, understand the privacy claim precisely, and
-   see where the real integration boundary sits.
+1. **Someone evaluating it cold.** They need to follow the whole journey end
+   to end in a few minutes, understand the privacy claim precisely, and see
+   where the real integration boundary sits.
 2. **A person moving ETH who does not want their withdrawal address linked to
    their deposit address.** Technically literate, not a cryptographer.
 

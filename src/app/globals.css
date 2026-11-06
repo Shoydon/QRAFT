@@ -163,6 +163,29 @@
   animation: rail-travel 2.1s linear infinite;
 }
 
+/* Vertical spectrum, for the connector running down a stepper. */
+@utility spectral-bar-y {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-spectral-1) 0%,
+    var(--color-spectral-2) 20%,
+    var(--color-spectral-3) 40%,
+    var(--color-spectral-4) 60%,
+    var(--color-spectral-5) 80%,
+    var(--color-spectral-6) 100%
+  );
+}
+
+/* The connector travelling down to the next step. */
+@utility fill-column {
+  transform-origin: top;
+  animation: fill-column var(--fill-duration, 700ms) linear both;
+}
+
+@utility ring-fill {
+  animation: fill-ring var(--fill-duration, 2600ms) linear both;
+}
+
 @utility line-draw {
   stroke-dasharray: 1;
   /* `both` holds the hidden start state through the delay, so a staggered
@@ -253,6 +276,25 @@
 /* A lit line draws along its own direction, so each side can follow the money:
    deposits run toward the pool, withdrawals away from it. */
 @keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The active step's marker ring closing, as its timer runs. */
+@keyframes fill-column {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes fill-ring {
   from {
     stroke-dashoffset: 1;
   }

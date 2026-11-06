@@ -269,5 +269,4 @@ and self-hostable rather than on content addressing.
 records product truth and the assumptions made where a human answer was not
 available.
 
-Unaudited software, built for a hackathon demo. Do not put money you care
-about through it.
+Unaudited software. Do not put money you care about through it.
