@@ -5,7 +5,7 @@ import { TRANSPORT } from "@/config/transport";
 import { formatEth } from "@/lib/format";
 import deployment from "../../public/pq-deployment.json";
 import { HowItWorks } from "@/components/landing/HowItWorks";
-import { ExternalIcon } from "@/components/icons";
+import { GitHubIcon } from "@/components/icons";
 
 const REPO = "https://github.com/Shoydon/QRAFT";
 const AMOUNT = formatEth(BigInt(deployment.denominationWei));
@@ -34,10 +34,10 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="px-5 pt-6 sm:px-8 sm:pt-8">
+      <header className="px-6 pt-8 sm:px-10 sm:pt-10 lg:px-16 lg:pt-12">
         <nav
           aria-label="Main navigation"
-          className="flex justify-between items-center"
+          className="mx-auto flex w-full max-w-[80rem] items-center justify-between"
         >
           <Link
             href="/"
@@ -54,10 +54,10 @@ export default function LandingPage() {
             href={REPO}
             target="_blank"
             rel="noreferrer noopener"
-            className="flex items-center  gap-1 justify-self-end rounded-pill px-3 py-2 text-sm text-ink-60 transition-colors hover:bg-sunk hover:text-ink"
+            aria-label="QRAFT on GitHub"
+            className="inline-flex size-11 items-center justify-center rounded-pill text-ink-60 transition-colors hover:bg-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
           >
-            Source
-            <ExternalIcon width={14} height={14} />
+            <GitHubIcon width={22} height={22} />
           </a>
         </nav>
 
