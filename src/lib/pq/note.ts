@@ -3,7 +3,7 @@ import { blake2b } from '@noble/hashes/blake2.js';
 import { concatBytes } from '@noble/hashes/utils.js';
 import { bytesToHex, hexToBytes, type Hex } from 'viem';
 
-export const PQ_PROFILE = 'himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16' as const;
+export const PQ_PROFILE = 'qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16' as const;
 const PREFIX = 'qraft-pq-note-v1:';
 export interface PqDeployment {
   readonly chainId: number;

@@ -75,7 +75,7 @@ def evaluate(program,f,acc=ZERO):
 
 def compile_program(ast):
     assert (ast['width'],ast['publicFields'],ast['prepWidth'],ast['rows'],ast['degree'],ast['constraintCount'])==(WIDTH,PUBLIC,PREP,ROWS,DEGREE,COUNT)
-    assert ast['format']=='HIMITSU-WITHDRAWAL-AIR-DAG-v1'
+    assert ast['format']=='QRAFT-WITHDRAWAL-AIR-DAG-v1'
     assert ast['upstream']=='0d803737b681774186cd283b1fd2d8e493655c82'
     assert ast['fieldModulus']==str(P) and ast['extension']=='X^5-3'
     nodes=ast['nodes'];roots=ast['constraints'];assert len(roots)==COUNT
@@ -104,7 +104,7 @@ def main():
     parser.add_argument('--output-dir',default='packages/pq-hiding-stark/contracts/testdata/air-program')
     args=parser.parse_args();src=Path(args.input_dir);out=Path(args.output_dir);out.mkdir(parents=True,exist_ok=True)
     ast=json.loads((src/'withdrawal-air.json').read_text());compiled=compile_program(ast);programs=[p for p,n,s,c in compiled];max_registers=max(n for p,n,s,c in compiled)
-    header=b'HIMITSU-WITHDRAWAL-AIR-RPN-v1\0'+struct.pack('>IHHHBIII',WIDTH,PUBLIC,PREP,ROWS,DEGREE,COUNT,BATCH,len(programs))
+    header=b'QRAFT-WITHDRAWAL-AIR-RPN-v1\0'+struct.pack('>IHHHBIII',WIDTH,PUBLIC,PREP,ROWS,DEGREE,COUNT,BATCH,len(programs))
     commitment=hashlib.blake2b(header+b''.join(struct.pack('>I',len(p))+p for p in programs),digest_size=64).hexdigest()
     peak=0;fixtures=[]
     for i in range(3):
@@ -124,7 +124,7 @@ def main():
     for i,p in enumerate(programs):
         (out/f'batch-{i:03}.hex').write_text('0x'+p.hex())
         batches.append({'index':i,'firstConstraint':compiled[i][2],'constraintCount':compiled[i][3],'bytes':len(p),'blake2b512':hashlib.blake2b(p,digest_size=64).hexdigest()})
-    manifest={'format':'HIMITSU-WITHDRAWAL-AIR-RPN-v1','fieldModulus':str(P),'extension':'X^5-3','packedInputBytes':219768,'packedInputOrder':'local,next,prepLocal,prepNext,public,selectors; canonicalLE-u64; extensionlimbsascending','upstream':ast['upstream'],'astSha256':hashlib.sha256((src/'withdrawal-air.json').read_bytes()).hexdigest(),'programBlake2b512':commitment,'width':WIDTH,'publicFields':PUBLIC,'prepWidth':PREP,'rows':ROWS,'degree':DEGREE,'constraintCount':COUNT,'maxBatchConstraints':BATCH,'batchCount':len(programs),'maxStack':peak,'maxRegisters':max_registers,'maxProgramBytes':max(map(len,programs)),'programBytes':sum(map(len,programs)),'foldRule':ast['fold'],'batches':batches,'nativeFixtures':fixtures,'scope':'AIR evaluation primitive only; not a proof verifier, transcript or pool authorization'}
+    manifest={'format':'QRAFT-WITHDRAWAL-AIR-RPN-v1','fieldModulus':str(P),'extension':'X^5-3','packedInputBytes':219768,'packedInputOrder':'local,next,prepLocal,prepNext,public,selectors; canonicalLE-u64; extensionlimbsascending','upstream':ast['upstream'],'astSha256':hashlib.sha256((src/'withdrawal-air.json').read_bytes()).hexdigest(),'programBlake2b512':commitment,'width':WIDTH,'publicFields':PUBLIC,'prepWidth':PREP,'rows':ROWS,'degree':DEGREE,'constraintCount':COUNT,'maxBatchConstraints':BATCH,'batchCount':len(programs),'maxStack':peak,'maxRegisters':max_registers,'maxProgramBytes':max(map(len,programs)),'programBytes':sum(map(len,programs)),'foldRule':ast['fold'],'batches':batches,'nativeFixtures':fixtures,'scope':'AIR evaluation primitive only; not a proof verifier, transcript or pool authorization'}
     (out/'withdrawal-air.json').write_bytes((src/'withdrawal-air.json').read_bytes())
     (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     # Tiny source fragment consumed by AirProgram.sol generation; public relation pins only.

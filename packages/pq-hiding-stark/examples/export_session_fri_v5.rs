@@ -1,5 +1,5 @@
 //! Portable public-only v5 native FRI subset exporter. Never reads or emits a private witness.
-use himitsu_direct_hiding_research::strong_config::{
+use qraft_direct_hiding_research::strong_config::{
     Challenge, Compress, FieldHash, LeafHash, NodeHash, Val, ValMmcs,
 };
 use p3_commit::Mmcs;
@@ -62,7 +62,7 @@ fn verify_source(
     fixture: &Value,
     challenges: &Value,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    use himitsu_direct_hiding_research::strong_transcript as fp;
+    use qraft_direct_hiding_research::strong_transcript as fp;
     let proof_bytes = std::fs::read(directory.join("proof.postcard"))?;
     let envelope = fp::Envelope::from_bytes(&std::fs::read(directory.join("envelope.postcard"))?)?;
     assert_eq!(

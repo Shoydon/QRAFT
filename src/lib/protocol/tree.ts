@@ -1,8 +1,8 @@
-// Poseidon tree ported from Himitsu packages/client/src/notes.ts.
+// Poseidon tree ported from the upstream client notes implementation.
 import { poseidon2 } from 'poseidon-lite';
 import { keccak256, stringToHex } from 'viem';
 const FIELD = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-const ZERO = BigInt(keccak256(stringToHex('himitsu.empty.leaf'))) % FIELD;
+const ZERO = BigInt(keccak256(stringToHex('qraft.empty.leaf'))) % FIELD;
 export class NoteTree {
   readonly zeros: bigint[] = [];
   readonly leaves: bigint[] = [];

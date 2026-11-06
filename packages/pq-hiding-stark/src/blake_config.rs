@@ -71,12 +71,12 @@ fn tagged_words<I: IntoIterator<Item = u64>>(tag: &[u8], input: I) -> [u64; 8] {
 }
 impl CryptographicHasher<u64, [u64; 8]> for LeafHash {
     fn hash_iter<I: IntoIterator<Item = u64>>(&self, input: I) -> [u64; 8] {
-        tagged_words(b"HIMITSU-P3-BLAKE2B-LEAF-v1\0", input)
+        tagged_words(b"QRAFT-P3-BLAKE2B-LEAF-v1\0", input)
     }
 }
 impl CryptographicHasher<u64, [u64; 8]> for NodeHash {
     fn hash_iter<I: IntoIterator<Item = u64>>(&self, input: I) -> [u64; 8] {
-        tagged_words(b"HIMITSU-P3-BLAKE2B-NODE-v1\0", input)
+        tagged_words(b"QRAFT-P3-BLAKE2B-NODE-v1\0", input)
     }
 }
 pub type FieldHash = SerializingHasher<LeafHash>;
@@ -103,15 +103,15 @@ pub fn fri_parameters<M>(mmcs: M) -> FriParameters<M> {
 /// Conservative feasibility schedule. No end-to-end quantum-security claim:
 /// the exact AIR event/knowledge/ZK/QROM ledger remains required.
 pub fn config() -> Config {
-    make_config(b"HIMITSU-BLAKE2B-PREIMAGE-RESEARCH-v1/q320-b16-e5\0")
+    make_config(b"QRAFT-BLAKE2B-PREIMAGE-RESEARCH-v1/q320-b16-e5\0")
 }
 
 pub fn membership_config() -> Config {
-    make_config(b"HIMITSU-BLAKE2B-MEMBERSHIP-NULLIFIER-RESEARCH-v1/q320-b16-e5\0")
+    make_config(b"QRAFT-BLAKE2B-MEMBERSHIP-NULLIFIER-RESEARCH-v1/q320-b16-e5\0")
 }
 
 pub fn withdrawal_config() -> Config {
-    make_config(b"HIMITSU-BLAKE2B-WITHDRAWAL-RESEARCH-v2/q320-b16-e5\0")
+    make_config(b"QRAFT-BLAKE2B-WITHDRAWAL-RESEARCH-v2/q320-b16-e5\0")
 }
 
 /// Reproducible commitment to the fixed, PUBLIC preprocessing table only.
@@ -140,7 +140,7 @@ pub fn canonical_membership_preprocessing() -> Result<
     let public_config = Config::new(
         pcs,
         Challenger::new(HashChallenger::new(
-            b"HIMITSU-BLAKE2B-MEMBERSHIP-NULLIFIER-RESEARCH-v1/q320-b16-e5\0".to_vec(),
+            b"QRAFT-BLAKE2B-MEMBERSHIP-NULLIFIER-RESEARCH-v1/q320-b16-e5\0".to_vec(),
             Blake2b512Hash,
         )),
     );
@@ -187,7 +187,7 @@ mod tests {
         let actual = bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
         assert_eq!(
             actual,
-            "060c01edc1a391c699aaae28d0e5aa9680edbdfc7d92e3bcd9e7c7e886a301adc9a5dd89c0aca6b80188f8c1f5c6ccc69d0aa48f84b0aad3f8c31d9f9de3fff8a1809345dffcc883abaecfc33b"
+            "060c01e2afedc2e3dca1b939eacbc6f5968aa180b001b68ba1c097a8d88e0285ab81e69ef9e9fac101f0e2a88da2fbe08ca401d1dfa3c4d9e6e4cd8d01fb99c9e7c0f686a9f501b09cdae799fdeaae73"
         );
     }
 
@@ -241,8 +241,8 @@ mod tests {
         let node = NodeHash.hash_slice(&words);
         assert_ne!(leaf, node);
         for (tag, actual) in [
-            (b"HIMITSU-P3-BLAKE2B-LEAF-v1\0".as_slice(), leaf),
-            (b"HIMITSU-P3-BLAKE2B-NODE-v1\0".as_slice(), node),
+            (b"QRAFT-P3-BLAKE2B-LEAF-v1\0".as_slice(), leaf),
+            (b"QRAFT-P3-BLAKE2B-NODE-v1\0".as_slice(), node),
         ] {
             let mut bytes = tag.to_vec();
             bytes.extend(words.iter().flat_map(|w| w.to_le_bytes()));

@@ -25,12 +25,12 @@ const target = process.env.CARGO_TARGET_DIR
 const output = join(wasm, 'pkg');
 mkdirSync(output, { recursive: true });
 run(bindgen, [
-  join(target, 'wasm32-unknown-unknown/release/himitsu_hiding_wasm_feasibility.wasm'),
+  join(target, 'wasm32-unknown-unknown/release/qraft_hiding_wasm_feasibility.wasm'),
   '--target', 'web', '--out-dir', output,
 ]);
 for (const name of ['worker.js', 'worker-v3.js', 'worker-v5.js']) copyFileSync(join(wasm, 'src', name), join(output, name));
 const files = [
-  'himitsu_hiding_wasm_feasibility.js', 'himitsu_hiding_wasm_feasibility_bg.wasm', 'worker.js', 'worker-v3.js', 'worker-v5.js',
+  'qraft_hiding_wasm_feasibility.js', 'qraft_hiding_wasm_feasibility_bg.wasm', 'worker.js', 'worker-v3.js', 'worker-v5.js',
 ];
 writeFileSync(join(output, 'manifest.json'), JSON.stringify({
   experimental: true,

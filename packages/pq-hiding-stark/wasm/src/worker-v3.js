@@ -1,4 +1,4 @@
-import init, * as binding from './himitsu_hiding_wasm_feasibility.js';
+import init, * as binding from './qraft_hiding_wasm_feasibility.js';
 self.onmessage=async({data})=>{
  try {
   const exports=await init();const start=performance.now();let result;

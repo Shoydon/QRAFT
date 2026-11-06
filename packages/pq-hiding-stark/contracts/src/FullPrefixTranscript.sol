@@ -12,8 +12,8 @@ library FullPrefixTranscript {
     uint256 internal constant MOVES=16;
     uint256 internal constant BLOCKS_PER_MOVE=64;
     uint256 internal constant MAX_HISTORY=1<<20;
-    bytes internal constant DOMAIN="HIMITSU-FS-FULL-PREFIX-v3\x00";
-    bytes internal constant PROFILE="HIMITSU-WITHDRAWAL-V3/q320-b16-e5\x00";
+    bytes internal constant DOMAIN="QRAFT-FS-FULL-PREFIX-v3\x00";
+    bytes internal constant PROFILE="QRAFT-WITHDRAWAL-V3/q320-b16-e5\x00";
     struct State {
         bytes[16] records;
         M.Digest[16] salts;

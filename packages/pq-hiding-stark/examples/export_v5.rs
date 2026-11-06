@@ -1,5 +1,5 @@
 //! Public-only genuine v5 two-layer-stream/write-back experiment. No witness serialized.
-use himitsu_direct_hiding_research::{
+use qraft_direct_hiding_research::{
     authorization::{self, WithdrawalAir, WithdrawalContext},
     membership, strong_config as bc, strong_transcript as fp,
 };
@@ -112,7 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert!(fp::verify_envelope(&changed, &public).is_err());
     let encoded_proof = postcard::to_allocvec(&envelope.proof)?;
     std::fs::write(out.join("proof.postcard"), &encoded_proof)?;
-    let mut fixture = json!({"profile":"himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16","proofSaltHex":hex(&envelope.salt),"expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":envelope.proof,"privateWitnessExported":false});
+    let mut fixture = json!({"profile":"qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16","proofSaltHex":hex(&envelope.salt),"expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":envelope.proof,"privateWitnessExported":false});
     stringify_numbers(&mut fixture);
     std::fs::write(out.join("fixture.json"), serde_json::to_vec(&fixture)?)?;
     let calls:Vec<_>=verifier.calls.iter().map(|c|json!({"round":c.round,"inputHex":hex(&c.input),"keyHex":hex(&c.key),"streamInputHex":hex(&[c.key.as_slice(),envelope.salt.as_slice()].concat()),"streamHex":hex(&c.stream),"writebackHex":hex(&c.writeback),"consumedBytes":c.consumed})).collect();

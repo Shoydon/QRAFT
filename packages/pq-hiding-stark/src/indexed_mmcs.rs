@@ -41,12 +41,12 @@ fn tagged(tag: &[u8], index: u32, input: impl IntoIterator<Item = u64>) -> [u64;
 }
 impl CryptographicHasher<u64, [u64; 8]> for IndexedLeafHash {
     fn hash_iter<I: IntoIterator<Item = u64>>(&self, input: I) -> [u64; 8] {
-        tagged(b"HIMITSU-P3-BLAKE2B-LEAF-v4\0", self.0, input)
+        tagged(b"QRAFT-P3-BLAKE2B-LEAF-v4\0", self.0, input)
     }
 }
 impl CryptographicHasher<u64, [u64; 8]> for IndexedNodeHash {
     fn hash_iter<I: IntoIterator<Item = u64>>(&self, input: I) -> [u64; 8] {
-        tagged(b"HIMITSU-P3-BLAKE2B-NODE-v4\0", self.0, input)
+        tagged(b"QRAFT-P3-BLAKE2B-NODE-v4\0", self.0, input)
     }
 }
 pub type FieldHash = SerializingHasher<IndexedLeafHash>;

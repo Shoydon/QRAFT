@@ -5,7 +5,7 @@ import {IFrameValidator} from "../vendor/erc8286/interfaces/IFrameValidator.sol"
 import {LibERC8286} from "../vendor/erc8286/lib/LibERC8286.sol";
 import {LibCloneConfig} from "../vendor/erc8286/lib/LibCloneConfig.sol";
 
-interface IHimitsuMldsaVerifier {
+interface IQraftMldsaVerifier {
     function verify(address descriptor, bytes calldata message, bytes calldata signature) external view returns (bool);
 }
 
@@ -15,7 +15,7 @@ interface IHimitsuMldsaVerifier {
 /// commits the chain, sender, nonce, every frame and fee. No caller-supplied hash authorizes
 /// validation: validateFrame reads the executing transaction's actual sig_hash.
 /// The underlying research verifier and prepared-key tooling are not independently audited.
-contract HimitsuMldsaValidator is IFrameValidator {
+contract QraftMldsaValidator is IFrameValidator {
     struct Layout {
         address descriptor;
         bytes32 descriptorHash;
@@ -23,17 +23,17 @@ contract HimitsuMldsaValidator is IFrameValidator {
         mapping(address => mapping(bytes32 => mapping(bytes32 => bool))) authorized;
     }
 
-    // ERC-7201 namespace: himitsu.erc8286.mldsa44.validator.v1 (derived below).
-    bytes32 private constant SLOT = bytes32(uint256(keccak256(abi.encode(uint256(keccak256("himitsu.erc8286.mldsa44.validator.v1")) - 1))) & ~uint256(0xff));
+    // ERC-7201 namespace: qraft.erc8286.mldsa44.validator.v1 (derived below).
+    bytes32 private constant SLOT = bytes32(uint256(keccak256(abi.encode(uint256(keccak256("qraft.erc8286.mldsa44.validator.v1")) - 1))) & ~uint256(0xff));
     address private immutable SELF = address(this);
-    IHimitsuMldsaVerifier public immutable VERIFIER;
+    IQraftMldsaVerifier public immutable VERIFIER;
     bytes32 public immutable VERIFIER_CODE_HASH;
     error InvalidKey();
     error InvalidSignature();
     error VerifierChanged();
     event FrameAuthorizationCached(bytes32 indexed sigHash, address indexed descriptor);
 
-    constructor(IHimitsuMldsaVerifier verifier) {
+    constructor(IQraftMldsaVerifier verifier) {
         if (address(verifier).code.length == 0) revert InvalidKey();
         VERIFIER = verifier;
         VERIFIER_CODE_HASH = address(verifier).codehash;

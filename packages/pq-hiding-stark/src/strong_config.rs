@@ -15,8 +15,8 @@ use rand::{
 pub struct LeafHash;
 #[derive(Clone, Copy, Debug)]
 pub struct NodeHash;
-pub const LEAF_DOMAIN: &[u8] = b"HIMITSU-P3-BLAKE2B-LEAF-v5\0";
-pub const NODE_DOMAIN: &[u8] = b"HIMITSU-P3-BLAKE2B-NODE-v5\0";
+pub const LEAF_DOMAIN: &[u8] = b"QRAFT-P3-BLAKE2B-LEAF-v5\0";
+pub const NODE_DOMAIN: &[u8] = b"QRAFT-P3-BLAKE2B-NODE-v5\0";
 fn tagged<I: IntoIterator<Item = u64>>(tag: &[u8], words: I) -> [u64; 8] {
     let mut h = Blake2b512::new();
     h.update(tag);

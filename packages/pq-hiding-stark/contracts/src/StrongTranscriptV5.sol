@@ -11,8 +11,8 @@ library StrongTranscriptV5 {
  uint256 internal constant MOVES=16;
  uint256 internal constant STREAM_BYTES=2560;
  uint256 internal constant MAX_HISTORY=1<<20;
- bytes internal constant DOMAIN="HIMITSU-SPBCS-CH-V5\x00";
- bytes internal constant PROFILE="HIMITSU-WITHDRAWAL-V5/q320-b16-e5\x00";
+ bytes internal constant DOMAIN="QRAFT-SPBCS-CH-V5\x00";
+ bytes internal constant PROFILE="QRAFT-WITHDRAWAL-V5/q320-b16-e5\x00";
  struct State{
   bytes[16] records;M.Digest[16] writebacks;M.Digest proofSalt;bytes statement;
   uint256 moves;uint256 nextBlock;uint256 remaining;uint256 accepted;uint256 historyBytes;

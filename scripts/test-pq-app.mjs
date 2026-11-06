@@ -5,6 +5,7 @@ import {chromium}from'@playwright/test';
 import{createPublicClient,http}from'viem';import{generatePrivateKey,privateKeyToAccount}from'viem/accounts';
 const url=new URL(process.env.QRAFT_BROWSER_URL??'http://127.0.0.1:3006').origin;
 const manifest=JSON.parse(await readFile('public/pq-deployment.json'));
+if(!manifest.applicationEnabled)throw Error('Deploy the QRAFT protocol and update its verified deployment manifest before running the live lifecycle test.');
 const rpc=createPublicClient({cacheTime:0,transport:http(manifest.rpcUrl,{timeout:60000,retryCount:0})});
 const browser=await chromium.launch({headless:true});await mkdir('.local',{recursive:true});
 const stamp=Date.now();const restore=process.env.QRAFT_TEST_WALLET;const walletPath=restore??`.local/pq-app-wallet-${stamp}.json`;const notePath=process.env.QRAFT_TEST_NOTE??`.local/pq-app-note-${stamp}.txt`;if(restore&&!process.env.QRAFT_TEST_NOTE)throw Error('Restoring the test requires both saved backups.');

@@ -29,7 +29,7 @@ contract PqNativePool {
     mapping(bytes32=>mapping(bytes32=>bool)) private commitments;
     mapping(bytes32=>mapping(bytes32=>bool)) private spent;
     uint256 private entered = 1;
-    bytes private constant CONTEXT_DOMAIN = "HIMITSU-WITHDRAW-CONTEXT-v2\x00";
+    bytes private constant CONTEXT_DOMAIN = "QRAFT-WITHDRAW-CONTEXT-v2\x00";
 
     error InvalidDenomination();
     error InvalidVerifier();

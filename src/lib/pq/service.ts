@@ -25,7 +25,7 @@ export interface PublicPqAccount {
   publicKey:Hex;address:Hex;descriptor:Hex;descriptorRuntime:Hex;rows:{address:Hex;runtime:Hex}[];
   cloneArgs:Hex;salt:Hex;runtime:Hex;
 }
-export function serviceEnabled():boolean{return process.env.QRAFT_LOCAL_PQ_SERVICE==='1';}
+export function serviceEnabled():boolean{return manifest.applicationEnabled && process.env.QRAFT_LOCAL_PQ_SERVICE==='1';}
 async function save(path:string,value:unknown){
   const file=await open(path+'.tmp','w',0o600);
   try{await file.writeFile(JSON.stringify(value));await file.sync();}finally{await file.close();}

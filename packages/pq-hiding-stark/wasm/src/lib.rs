@@ -1,4 +1,4 @@
-use himitsu_direct_hiding_research::{
+use qraft_direct_hiding_research::{
     blake_config::{self as bc, Config, Val},
     membership::{self, MembershipAir},
 };
@@ -133,13 +133,13 @@ fn withdrawal_statement(s: &str) -> Result<(Vec<Val>, [u8; 64]), JsValue> {
     let n: [u8; 64] = s.nullifier.try_into().map_err(|_| err())?;
     let c: [u8; 64] = s.context.try_into().map_err(|_| err())?;
     Ok((
-        himitsu_direct_hiding_research::authorization::public_values::<Val>(r, n, c),
+        qraft_direct_hiding_research::authorization::public_values::<Val>(r, n, c),
         c,
     ))
 }
 #[wasm_bindgen]
 pub fn prove_withdrawal(expected: &str, private: &str) -> Result<Vec<u8>, JsValue> {
-    use himitsu_direct_hiding_research::{authorization as a, full_prefix as fp};
+    use qraft_direct_hiding_research::{authorization as a, full_prefix as fp};
     let (public, context) = withdrawal_statement(expected)?;
     let (secret, siblings, directions) = witness(private)?;
     let root = membership::root_and_nodes(secret, &siblings, &directions).0;
@@ -163,7 +163,7 @@ pub fn prove_withdrawal(expected: &str, private: &str) -> Result<Vec<u8>, JsValu
 }
 #[wasm_bindgen]
 pub fn verify_withdrawal(expected: &str, bytes: &[u8]) -> Result<bool, JsValue> {
-    use himitsu_direct_hiding_research::full_prefix as fp;
+    use qraft_direct_hiding_research::full_prefix as fp;
     let (public, _) = withdrawal_statement(expected)?;
     let envelope = fp::Envelope::from_bytes(bytes).map_err(|_| err())?;
     Ok(fp::verify_envelope(&envelope, &public).is_ok())
@@ -181,7 +181,7 @@ pub fn diagnostic_withdrawal() -> Result<String, JsValue> {
 
 #[wasm_bindgen]
 pub fn prove_withdrawal_v5(expected: &str, private: &str) -> Result<Vec<u8>, JsValue> {
-    use himitsu_direct_hiding_research::{
+    use qraft_direct_hiding_research::{
         authorization as a, strong_config as sc, strong_transcript as fp,
     };
     let (public, context) = withdrawal_statement(expected)?;
@@ -207,14 +207,14 @@ pub fn prove_withdrawal_v5(expected: &str, private: &str) -> Result<Vec<u8>, JsV
 }
 #[wasm_bindgen]
 pub fn verify_withdrawal_v5(expected: &str, bytes: &[u8]) -> Result<bool, JsValue> {
-    use himitsu_direct_hiding_research::strong_transcript as fp;
+    use qraft_direct_hiding_research::strong_transcript as fp;
     let (public, _) = withdrawal_statement(expected)?;
     let envelope = fp::Envelope::from_bytes(bytes).map_err(|_| err())?;
     Ok(fp::verify_envelope(&envelope, &public).is_ok())
 }
 #[wasm_bindgen]
 pub fn public_vk_v5_hex() -> Result<String, JsValue> {
-    let (_, vk) = himitsu_direct_hiding_research::strong_config::canonical_preprocessing()
+    let (_, vk) = qraft_direct_hiding_research::strong_config::canonical_preprocessing()
         .map_err(|_| err())?;
     let bytes = postcard::to_allocvec(&(vk.width as u64, vk.degree_bits as u64, &vk.commitment))
         .map_err(|_| err())?;

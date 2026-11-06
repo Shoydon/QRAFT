@@ -3,10 +3,10 @@ pragma solidity ^0.8.27;
 
 import {ERC8286FrameAccount} from "../vendor/erc8286/ERC8286FrameAccount.sol";
 import {LibERC8286} from "../vendor/erc8286/lib/LibERC8286.sol";
-import {HimitsuMldsaValidator} from "./HimitsuMldsaValidator.sol";
+import {QraftMldsaValidator} from "./QraftMldsaValidator.sol";
 
 /// @notice Reference ERC-8286 account plus a fixed ML-DSA cache-computation entry point.
-contract HimitsuFrameAccount is ERC8286FrameAccount {
+contract QraftFrameAccount is ERC8286FrameAccount {
     address public immutable MLDSA_VALIDATOR;
     bytes32 public immutable MLDSA_VALIDATOR_CODE_HASH;
     error ValidatorUnavailable();
@@ -33,7 +33,7 @@ contract HimitsuFrameAccount is ERC8286FrameAccount {
         address validator = MLDSA_VALIDATOR;
         if (!isValidatorInstalled(validator) || validator.codehash != MLDSA_VALIDATOR_CODE_HASH) revert ValidatorUnavailable();
         (bool ok, bytes memory result) = validator.delegatecall(
-            abi.encodeCall(HimitsuMldsaValidator.cacheFrameAuthorization, (sigHash, signature))
+            abi.encodeCall(QraftMldsaValidator.cacheFrameAuthorization, (sigHash, signature))
         );
         if (!ok) assembly ("memory-safe") { revert(add(result, 32), mload(result)) }
     }

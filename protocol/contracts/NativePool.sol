@@ -9,7 +9,7 @@ interface ISpendVerifier {
         uint256[2] calldata c, uint256[5] calldata signals) external view returns (bool);
 }
 
-/// Native ETH adaptation of Himitsu's depth-10 Poseidon private-note pool.
+/// Native ETH adaptation of the imported depth-10 Poseidon private-note pool.
 /// No token, allowance, operator, upgrade key, or administrative withdrawal.
 contract NativePool {
     uint256 public constant LEVELS = 10;
@@ -37,7 +37,7 @@ contract NativePool {
     constructor(address h, address v, uint256 amount) {
         require(h.code.length != 0 && v.code.length != 0 && amount != 0, "Invalid configuration");
         hasher = IHasher(h); verifier = ISpendVerifier(v); denomination = amount;
-        bytes32 zero = bytes32(uint256(keccak256("himitsu.empty.leaf")) % FIELD);
+        bytes32 zero = bytes32(uint256(keccak256("qraft.empty.leaf")) % FIELD);
         for (uint256 i; i < LEVELS; ++i) {
             zeros[i] = zero; filled[i] = zero; zero = hasher.poseidon([zero, zero]);
         }

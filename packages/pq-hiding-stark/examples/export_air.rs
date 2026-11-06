@@ -1,6 +1,6 @@
 //! Export the fixed WithdrawalAir relation and native differential fixtures.
 //! Local research utility; never exports a private witness or deploys anything.
-use himitsu_direct_hiding_research::{
+use qraft_direct_hiding_research::{
     authorization::{PUBLIC_FIELDS, WIDTH, WithdrawalAir},
     blake_config::{Challenge as EF, Config, Val as F},
 };
@@ -153,7 +153,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .iter()
         .map(|c| intern(c, &mut nodes, &mut cache))
         .collect();
-    let ast = json!({"format":"HIMITSU-WITHDRAWAL-AIR-DAG-v1","upstream":"0d803737b681774186cd283b1fd2d8e493655c82","fieldModulus":"18446744069414584321","extension":"X^5-3","width":WIDTH,"publicFields":PUBLIC_FIELDS,"prepWidth":6,"rows":2048,"degree":degree,"constraintCount":constraints.len(),"nodes":nodes,"constraints":roots,"fold":"acc = acc * alpha + constraint; native assertion order","batchConstraints":64});
+    let ast = json!({"format":"QRAFT-WITHDRAWAL-AIR-DAG-v1","upstream":"0d803737b681774186cd283b1fd2d8e493655c82","fieldModulus":"18446744069414584321","extension":"X^5-3","width":WIDTH,"publicFields":PUBLIC_FIELDS,"prepWidth":6,"rows":2048,"degree":degree,"constraintCount":constraints.len(),"nodes":nodes,"constraints":roots,"fold":"acc = acc * alpha + constraint; native assertion order","batchConstraints":64});
     fs::write(out.join("withdrawal-air.json"), serde_json::to_vec(&ast)?)?;
     for (i, seed) in [1u64, 0xfeedbeef, 0xffffffffffffffff]
         .into_iter()

@@ -15,8 +15,8 @@ use p3_uni_stark::{
 use rand::{TryRng, rngs::SysRng};
 use std::sync::{Arc, Mutex};
 
-pub const DOMAIN: &[u8] = b"HIMITSU-FS-FULL-PREFIX-v3\0";
-pub const PROFILE: &[u8] = b"HIMITSU-WITHDRAWAL-V3/q320-b16-e5\0";
+pub const DOMAIN: &[u8] = b"QRAFT-FS-FULL-PREFIX-v3\0";
+pub const PROFILE: &[u8] = b"QRAFT-WITHDRAWAL-V3/q320-b16-e5\0";
 pub const MOVES: usize = 16;
 pub const BLOCKS_PER_MOVE: usize = 64;
 pub const MAX_HISTORY_BYTES: usize = 1 << 20;

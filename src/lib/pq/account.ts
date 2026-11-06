@@ -17,6 +17,7 @@ const quantityHex = (value: unknown): value is Hex => typeof value === 'string' 
 function failure(message: string): never { throw Error(message); }
 
 export interface PqAccountDeployment {
+  applicationEnabled?: boolean;
   chainId: number;
   genesisHash: string;
   anchorBlock: number;
@@ -62,6 +63,7 @@ export function derivePqAccount(publicKey: Hex, rowAddresses: readonly Hex[], de
 }
 
 export async function verifyPqDeployment(transport: ChainTransport, deployment: PqAccountDeployment = manifest): Promise<void> {
+  if (deployment.applicationEnabled === false) failure('The QRAFT protocol requires a fresh deployment. Transactions are disabled.');
   const [chainId, genesis, anchor] = await Promise.all([
     transport.request<Hex>('eth_chainId'),
     transport.request<{ hash: Hex }>('eth_getBlockByNumber', ['0x0', false]),

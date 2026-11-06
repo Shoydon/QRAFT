@@ -2,6 +2,7 @@ import './check-pq-artifacts.mjs';
 import { readFile } from 'node:fs/promises';
 import { createPublicClient, http, keccak256, parseAbi } from 'viem';
 const m = JSON.parse(await readFile('public/pq-deployment.json'));
+if (!m.applicationEnabled) throw Error('The QRAFT protocol requires a fresh deployment. Historical contract pins are not valid for this namespace.');
 const c = createPublicClient({ transport: http(process.env.QRAFT_RPC_URL ?? m.rpcUrl, { retryCount: 0, timeout: 20000 }) });
 try {
   if (await c.getChainId() !== m.chainId || (await c.getBlock({ blockNumber: 0n })).hash !== m.genesisHash || (await c.getBlock({ blockNumber: BigInt(m.anchorBlock) })).hash !== m.anchorHash) throw Error('Deployment chain identity changed. Do not deposit.');

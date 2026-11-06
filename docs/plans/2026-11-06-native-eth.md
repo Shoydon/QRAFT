@@ -4,16 +4,16 @@ Historical classical implementation plan. Superseded for the active application 
 
 > **For Codex:** Use executing-plans to implement this plan task by task.
 
-**Goal:** Replace QRAFT’s simulated deposit and withdrawal adapters with a working native ETH privacy pool, using Himitsu’s existing note circuit and browser proving material.
+**Goal:** Replace QRAFT’s simulated deposit and withdrawal adapters with a working native ETH privacy pool, using the existing note circuit and browser proving material.
 
-**Architecture:** Preserve the QRAFT UI, file-based notes, and adapter boundary. Reuse the Himitsu depth-10 Poseidon tree and existing Groth16 circuit; bind the proof to the chain, pool, denomination, nullifier and recipient. Hold and pay native ETH directly. Route application reads through the official Anon-RPC Nym worker; fail closed if anonymous transport is unavailable. Wallet RPC remains responsible for signed submissions and account access.
+**Architecture:** Preserve the QRAFT UI, file-based notes, and adapter boundary. Reuse the existing depth-10 Poseidon tree and existing Groth16 circuit; bind the proof to the chain, pool, denomination, nullifier and recipient. Hold and pay native ETH directly. Route application reads through the official Anon-RPC Nym worker; fail closed if anonymous transport is unavailable. Wallet RPC remains responsible for signed submissions and account access.
 
 **Tech Stack:** Next.js, TypeScript, viem, Solidity, Circom/Groth16, snarkjs, Anon-RPC.
 
 ---
 
 ### 1. Native ETH protocol and reproduction
-- Import the exact Himitsu V1 circuit, verifier, public verification key and proving artifacts with source attribution and checksums.
+- Import the exact V1 circuit, verifier, public verification key and proving artifacts with source attribution and checksums.
 - Add an ETH-only pool with fixed denominations, duplicate protection, reentrancy protection and recipient/domain-bound withdrawal verification.
 - Add reproducible compile/deploy tooling and local EVM lifecycle tests covering native payout, invalid proofs, replay, wrong recipient and reverted payout.
 

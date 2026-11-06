@@ -1,8 +1,8 @@
-use himitsu_direct_hiding_research::blake_config::{
+use qraft_direct_hiding_research::blake_config::{
     Challenge, Config, Val, canonical_membership_preprocessing, config, fri_parameters,
     membership_config,
 };
-use himitsu_direct_hiding_research::membership::{
+use qraft_direct_hiding_research::membership::{
     MembershipAir, WIDTH, public_values, root_and_nodes, trace,
 };
 use p3_air::symbolic::AirLayout;
@@ -34,11 +34,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prove_ms = start.elapsed().as_secs_f64() * 1000.;
     let start = Instant::now();
     #[cfg(feature = "hash-metrics")]
-    himitsu_direct_hiding_research::hash_metrics::start();
+    qraft_direct_hiding_research::hash_metrics::start();
     verify_with_preprocessed(&cfg, &air, &proof, &public, Some(&vk))?;
     let verify_ms = start.elapsed().as_secs_f64() * 1000.;
     #[cfg(feature = "hash-metrics")]
-    let hash_lengths = himitsu_direct_hiding_research::hash_metrics::finish();
+    let hash_lengths = qraft_direct_hiding_research::hash_metrics::finish();
 
     for index in [0, 32] {
         let mut changed = public.clone();

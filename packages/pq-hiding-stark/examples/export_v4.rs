@@ -1,5 +1,5 @@
 //! Public-only genuine v4 full-prefix/native differential export. No witness serialized.
-use himitsu_direct_hiding_research::{
+use qraft_direct_hiding_research::{
     authorization::{self, WithdrawalAir, WithdrawalContext},
     full_prefix_v4 as fp, indexed_config as bc, membership,
 };
@@ -131,7 +131,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let encoded_proof = postcard::to_allocvec(&envelope.proof)?;
     std::fs::write(out.join("proof.postcard"), &encoded_proof)?;
-    let mut fixture = json!({"profile":"himitsu-withdrawal-v4-full-prefix-indexed-blake2b512-goldilocks5-q320-b16","publicSalts":envelope.salts,"expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":envelope.proof,"privateWitnessExported":false});
+    let mut fixture = json!({"profile":"qraft-withdrawal-v4-full-prefix-indexed-blake2b512-goldilocks5-q320-b16","publicSalts":envelope.salts,"expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":envelope.proof,"privateWitnessExported":false});
     stringify_numbers(&mut fixture);
     std::fs::write(out.join("fixture.json"), serde_json::to_vec(&fixture)?)?;
     let calls:Vec<_>=verifier.calls.iter().map(|c|json!({"round":c.round,"block":c.block,"inputHex":hex(&c.input),"outputHex":hex(&c.output)})).collect();

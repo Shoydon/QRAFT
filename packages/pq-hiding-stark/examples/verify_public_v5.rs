@@ -1,5 +1,5 @@
 //! Verify public v5 bytes against a SEPARATE caller-provided statement. No witness IO.
-use himitsu_direct_hiding_research::{authorization, strong_config as bc, strong_transcript as fp};
+use qraft_direct_hiding_research::{authorization, strong_config as bc, strong_transcript as fp};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 #[derive(Deserialize)]

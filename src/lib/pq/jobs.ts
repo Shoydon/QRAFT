@@ -45,6 +45,7 @@ export async function proofJob(id:string):Promise<PqProofJob>{
 }
 async function fail(job:PqProofJob,error:unknown){job.phase='failed';job.error=error instanceof Error?error.message.split('\n')[0]:'Public proof computation failed.';await save(job);}
 export async function acceptPublicProof(bytes:Uint8Array,statementText:string):Promise<PqProofJob>{
+  if(!manifest.applicationEnabled)throw Error('The QRAFT protocol requires a fresh deployment. Public proof submission is disabled.');
   if(bytes.length<72||bytes.length>16*1024*1024||statementText.length>16384)throw Error('Public proof size limit.');
   const statement:unknown=JSON.parse(statementText);validatePublicStatement(statement);
   const id=createHash('sha256').update(bytes).update(statementText).digest('hex');

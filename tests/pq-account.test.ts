@@ -3,7 +3,7 @@ import { bytesToHex, encodeAbiParameters, keccak256, numberToHex, type Hex } fro
 import { createKey } from '../packages/pq-account/src/keys';
 import { decodeFrameTransaction } from '../packages/frame-account/src/frametx';
 import realManifest from '../public/pq-deployment.json';
-import { derivePqAccount, PqAccountClient, verifyProvisionedPqAccount, type PqAccountDeployment, type PublicJournalStorage, type PqFetch } from '../src/lib/pq/account';
+import { derivePqAccount, PqAccountClient, verifyPqDeployment, verifyProvisionedPqAccount, type PqAccountDeployment, type PublicJournalStorage, type PqFetch } from '../src/lib/pq/account';
 import type { ChainTransport } from '../src/lib/transport/types';
 
 const genesis = realManifest.genesisHash;
@@ -21,6 +21,7 @@ function fixture() {
   const publicKey = bytesToHex(key.publicKey);
   const deployment: PqAccountDeployment = {
     ...realManifest,
+    applicationEnabled: true,
     contracts: Object.fromEntries(Object.entries(realManifest.contracts).map(([name, pin]) => [name, { address: pin.address, runtimeHash: keccak256('0x6000') }])) as PqAccountDeployment['contracts'],
   };
   const account = derivePqAccount(publicKey, rowAddresses, descriptor, deployment);
@@ -144,4 +145,12 @@ test('reconciliation checks its expected hash inside the account lock before any
  f.methods.length=0;const sent=f.state.sent.length;
  await expect(client.reconcile({expectedHash})).rejects.toThrow('changed while waiting');
  expect(f.methods).toEqual([]);expect(f.state.sent.length).toBe(sent);expect(client.pending!.hash).not.toBe(expectedHash);
+});
+
+
+test('a deployment awaiting the QRAFT namespace migration rejects before any RPC or submission', async () => {
+  const f = fixture();
+  await expect(verifyPqDeployment(f.transport, { ...realManifest, applicationEnabled: false })).rejects.toThrow('fresh deployment');
+  expect(f.methods).toHaveLength(0);
+  expect(f.state.sent).toHaveLength(0);
 });

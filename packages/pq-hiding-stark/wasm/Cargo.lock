@@ -244,7 +244,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "himitsu-direct-hiding-research"
+name = "qraft-direct-hiding-research"
 version = "0.0.0"
 dependencies = [
  "blake2",
@@ -270,11 +270,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "himitsu-hiding-wasm-feasibility"
+name = "qraft-hiding-wasm-feasibility"
 version = "0.0.0"
 dependencies = [
  "getrandom",
- "himitsu-direct-hiding-research",
+ "qraft-direct-hiding-research",
  "p3-challenger",
  "p3-commit",
  "p3-dft",

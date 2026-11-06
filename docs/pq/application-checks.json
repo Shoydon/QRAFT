@@ -1,7 +1,7 @@
 {
   "checkedAt": "2026-11-05T20:18:22.148Z",
   "chainId": 8141,
-  "profile": "himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "profile": "historical-v5-before-namespace-migration",
   "account": "0x39D88938b1c4934Cb7191263c4d0898BFcb4A980",
   "recipient": "0x9E74cEcA8a50Ad2AC94215FEdba0fAA55E73F9E4",
   "pool": "0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a",
@@ -35,5 +35,6 @@
     "publicEncoderBoundaryChecks": 15,
     "cleanArchivePublicEncoding": true
   },
-  "externalScope": "Application cryptography is experimental; consensus, TLS, Nym and the external ECDSA gas carrier have separate limits. No independent quantum-security certificate or production audit."
+  "externalScope": "Application cryptography is experimental; consensus, TLS, Nym and the external ECDSA gas carrier have separate limits. No independent quantum-security certificate or production audit.",
+  "appliesToCurrentNamespace": false
 }

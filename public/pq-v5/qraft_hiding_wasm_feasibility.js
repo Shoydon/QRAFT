@@ -1,4 +1,4 @@
-/* @ts-self-types="./himitsu_hiding_wasm_feasibility.d.ts" */
+/* @ts-self-types="./qraft_hiding_wasm_feasibility.d.ts" */
 
 /**
  * @returns {string}
@@ -222,7 +222,7 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./himitsu_hiding_wasm_feasibility_bg.js": import0,
+        "./qraft_hiding_wasm_feasibility_bg.js": import0,
     };
 }
 
@@ -419,7 +419,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('himitsu_hiding_wasm_feasibility_bg.wasm', import.meta.url);
+        module_or_path = new URL('qraft_hiding_wasm_feasibility_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

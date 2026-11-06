@@ -1,5 +1,5 @@
 //! Public-only native/EVM differential fixture. Never serializes the witness.
-use himitsu_direct_hiding_research::{authorization::{self,WithdrawalAir,WithdrawalContext},blake_config as bc,membership};
+use qraft_direct_hiding_research::{authorization::{self,WithdrawalAir,WithdrawalContext},blake_config as bc,membership};
 use p3_challenger::{HashChallenger,SerializingChallenger64};
 use p3_field::PrimeCharacteristicRing;
 use p3_symmetric::CryptographicHasher;
@@ -32,11 +32,11 @@ fn main()->Result<(),Box<dyn std::error::Error>> {
  verify_with_preprocessed(&cfg,&air,&proof,&public,Some(&vk))?;
  for i in [0,32,64] {let mut changed=public.clone();changed[i]+=bc::Val::ONE;assert!(verify_with_preprocessed(&cfg,&air,&proof,&changed,Some(&vk)).is_err());}
  let encoded=postcard::to_allocvec(&proof)?;std::fs::write(out.join("proof.postcard"),&encoded)?;
- let recorded=RecordedConfig::new(cfg.pcs().clone(),RecordedChallenger::new(HashChallenger::new(b"HIMITSU-BLAKE2B-WITHDRAWAL-RESEARCH-v2/q320-b16-e5\0".to_vec(),TraceHasher)));
+ let recorded=RecordedConfig::new(cfg.pcs().clone(),RecordedChallenger::new(HashChallenger::new(b"QRAFT-BLAKE2B-WITHDRAWAL-RESEARCH-v2/q320-b16-e5\0".to_vec(),TraceHasher)));
  let recorded_proof:Proof<RecordedConfig>=postcard::from_bytes(&encoded)?;
  let recorded_vk=PreprocessedVerifierKey::<RecordedConfig>{width:vk.width,degree_bits:vk.degree_bits,commitment:vk.commitment.clone()};
  verify_with_preprocessed(&recorded,&air,&recorded_proof,&public,Some(&recorded_vk))?;
- let mut fixture=json!({"profile":"himitsu-withdrawal-v2-blake2b512-goldilocks5-q320-b16","expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":proof,"privateWitnessExported":false});
+ let mut fixture=json!({"profile":"qraft-withdrawal-v2-blake2b512-goldilocks5-q320-b16","expectedPublic":public,"contextDigestHex":hex(&context),"rootHex":hex(&root),"nullifierHex":hex(&nul),"publicVk":{"width":vk.width,"degreeBits":vk.degree_bits,"commitment":vk.commitment},"proof":proof,"privateWitnessExported":false});
  stringify_numbers(&mut fixture);std::fs::write(out.join("fixture.json"),serde_json::to_vec(&fixture)?)?;
  let hashes=HASHES.lock().unwrap();std::fs::write(out.join("transcript-hashes.json"),serde_json::to_vec(&*hashes)?)?;
  let summary=json!({"experimental":true,"fullEvmVerification":false,"privateWitnessExported":false,"proofBytes":encoded.len(),"publicInputCount":public.len(),"traceWidth":authorization::WIDTH,"transcriptHashCalls":hashes.len(),"proveMs":prove_ms,"nativeVerified":true,"changedRootRejected":true,"changedNullifierRejected":true,"changedContextRejected":true});

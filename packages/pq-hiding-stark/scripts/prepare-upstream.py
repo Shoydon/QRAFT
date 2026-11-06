@@ -17,7 +17,7 @@ ARCHIVE = VENDOR / "plonky3.tar.gz"
 if not ARCHIVE.exists():
     request = urllib.request.Request(
         f"https://codeload.github.com/Plonky3/Plonky3/tar.gz/{COMMIT}",
-        headers={"User-Agent": "Himitsu-pinned-research"},
+        headers={"User-Agent": "QRAFT-pinned-research"},
     )
     with urllib.request.urlopen(request, timeout=90) as response:
         data = response.read(100_000_001)

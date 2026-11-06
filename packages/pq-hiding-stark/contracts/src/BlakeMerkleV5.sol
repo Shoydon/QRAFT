@@ -138,12 +138,12 @@ library BlakeMerkleV5 {
     /// Calling leaf() alone neither validates an opening nor authenticates it to a root.
     function leaf(bytes[] memory rows,bytes[] memory salts) internal view returns(Digest memory r){
         if(rows.length!=salts.length)revert Shape();
-        uint256 len=27; // HIMITSU-P3-BLAKE2B-LEAF-v5\0
+        uint256 len=25; // QRAFT-P3-BLAKE2B-LEAF-v5\0
         for(uint256 i;i<rows.length;++i)len+=rows[i].length+salts[i].length;
         r=Digest(0,0);
         uint256 mark;assembly("memory-safe"){mark:=mload(0x40)}
         bytes memory input=new bytes(len);
-        bytes memory tag=bytes("HIMITSU-P3-BLAKE2B-LEAF-v5\x00");
+        bytes memory tag=bytes("QRAFT-P3-BLAKE2B-LEAF-v5\x00");
         uint256 at=tag.length;
         copy(tag,input,0);
         for(uint256 i;i<rows.length;++i){copy(rows[i],input,at);at+=rows[i].length;copy(salts[i],input,at);at+=salts[i].length;}
@@ -153,7 +153,7 @@ library BlakeMerkleV5 {
     function node(Digest memory left,Digest memory right) internal view returns(Digest memory r){
         r=Digest(0,0);
         uint256 mark;assembly("memory-safe"){mark:=mload(0x40)}
-        bytes memory input=abi.encodePacked("HIMITSU-P3-BLAKE2B-NODE-v5\x00",left.a,left.b,right.a,right.b);
+        bytes memory input=abi.encodePacked("QRAFT-P3-BLAKE2B-NODE-v5\x00",left.a,left.b,right.a,right.b);
         bytes memory out=Blake2b_512.hash(input);
         assembly("memory-safe"){mstore(r,mload(add(out,32)))mstore(add(r,32),mload(add(out,64)))mstore(0x40,mark)}
     }

@@ -13,18 +13,18 @@ export function withdrawalContext(recipient:Hex,deadline:bigint):{digest:Hex;pub
   const chainId=numberToBytes(deployment.chainId,{size:32});const pool=hexToBytes(deployment.pool as Hex);
   const recipientBytes=hexToBytes(recipient);const zero=new Uint8Array(20);
   if(recipientBytes.length!==20||BigInt(recipient)===0n||recipient.toLowerCase()===deployment.pool.toLowerCase())throw Error('Choose a nonzero recipient outside the pool.');
-  const digest=bytesToHex(blake2b(concatBytes(new TextEncoder().encode('HIMITSU-WITHDRAW-CONTEXT-v2\0'),chainId,pool,zero,numberToBytes(BigInt(deployment.denominationWei),{size:16}),recipientBytes,zero,new Uint8Array(16),numberToBytes(deadline,{size:8})),{dkLen:64}));
+  const digest=bytesToHex(blake2b(concatBytes(new TextEncoder().encode('QRAFT-WITHDRAW-CONTEXT-v2\0'),chainId,pool,zero,numberToBytes(BigInt(deployment.denominationWei),{size:16}),recipientBytes,zero,new Uint8Array(16),numberToBytes(deadline,{size:8})),{dkLen:64}));
   return {digest,publicContext:{chainIdHex:bytesToHex(chainId),poolHex:deployment.pool,recipientHex:recipient,relayerHex:bytesToHex(zero),denomination:deployment.denominationWei,fee:'0',deadline:String(deadline)}};
 }
 let assets:Promise<{moduleText:string;wasm:Uint8Array}>|null=null;
 async function verifiedAssets(){
   if(!assets){assets=(async()=>{
-    const fetchOne=async(name:'himitsu_hiding_wasm_feasibility.js'|'himitsu_hiding_wasm_feasibility_bg.wasm')=>{
+    const fetchOne=async(name:'qraft_hiding_wasm_feasibility.js'|'qraft_hiding_wasm_feasibility_bg.wasm')=>{
       const response=await fetch(`/pq-v5/${name}`,{signal:AbortSignal.timeout(120000)});if(!response.ok)throw Error('Could not load the PQ prover.');
       const bytes=new Uint8Array(await response.arrayBuffer());const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),byte=>byte.toString(16).padStart(2,'0')).join('');
       if(hash!==assetManifest.files[name])throw Error('The PQ prover does not match its pinned artifact hash.');return bytes;
     };
-    const [js,wasm]=await Promise.all([fetchOne('himitsu_hiding_wasm_feasibility.js'),fetchOne('himitsu_hiding_wasm_feasibility_bg.wasm')]);return{moduleText:new TextDecoder().decode(js),wasm};
+    const [js,wasm]=await Promise.all([fetchOne('qraft_hiding_wasm_feasibility.js'),fetchOne('qraft_hiding_wasm_feasibility_bg.wasm')]);return{moduleText:new TextDecoder().decode(js),wasm};
   })();assets.catch(()=>{assets=null;});}return assets;
 }
 export async function browserPqProof(note:PqNote,tree:PqNoteTree,index:number,recipient:Hex,deadline:bigint,onProgress:(label:string)=>void,signal:AbortSignal):Promise<{proof:Uint8Array;statement:PublicWithdrawalStatement}>{

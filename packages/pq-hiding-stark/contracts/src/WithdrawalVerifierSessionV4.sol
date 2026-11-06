@@ -122,7 +122,7 @@ contract WithdrawalVerifierSessionV4 {
  function _completeInput(Session storage s,uint256[5] memory value)private{s.values[s.query]=value;++s.query;s.group=0;s.row=0;s.rowEnd=0;delete s.suffix;if(s.query==320)s.phase=Phase.Fri;}
  function _phase(Session storage s,Phase expected)private view{if(s.phase!=expected)revert PhaseOrder();}
  function _loadClaims(Session storage s)private view returns(C.Claims memory claims){bytes memory encoded=blobs.read(s.claimsBlob);if(encoded.length>230000)revert Shape();claims=abi.decode(encoded,(C.Claims));if(!_eq(_claimsHash(claims),s.claimsHash))revert Binding();}
- function _claimsHash(C.Claims memory c)private view returns(M.Digest memory){return _hash(abi.encode("HIMITSU-SESSION-CLAIMS-v1",c));}
+ function _claimsHash(C.Claims memory c)private view returns(M.Digest memory){return _hash(abi.encode("QRAFT-SESSION-CLAIMS-v1",c));}
  function _transcriptState(Session storage s)private view returns(T.State memory state){
   state.salts=s.material.salts;state.moves=s.tsMoves;state.nextBlock=s.tsBlock;state.remaining=s.tsRemaining;state.accepted=s.tsAccepted;state.historyBytes=s.tsHistory;state.outputA=s.tsA;state.outputB=s.tsB;
   C.Claims memory claims;C.Claims memory empty;if(state.moves>2)claims=_loadClaims(s);uint256 history;

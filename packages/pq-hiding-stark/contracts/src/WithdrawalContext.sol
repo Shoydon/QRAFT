@@ -10,7 +10,7 @@ library WithdrawalContext {
     error InvalidDigestLength();
     function digest(Params memory c) internal view returns(bytes memory) {
         return Blake2b_512.hash(abi.encodePacked(
-            "HIMITSU-WITHDRAW-CONTEXT-v2\x00",c.chainId,c.pool,c.asset,
+            "QRAFT-WITHDRAW-CONTEXT-v2\x00",c.chainId,c.pool,c.asset,
             c.denomination,c.recipient,c.relayer,c.fee,c.deadline
         ));
     }

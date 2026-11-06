@@ -24,7 +24,7 @@ The expected JSON has exactly these fields:
 
 ```json
 {
-  "profile": "himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "profile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
   "root": ["64 byte values, represented as JSON numbers"],
   "nullifier": ["64 byte values, represented as JSON numbers"],
   "context": ["64 byte values, represented as JSON numbers"],

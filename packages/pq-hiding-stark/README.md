@@ -1,4 +1,6 @@
-# Himitsu direct hiding-STARK withdrawal proof
+# QRAFT direct hiding-STARK withdrawal proof
+
+The QRAFT namespace requires a fresh contract deployment. The previous live evidence below describes the earlier protocol; transactions are disabled pending new verified pins.
 
 The current **v5** profile proves knowledge of a64-byte secret and a hidden depth32
 SHA3-512 Merkle path. It constrains the nullifier to SHA3-512 of the first32 secret
@@ -8,8 +10,8 @@ independently and maintains known roots and globally spent nullifiers.
 
 The package now includes native and browser proving, native/browser verification,
 a complete staged Solidity verifier, immutable public-proof data storage, and a
-fixed-denomination native ETH pool. The v5 stack has deployed on the user-selected
-Chiranjeev devnet, chain 8141. A real 0.0001 ETH deposit, complete v5 proof
+fixed-denomination native ETH pool. The pre-migration v5 stack deployed on the user-selected
+Chiranjeev devnet, chain 8141. That historical profile completed a real 0.0001 ETH deposit, complete v5 proof
 verification and exact withdrawal have all confirmed. All 725 verification and
 withdrawal transactions succeeded; nine negative checks rejected incomplete,
 unauthorized, altered and replayed withdrawals. Independent reconciliation checked
@@ -117,6 +119,6 @@ Plonky3 `0d803737b681774186cd283b1fd2d8e493655c82` is used unchanged under its
 MIT/Apache-2.0 licenses. The preparation script verifies its archive SHA256 and all
 1389cached source files without Git operations. The Keccak AIR, hiding PCS and FRI
 machinery are upstream work. The compiler security argument uses published
-results, linked in the claim ledger. Himitsu's work is the withdrawal relation,
+results, linked in the claim ledger. The imported research implementation includes the withdrawal relation,
 two-layer stream/write-back compiler adapter, standard wide-hash profile and complete bounded EVM
 integration. No new cryptographic primitive or world-first claim is made.

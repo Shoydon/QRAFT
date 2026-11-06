@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "profile": "himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "profile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
   "chainId": 8141,
   "chainName": "Ethrex devnet",
   "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
@@ -95,5 +95,8 @@
       "block": "623947",
       "initDataHash": "0x3e9d57ffee69c84e56f4f30cabceab0847427fcb0cacdece1dbdaa74d969fc39"
     }
-  }
+  },
+  "applicationEnabled": false,
+  "deploymentStatus": "requires-qraft-namespace-deployment",
+  "deploymentNote": "Contract pins are historical. Deploy and verify the QRAFT namespace contracts before enabling transactions."
 }

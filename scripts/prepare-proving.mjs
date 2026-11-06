@@ -11,4 +11,4 @@ for (const [name, hash] of Object.entries(expected)) {
   if (name !== 'verification_key.json') await writeFile(new URL(`../public/proving/${name}`, import.meta.url), bytes);
 }
 await writeFile(new URL('../public/proving/snarkjs.min.js', import.meta.url), await readFile(require.resolve('snarkjs').replace(/main\.cjs$/, 'snarkjs.min.js')));
-console.log('Prepared and hash-verified the existing Himitsu proving artifacts.');
+console.log('Prepared and hash-verified the existing proving artifacts.');

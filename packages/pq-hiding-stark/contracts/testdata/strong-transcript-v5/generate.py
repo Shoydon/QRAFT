@@ -5,11 +5,11 @@ from pathlib import Path
 from Crypto.Hash import cSHAKE256
 HERE=Path(__file__).resolve().parent;ROOT=HERE.parents[4]
 p=argparse.ArgumentParser();p.add_argument('--proof-dir',type=Path,default=ROOT/'.local/pq-v5-native');p.add_argument('--output-dir',type=Path,default=HERE);a=p.parse_args();out=a.output_dir;out.mkdir(parents=True,exist_ok=True)
-f=json.loads((a.proof_dir/'fixture.json').read_text());calls=json.loads((a.proof_dir/'transcript-hashes.json').read_text());domain=b'HIMITSU-SPBCS-CH-V5'+bytes([0]);profile=b'HIMITSU-WITHDRAWAL-V5/q320-b16-e5'+bytes([0]);salt=bytes.fromhex(f['proofSaltHex']);assert len(salt)==64
+f=json.loads((a.proof_dir/'fixture.json').read_text());calls=json.loads((a.proof_dir/'transcript-hashes.json').read_text());domain=b'QRAFT-SPBCS-CH-V5'+bytes([0]);profile=b'QRAFT-WITHDRAWAL-V5/q320-b16-e5'+bytes([0]);salt=bytes.fromhex(f['proofSaltHex']);assert len(salt)==64
 (out/'proof-salt.abi').write_bytes(salt);items=[];values=[];indices=[]
 for round,c in enumerate(calls):
  raw=bytes.fromhex(c['inputHex']);key=bytes.fromhex(c['keyHex']);stream=bytes.fromhex(c['streamHex']);wb=bytes.fromhex(c['writebackHex']);assert hashlib.blake2b(raw).digest()==key
- assert cSHAKE256.new(custom=b'HIMITSU-SPBCS-STREAM-V5',data=key+salt).read(2560)==stream and stream[:64]==wb
+ assert cSHAKE256.new(custom=b'QRAFT-SPBCS-STREAM-V5',data=key+salt).read(2560)==stream and stream[:64]==wb
  assert raw.startswith(domain);at=len(domain)
  def take(n):
   global at

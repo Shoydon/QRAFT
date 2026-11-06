@@ -12,7 +12,7 @@ class IntegrityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         source = Path(__file__).resolve().parents[1]
-        cls.temporary = tempfile.TemporaryDirectory(prefix="himitsu-source-integrity-")
+        cls.temporary = tempfile.TemporaryDirectory(prefix="qraft-source-integrity-")
         cls.root = Path(cls.temporary.name)
         (cls.root / "scripts").mkdir()
         (cls.root / "vendor").mkdir()

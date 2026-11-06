@@ -236,7 +236,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "himitsu-direct-hiding-research"
+name = "qraft-direct-hiding-research"
 version = "0.0.0"
 dependencies = [
  "blake2",

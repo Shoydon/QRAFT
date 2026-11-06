@@ -71,7 +71,7 @@ impl WithdrawalContext {
     pub fn digest(&self) -> [u8; 64] {
         use blake2::{Blake2b512, Digest};
         let mut h = Blake2b512::new();
-        h.update(b"HIMITSU-WITHDRAW-CONTEXT-v2\0");
+        h.update(b"QRAFT-WITHDRAW-CONTEXT-v2\0");
         h.update(self.chain_id);
         h.update(self.pool);
         h.update(self.asset);

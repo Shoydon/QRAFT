@@ -1,5 +1,5 @@
 //! Verify and export an existing PUBLIC browser V5 envelope. Never reads a witness.
-use himitsu_direct_hiding_research::{
+use qraft_direct_hiding_research::{
     authorization::{self, WithdrawalContext},
     strong_config as bc, strong_transcript as fp,
 };
@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{fs, io::Read, path::Path};
 
-const PROFILE: &str = "himitsu-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16";
+const PROFILE: &str = "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16";
 type Error = Box<dyn std::error::Error>;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]

@@ -1,12 +1,12 @@
 [package]
 publish=false
-name="himitsu-hiding-wasm-feasibility"
+name="qraft-hiding-wasm-feasibility"
 version="0.0.0"
 edition="2024"
 [lib]
 crate-type=["cdylib"]
 [dependencies]
-himitsu-direct-hiding-research={path=".."}
+qraft-direct-hiding-research={path=".."}
 p3-field={path="../vendor/plonky3/field"}
 p3-uni-stark={path="../vendor/plonky3/uni-stark"}
 p3-merkle-tree={path="../vendor/plonky3/merkle-tree"}

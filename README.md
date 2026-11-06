@@ -4,6 +4,12 @@
 
 The active application uses ML-DSA-44 account authorization, SHA3-512 notes and Merkle commitments, and the transparent V5 withdrawal proof. User signing seeds and note witnesses stay in the browser. This is experimental devnet software: the proof construction has a conditional security argument, not an independently established quantum-security certificate or a production audit. See [security boundaries](docs/pq/application-security.md).
 
+## Deployment status
+
+The current source and browser prover use the QRAFT namespace. The previous contract addresses are retained only as historical pins, with `applicationEnabled: false` in `public/pq-deployment.json`. Deploy and verify fresh contracts before enabling transactions; the current application refuses to submit against the earlier protocol. Saved notes from the earlier profile are incompatible with this namespace.
+
+Native and browser proof tests run locally without a live deployment. The recorded onchain lifecycle evidence predates this namespace migration and does not validate the current contracts.
+
 ## Run locally
 
 Use Node 22.23+ (or Node 24), Rust/Cargo, Python 3, and Bun for unit tests. Keep the `PYTHON` environment variable set when starting the helper so its encoder can load PyCryptodome.
@@ -44,7 +50,7 @@ Desktop Chromium is recommended. V5 proving currently uses approximately **2.04 
 
 ## Network and verification
 
-The active deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
+The historical deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
 
 Browser chain requests use the official Nym Anon-RPC worker by default and stop on failure, with no automatic direct fallback. The worker lookup uses a direct Ethereum bootstrap RPC. Explicit passthrough mode is labelled non-anonymous. The local helper and CLI diagnostics use direct RPC. See [.env.example](.env.example).
 
@@ -58,7 +64,7 @@ npm run test:browser
 
 `doctor` checks the active PQ deployment and browser artifact hashes. `test:pq:browser` checks the browser proof and mutations without depositing. `test:browser` performs a real fresh-account deposit/restore/withdrawal test against the locally running application (default port 3006), uses disposable devnet ETH and saves protected backups/evidence under ignored `.local/`. Start it with `npm run start -- --port 3006` after building. Unit tests need Bun. Install the browser test runtime with `npx playwright install chromium` if it is not already present. Rust tests run from `packages/pq-hiding-stark` after upstream preparation. Public encoder boundary checks are documented in [public-encoder.md](docs/pq/public-encoder.md).
 
-The [live integration evidence](docs/pq/application-checks.json) records a fresh native deposit, browser V5 proving, all 663 successful verifier calls, browser-session recovery, exact 0.0001 ETH payout and spent-note rejection. The [receipt screenshot](docs/pq/withdrawal-receipt.png) shows the confirmed native withdrawal. This test reused its deposit account for gas and makes no unlinkability claim. Browser request counters in that report cover the resumed session.
+The historical [live integration evidence](docs/pq/application-checks.json) records a fresh native deposit, browser V5 proving, all 663 successful verifier calls, browser-session recovery, exact 0.0001 ETH payout and spent-note rejection. The [receipt screenshot](docs/pq/withdrawal-receipt.png) shows the confirmed native withdrawal. This test reused its deposit account for gas and makes no unlinkability claim. Browser request counters in that report cover the resumed session.
 
 If Nym reads time out, open the read-path footer, reconnect anonymous reads, and retry the same backup or saved workflow. Never discard an unresolved signed intent or switch to a replacement nonce to work around a timeout.
 
