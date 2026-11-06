@@ -291,6 +291,15 @@ export function PqApp() {
     try {
       if (file && file.size > 16384)
         throw Error("That file is too large to be a PQ wallet backup.");
+      updateProgress(`Connecting through ${TRANSPORT.worker.label} and checking the RPC network`);
+      if (!file) {
+        // Do not provision or fund a new account until an anonymous RPC round
+        // trip succeeds. Worker startup alone does not prove RPC access works.
+        const chainId = await transport.request<string>("eth_chainId");
+        if (BigInt(chainId) !== BigInt(PQ_DEPLOYMENT.chainId))
+          throw Error(`This wallet requires chain ${PQ_DEPLOYMENT.chainId}. The configured RPC reports another network.`);
+      }
+      updateProgress(file ? "Verifying saved PQ account ownership" : "Provisioning and verifying your ML-DSA account");
       const client = file
         ? await PqAccountClient.restore(await file.text(), transport)
         : await PqAccountClient.create(transport);
@@ -317,6 +326,13 @@ export function PqApp() {
     } finally {
       end();
     }
+  }
+  function reconnectReads() {
+    if (busyRef.current) return;
+    setWalletError(null);
+    setReadError(null);
+    transport?.stop();
+    transport?.start();
   }
   function downloadWallet() {
     if (!account || busyRef.current) return;
@@ -1463,7 +1479,7 @@ export function PqApp() {
               variant="primary"
               className="w-full"
               busy={busy}
-              disabled={!readReady || serviceEnabled !== true}
+              disabled={serviceEnabled !== true}
               onClick={() => void connectWallet()}
             >
               Create PQ wallet
@@ -1471,7 +1487,6 @@ export function PqApp() {
             <Button
               className="w-full"
               busy={busy}
-              disabled={!readReady}
               onClick={() => walletInput.current?.click()}
             >
               Import PQ wallet backup
@@ -1481,15 +1496,27 @@ export function PqApp() {
                 {progress}
               </p>
             ) : null}
-            {/* Two conditions gate this button, and naming only one of them
-                pointed at the transport while an unset env var was the real
-                blocker. */}
-            {serviceEnabled !== true || !readReady ? (
-              <p className="text-xs leading-relaxed text-ink-60">
-                {serviceEnabled !== true
-                  ? "Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server."
-                  : "Anonymous reads must connect before account ownership can be verified."}
-              </p>
+            <div className="space-y-3" role="status" aria-live="polite">
+              {!busy ? (
+                <p className="text-xs leading-relaxed text-ink-60">
+                  {status.phase === "starting"
+                    ? `Loading ${status.network} and connecting to its anonymous network. You can choose an action while it connects.`
+                    : status.phase === "failed" || status.phase === "not-configured"
+                      ? status.detail
+                      : readReady
+                        ? `${status.network} worker ready. Account ownership is verified through anonymous RPC before the wallet opens.`
+                        : `Create or import a wallet to connect through ${status.network} and verify ownership.`}
+                </p>
+              ) : null}
+              {serviceEnabled === null ? <p className="text-xs text-ink-60">Checking the local gas helper…</p> : null}
+              {serviceEnabled === false ? (
+                <p className="text-xs leading-relaxed text-ink-60">Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server. You can still import an existing backup.</p>
+              ) : null}
+            </div>
+            {!busy && (!readReady || !!walletError) ? (
+              <Button className="w-full" onClick={reconnectReads}>
+                Retry anonymous connection
+              </Button>
             ) : null}
           </div>
         ) : (
@@ -1622,10 +1649,7 @@ export function PqApp() {
           <Button
             className="w-full"
             disabled={busy}
-            onClick={() => {
-              transport?.stop();
-              transport?.start();
-            }}
+            onClick={reconnectReads}
           >
             Reconnect anonymous reads
           </Button>
