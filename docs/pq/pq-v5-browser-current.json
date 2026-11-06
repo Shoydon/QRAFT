@@ -1,0 +1,31 @@
+{
+  "profile": "v5-spbcs",
+  "experimental": true,
+  "applicationEnabled": false,
+  "externalRequests": [],
+  "consoleEntries": [],
+  "errors": [],
+  "protocolProfile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "proofBytes": 10288594,
+  "proveMs": 11591.900000035763,
+  "proveLinearMemoryBytes": 2190737408,
+  "verifyMs": 175.69999998807907,
+  "verifyLinearMemoryBytes": 56098816,
+  "totalMs": 12339.5,
+  "publicVkPostcardHex": "060c019eb192c989e284e415a3c4d9cf94f7d2a6298ddab3d1e1908994ef018db6fdafbdceefceb401f3a3de8bab94deeeb30199ebe6e2eeaac8c1c801ef96d8c8c1e085c39501f4dceaf8deb3def4a501",
+  "checks": {
+    "valid": true,
+    "changedRoot": true,
+    "changedNullifier": true,
+    "changedContext": true,
+    "corruptedProof": true,
+    "changedSecret": true,
+    "nonBooleanDirection": true,
+    "trailingBytes": true
+  },
+  "witnessExported": false,
+  "proofExported": false,
+  "workersTerminatedAfterEveryOperation": true,
+  "success": true,
+  "scope": "Fresh local browser V5 proving/verification checks; separate from the actual chain-1337 proof and receipt evidence."
+}

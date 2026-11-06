@@ -1,3 +1,3 @@
 'use client';
 
-export { AtomicApp as AppShell } from './AtomicApp';
+export { PrivateWalletApp as AppShell } from './PrivateWalletApp';

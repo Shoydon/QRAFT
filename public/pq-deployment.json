@@ -19,11 +19,11 @@
       "initDataHash": "0x81675bfff69f4e37d27e85571d1a5f8cbd8c21df79a2d56630b3f551719cd6c6"
     },
     "mldsaVerifier": {
-      "address": "0x6248EF93Ab7072CB5c1Ac026F4Daeb97c700AE39",
-      "runtimeHash": "0xd7202d67bb7487d1ad0cbe98c94277f5a3117a1f9e16adc960a5afa3a70c8f8f",
-      "transactionHash": "0xe683a8b5f03c421237a5d7534e70692a2aedfd8124ba44a6f2e204c625b314d2",
-      "block": "4336",
-      "initDataHash": "0x3feb53282b6ccef89414d316248dc45c6f554e4c28b9097ac8f85b262388719f"
+      "address": "0xec38dC8aC3384360D4bAf5de5c725b037c5773BA",
+      "runtimeHash": "0xaa229beb6e46c5343e571f7b2b28d95c1840d97f6a55baf54f0c9697db2c9907",
+      "transactionHash": "0x14bc43b2c974ca17aa8f50d3d2880096e2ff121bbc1aa55019aad6fceac3bb63",
+      "block": "4711",
+      "initDataHash": "0x9dae4cd5d6bcc75b5cca0235aadf91b5f48a890a1c5f23ddb4b30c6c56b75b15"
     },
     "blobs": {
       "address": "0xBA9A538730ada22deB7A689193320eBe03DF36a5",
@@ -33,15 +33,18 @@
       "initDataHash": "0x475658fd040eacb1340733fd5814f5d968939a15de61d148f394886e1c5d0edb"
     },
     "validator": {
-      "address": "0xEa140A0090011BD8Fc57a5B887f53E5bfCae6393",
-      "runtimeHash": "0x025347592edac0a034f88965827b726a3578f35a8404b7a73548a35a1225d985",
-      "transactionHash": "0x6e182b97fb708911025de7335cfef594cfeb302dc3b9665a43b6436e805f2195",
-      "block": "4338",
-      "initDataHash": "0xc7fa59e017e7cb701915c8ddccff5db8af1bd4f57053a55841406da12d4be090"
+      "address": "0xf7753cA2f4Ca394210565AB0883c6d8B2C818E10",
+      "runtimeHash": "0xde500d7cefff88a13f71fc230271313e5b1271ffa421f96ad929bc10bb65f835",
+      "transactionHash": "0x159283ed18e7c8cdf59add16bdbd4bfd10b0cd27ac50dd7677579dc24bbbd93d",
+      "block": "4712",
+      "initDataHash": "0x686d49dbaa1baae1d60b35c5c4f46b3cc9388364a0ac0cfc4f8d0ea223f24df8"
     },
     "implementation": {
-      "address": "0x397AB017440fF4f567E31F7860c5C1ba183cb3af",
-      "runtimeHash": "0x54911e8302bf653273d4a050fe48279bc8a8d56d26688c582d4910c2af9e94ca"
+      "address": "0x7c7C97B010f67d80D6cB23556cE68d9A8152E59a",
+      "runtimeHash": "0x86acfaa8a1f20c6edf2ead7ebbdff337764df378cffc5931a0bd2fb0862c3998",
+      "transactionHash": "0xb55d7dc50be68a8897474a975d4cd460e3fd9c201e21e44adb0da7b05a38903d",
+      "block": "4713",
+      "initDataHash": "0x2661b79912f86d68b27f23663c5385287522ffd138e1ca5335fb0109ba65616e"
     },
     "factory": {
       "address": "0xdD769B161115EEE493a8C6797cb8CB80Efb73051",
@@ -93,13 +96,16 @@
       "initDataHash": "0xa0ae845dc2b648fa84e05049aaa58f7ec319944245c38ec7362cfbb7ab7251a0"
     },
     "paymaster": {
-      "address": "0xba1BD2aF23278D1B56c150928450d9f7A4b9F4eD",
-      "runtimeHash": "0x2ecd9972b38ff67a010a92c70a4ba10631f064ffe91a811db06f7481cd0670ea"
+      "address": "0x3DA6A4FB056CCAd0d045BcA9A0B4aA21cC57A938",
+      "runtimeHash": "0x534a687d61d092015d61244b0546fa300b752050e0a11dfa17cf2443ae7e3dc3",
+      "transactionHash": "0xded6a415c5f4a1929f58dcc5c8f15abb042bc8f25303303f5a5b895e8d815303",
+      "block": "4715",
+      "initDataHash": "0xd5e1eaaf86ed8f956f6ab2913db292b1e954474429973e239bf0e8fe25791a82"
     }
   },
-  "applicationEnabled": false,
-  "deploymentStatus": "blocked-sidecar-opcode-admission",
-  "deploymentNote": "Chain 1337 infrastructure is deployed. PQ execution simulation succeeds, but the sidecar rejects sender GAS opcode (OP-011). Transactions remain disabled until admission is resolved.",
+  "applicationEnabled": true,
+  "deploymentStatus": "verified-pq-withdrawal",
+  "deploymentNote": "Complete V5 hiding-STARK proof verified on chain 1337 through the alternative mempool: 663 verifier calls in 376 confirmed transactions, followed by an exact 0.0001 ETH sponsored withdrawal in block 8938. Evidence: docs/pq/pq-v5-1337-live.json. Experimental staged verifier; not low gas or independently audited.",
   "sidecarUrl": "https://altmempool.forshtat.com/rpc",
   "explorerBase": "https://explorer.altmempool.wtf"
 }

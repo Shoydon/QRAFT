@@ -13,10 +13,12 @@ export function serviceFramePlan(operation: ServiceFrameOperation) {
   const value = operation.value ?? 0n;
   if (!to && value !== 0n) throw Error('Public data deployment cannot receive ETH.');
   const deployment = !to ? getCreate2Address({ from: DEPLOYMENT_PROXY, salt, bytecode: data }) : null;
+  const setupCall = operation.chainId === 1337 && to && (data === '0x' || ['0xa1a8b9a4', '0xc7e55f3e', '0xdfd513dd'].includes(data.slice(0, 10)));
+  const codeWrite = !to || data.slice(0, 10) === '0xff8d44dc'; // ProofBlobStore.append deploys up to 8 KiB of public data.
   const tx = new FrameTx({ chainId: operation.chainId ?? 8141, nonceKeys: [operation.nonceKey ?? SERVICE_NONCE_KEY], nonceSeq: nonce, sender: operator,
     maxPriorityFee: 1n, maxFee: 128n, signatures: [new FrameSig({ scheme: SigScheme.SECP256K1, signer: operator, signature: `0x${'00'.repeat(65)}` })], frames: [
       new Frame({ mode: FrameMode.VERIFY, flags: 3, target: operator, gasLimit: 30000n, stateGasLimit: 97920n, data: '0x' }),
-      new Frame({ mode: FrameMode.SENDER, target: to ?? DEPLOYMENT_PROXY, gasLimit: operation.chainId === 1337 && !to ? 8000000n : 14500000n, stateGasLimit: operation.chainId === 1337 ? to ? 10000000n : 16000000n : 40000000n, value, data: to ? data : concat([salt, data]) }),
+      new Frame({ mode: FrameMode.SENDER, target: to ?? DEPLOYMENT_PROXY, gasLimit: setupCall ? 500000n : operation.chainId === 1337 && codeWrite ? 8000000n : 14500000n, stateGasLimit: setupCall ? 1000000n : operation.chainId === 1337 ? codeWrite ? 16000000n : 10000000n : 40000000n, value, data: to ? data : concat([salt, data]) }),
     ] });
   return { tx, deployment };
 }
@@ -42,7 +44,12 @@ export function serviceFrameSigner(tx:FrameTx):Promise<Hex>{
 
 export function verifyServiceFrame(raw: Hex, operation: ServiceFrameOperation): FrameTx {
   const actual = decodeFrameTransaction(raw);
-  const expected = serviceFramePlan(operation).tx;
+  const plan = serviceFramePlan(operation).tx;
+  const execution = actual.frames[1];
+  if (!execution || execution.gasLimit <= 0n || execution.gasLimit > 14500000n || execution.stateGasLimit > 40000000n) throw Error('Invalid saved service gas limits.');
+  // Preserve already-signed journals when gas budgets are tuned. All call data,
+  // value, targets, nonce and fee fields remain bound to the requested operation.
+  const expected = new FrameTx({ ...plan, frames: [plan.frames[0]!, new Frame({ ...plan.frames[1]!, gasLimit: execution.gasLimit, stateGasLimit: execution.stateGasLimit })] });
   if (actual.sigHash() !== expected.sigHash() || actual.signatures[0]?.scheme !== SigScheme.SECP256K1 || actual.signatures[0].signature.length !== 132)
     throw Error('Saved native service transaction differs from the public operation.');
   return actual;

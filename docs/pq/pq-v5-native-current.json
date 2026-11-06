@@ -1,0 +1,16 @@
+{
+  "scope": "Native independent verification and mutation checks on the actual chain-1337 public proof envelope",
+  "jobId": "366991e8eac3e42a832703c2f82ed4fa74850c067e6973b8f8febd6ba1131442",
+  "checks": [
+    "PASS public encoder valid-independent-statement",
+    "PASS public encoder wrong-profile",
+    "PASS public encoder changed-root",
+    "PASS public encoder changed-nullifier",
+    "PASS public encoder changed-recipient-context",
+    "PASS public encoder witness-field",
+    "PASS public encoder nested-secret-field",
+    "PASS public encoder trailing-proof-bytes",
+    "PASS public encoder corrupted-envelope",
+    "PASS public encoder truncated-envelope"
+  ]
+}

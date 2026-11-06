@@ -4,6 +4,9 @@ import {readFile,writeFile,mkdir,chmod}from'node:fs/promises';
 import {chromium}from'@playwright/test';
 import{createPublicClient,http}from'viem';import{generatePrivateKey,privateKeyToAccount}from'viem/accounts';
 const url=new URL(process.env.QRAFT_BROWSER_URL??'http://localhost:3006').origin;
+const appPath=process.env.QRAFT_TEST_APP_PATH??'/pq';
+const withdrawalTimeoutMs=Number(process.env.QRAFT_TEST_WITHDRAWAL_TIMEOUT_MS??7200000);
+if(!Number.isSafeInteger(withdrawalTimeoutMs)||withdrawalTimeoutMs<=0)throw Error('Invalid live withdrawal test timeout.');
 const manifest=JSON.parse(await readFile('public/pq-deployment.json'));
 if(!manifest.applicationEnabled)throw Error('Deploy the QRAFT protocol and update its verified deployment manifest before running the live lifecycle test.');
 const rpc=createPublicClient({cacheTime:0,transport:http(manifest.rpcUrl,{timeout:60000,retryCount:0})});
@@ -15,17 +18,17 @@ if(resumeJobId&&(!restore||!/^([a-f0-9]{64})$/.test(resumeJobId)))throw Error('P
 let wallet;let depositHash=null;let depositAccountBalanceBefore=null;let depositAccountBalanceAfter=null;
 const errors=[];let directBrowserPosts=0;let sensitiveRequests=0;const needles=[];const requests=[];
 let context,page;let latestProgress='';
-const diagnostic=setInterval(()=>{if(page&&!page.isClosed())void page.locator('main').allTextContents().then(text=>console.log('Browser state:',text.join(' ').replace(/\s+/g,' ').slice(-1300))).catch(()=>{});},30000);
+const diagnostic=setInterval(()=>{if(page&&!page.isClosed())void page.locator('body').innerText().then(text=>console.log('Browser state:',text.replace(/\s+/g,' ').slice(-1300))).catch(()=>{});},30000);
 async function newPage(){
- context=await browser.newContext({acceptDownloads:true,permissions:['clipboard-read','clipboard-write'],viewport:{width:1280,height:900}});page=await context.newPage();page.setDefaultTimeout(120000);
+ context=await browser.newContext({...(process.env.QRAFT_TEST_STORAGE_STATE?{storageState:process.env.QRAFT_TEST_STORAGE_STATE}:{}),acceptDownloads:true,permissions:['clipboard-read','clipboard-write'],viewport:{width:1280,height:900}});page=await context.newPage();page.setDefaultTimeout(120000);
  const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',ctap2Version:'ctap2_1',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
  page.on('pageerror',error=>errors.push(error.message));
  page.on('request',request=>{const body=request.postDataBuffer();if(request.method()==='POST'&&request.url().startsWith(manifest.rpcUrl))directBrowserPosts++;if(body){requests.push(body);if(needles.some(needle=>body.includes(needle)))sensitiveRequests++;}});
  page.on('response',response=>{if(response.request().method()==='GET'&&/\/api\/pq\/proofs\/[a-f0-9]{64}$/.test(response.url()))void response.json().then(job=>{const label=job.phase==='verifying'?`${job.phase}:${Math.floor((job.done??0)/24)*24}`:job.stage;if(label&&label!==latestProgress){latestProgress=label;console.log(`PQ progress: ${label}`);}}).catch(()=>{});});
- await page.goto(new URL('/app',url).href);return page;
+ await page.goto(new URL(appPath,url).href);return page;
 }
 async function download(button,path){const waiting=page.waitForEvent('download');await button.click();await(await waiting).saveAs(path);await chmod(path,0o600);}
-async function confirmed(timeout=300000){const receipt=page.getByText(/Confirmed in block/).filter({visible:true}).first();const stopped=page.getByText(/^(Withdrawal stopped|Deposit did not complete|Withdrawal outcome unknown|Deposit outcome unknown)$/).filter({visible:true}).first();await receipt.or(stopped).first().waitFor({timeout});if(await stopped.isVisible())throw Error('Transaction workflow stopped: '+(await page.locator('main').innerText()).replace(/\s+/g,' ').slice(-1400));}
+async function confirmed(timeout=300000){const receipt=page.getByText(/Confirmed in block/).filter({visible:true}).first();const stopped=page.getByText(/^(Withdrawal stopped|Deposit did not complete|Withdrawal outcome unknown|Deposit outcome unknown|Waiting for withdrawal confirmation)$/).filter({visible:true}).first();await receipt.or(stopped).first().waitFor({timeout});if(await stopped.isVisible())throw Error('Transaction workflow stopped: '+(await page.locator('main').innerText()).replace(/\s+/g,' ').slice(-1400));}
 try{
  if(!restore){
  await newPage();
@@ -87,14 +90,14 @@ try{
  let recovered;
  if(resumeJobId){
   const response=await fetch(`${url}/api/pq/proofs/${resumeJobId}`);if(!response.ok)throw Error('The saved public proof job is unavailable.');recovered=await response.json();
-  if(!recovered.sessionId||!recovered.claimsBlob||!['verifying','verified'].includes(recovered.phase))throw Error('Only an attached, continuing public verification job can be recovered by this test.');
+  if(!recovered.claimsBlob||!['uploaded','verifying','verified'].includes(recovered.phase))throw Error('Only an uploaded public proof job can be recovered by this test.');
   const statement=recovered.statement;const recipient=statement.publicContext.recipientHex;const deadline=statement.publicContext.deadline;
-  const flow={owner:wallet.address,binding:JSON.stringify([statement.root,statement.nullifier,statement.context,recipient,deadline]),nullifier:'0x'+Buffer.from(statement.nullifier).toString('hex'),recipient,deadline,sessionId:recovered.sessionId,attached:true};
-  await page.evaluate(({key,flow})=>localStorage.setItem(key,JSON.stringify(flow)),{key:`qraft:pq:public-flow:v1:${resumeJobId}`,flow});
+  const flow={owner:wallet.address,binding:JSON.stringify([statement.root,statement.nullifier,statement.context,recipient,deadline]),nullifier:'0x'+Buffer.from(statement.nullifier).toString('hex'),recipient,deadline,sessionId:recovered.sessionId,attached:!!recovered.sessionId};
+  await page.evaluate(({key,flow})=>{if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(flow));},{key:`qraft:pq:public-flow:v1:${resumeJobId}`,flow});
  }
  await page.getByRole('tab',{name:/^withdraw$/i}).click();
  await page.getByLabel('PQ note file',{exact:true}).setInputFiles(notePath);
- const recipient=recovered?.statement.publicContext.recipientHex??privateKeyToAccount(generatePrivateKey()).address;
+ const recipient=recovered?.statement.publicContext.recipientHex??process.env.QRAFT_TEST_RECIPIENT??privateKeyToAccount(generatePrivateKey()).address;
  const recipientBefore=await rpc.getBalance({address:recipient});
  if(recovered){await page.getByRole('button',{name:'Resume the same withdrawal',exact:true}).waitFor({timeout:360000});}else{
  for(let attempt=0;;attempt++){
@@ -112,7 +115,7 @@ try{
  }
  if(recovered)await page.getByRole('button',{name:'Resume the same withdrawal',exact:true}).click();
  console.log(recovered?'Resuming the same public verification session and final native withdrawal':'Running browser V5 proof, public encoding, native session authorization and staged EVM verification');
- await confirmed(3600000);
+ await confirmed(withdrawalTimeoutMs);
  const delta=(await rpc.getBalance({address:recipient}))-recipientBefore;
  assert.equal(delta,BigInt(manifest.denominationWei));
  assert.equal(await rpc.getBalance({address:manifest.pool}),poolBefore-BigInt(manifest.denominationWei));
@@ -126,12 +129,14 @@ try{
  await page.screenshot({path:'.local/pq-app-receipt.png',fullPage:true});
  await writeFile('.local/pq-app-evidence.json',JSON.stringify(evidence,null,2)+'\n');
  console.log('PASS exact native ETH payout after the complete PQ browser flow');
+ const doneButton=page.getByRole('button',{name:'Done',exact:true});
+ if(await doneButton.isVisible())await doneButton.click();
  await page.getByRole('button',{name:'Withdraw another note',exact:true}).click();
  await page.getByLabel('PQ note file',{exact:true}).setInputFiles(notePath);
  await page.getByText(/already been withdrawn|Already withdrawn|already spent/).first().waitFor({timeout:360000});
  console.log('PASS spent PQ note reimport');
  void poolAbi;
 }catch(error){
- await context?.storageState({path:'.local/pq-app-public-browser-state.json'}).catch(()=>{});
+ await context?.storageState({path:'.local/pq-app-public-browser-state.json'}).then(()=>chmod('.local/pq-app-public-browser-state.json',0o600)).catch(()=>{});
  const alerts=await page?.getByRole('alert').allTextContents().catch(()=>[]);await page?.screenshot({path:'.local/pq-app-stopped.png',fullPage:true}).catch(()=>{});console.error('PQ browser test stopped:',error.message.split('\n')[0]);if(alerts?.length)console.error('Visible errors:',JSON.stringify(alerts));throw error;
 }finally{clearInterval(diagnostic);await browser.close();}

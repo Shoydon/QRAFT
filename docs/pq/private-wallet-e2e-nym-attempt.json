@@ -1,0 +1,17 @@
+{
+  "passed": false,
+  "completed": false,
+  "transport": "Real configured Nym browser transport",
+  "completedSteps": [
+    "Two deposits confirmed in browser",
+    "Private send included successfully on chain"
+  ],
+  "paymentHash": "0xe4b6f4fa5eb7f9a6f7f3e07553587f39a3527886cc44373bffdb3a29aee4a3f2",
+  "receiptStatus": "0x1",
+  "frameStatuses": [
+    "0x1",
+    "0x1",
+    "0x1"
+  ],
+  "limitation": "Stopped after approximately 15 minutes: Nym reads stalled during reload reconciliation of deliberately dropped relay response. Full Nym restore/withdraw flow was not completed. Read reconnect fix subsequently added; standalone network and browser checks rerun separately."
+}

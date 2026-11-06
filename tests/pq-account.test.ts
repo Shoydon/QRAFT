@@ -268,5 +268,5 @@ test('EF wallet carries PQ signature in VERIFY transaction and never calls cache
   const tx = decodeFrameTransaction(f.state.sent[0]!);
   expect(tx.signatures).toHaveLength(1);
   expect(tx.signatures[0]!.signature).toHaveLength(4842);
-  expect(tx.frames[0]!.gasLimit).toBe(3000000n);
+  expect(tx.frames[0]!.gasLimit).toBe(2200000n);
 });

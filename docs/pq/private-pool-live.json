@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "route": "alternative mempool",
+  "pool": "0x4749f594168F9679E30a2C07976897458112d852",
+  "results": [
+    {
+      "step": "shield",
+      "hash": "0x280ced8f3ac4b2d38da0456ceb0d3c5aa2958a63fa71acdd392c858145403663",
+      "gasUsed": "4344327",
+      "payer": "0x8bfeda3e5a4812116c0f0e993254600827c150d5",
+      "frameStatuses": [
+        "0x1",
+        "0x1",
+        "0x1"
+      ]
+    },
+    {
+      "step": "send",
+      "hash": "0xbd8a6e8604b9e0073bc8b68fe5697142770cf0b41633eba99cdce7e22e7a22f0",
+      "gasUsed": "5188516",
+      "payer": "0x8bfeda3e5a4812116c0f0e993254600827c150d5",
+      "frameStatuses": [
+        "0x1",
+        "0x1",
+        "0x1"
+      ]
+    },
+    {
+      "step": "withdraw",
+      "hash": "0x486878ec1c60d4f21df49b7577f05c97e56697a26dff71c9303d21f16b980793",
+      "gasUsed": "4500838",
+      "payer": "0x8bfeda3e5a4812116c0f0e993254600827c150d5",
+      "frameStatuses": [
+        "0x1",
+        "0x1",
+        "0x1"
+      ]
+    }
+  ]
+}

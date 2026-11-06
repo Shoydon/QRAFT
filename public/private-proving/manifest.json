@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "profile": "Groth16-BN254 single-operator development setup; not for production",
+  "sourceHash": "0d814eef527ae3f759f7bfe9e70a8c85e74e8cf4cf9c3902632576e533a4bf3b",
+  "r1csHash": "6432661e106e6af5a224a5ba00ebd32551eb5c906bd17dcfe87d61e218bbbec0",
+  "inputs": 4,
+  "outputs": 2,
+  "depth": 20,
+  "files": {
+    "join-split.wasm": "49d312bf49be9294a4344292404a47b423ebf131726d0e125b789230038c1e13",
+    "join-split.zkey": "e585c6e67e969abf4ed359490f7a4439b36d2846acb922c4095a48055cfa97d7",
+    "verification_key.json": "d406cf8251a549168a2808210b92656e06c3ccc9b9dae40b2ac07d9e4886bac1",
+    "snarkjs.min.js": "3f61bbd9ac0a10173902eaef65b510fa4e9a2c057f759c7f18a6d0446b20fd06"
+  },
+  "compiler": "0.2.23",
+  "solc": "0.8.30+commit.73712a01.Emscripten.clang"
+}

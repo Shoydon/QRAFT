@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Build the PQ route without replacing assets used by an active proof worker.
+  distDir: process.env.QRAFT_PRIVATE_BUILD === '1' ? '.next-private' : process.env.QRAFT_ISOLATED_PQ_BUILD === '1' ? '.next-pq' : '.next',
   reactStrictMode: true,
   outputFileTracingExcludes: {
     '/*': ['./.local/**/*', './.env*', './packages/**/target/**/*'],

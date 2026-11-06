@@ -3,7 +3,7 @@ import { AppShell } from '@/components/AppShell';
 import { WORDMARK, SHIPPED_DESCRIPTION } from '@/config/brand';
 
 export const metadata: Metadata = {
-  title: `Deposit and withdraw — ${WORDMARK}`,
+  title: `Private wallet — ${WORDMARK}`,
   description: SHIPPED_DESCRIPTION,
 };
 

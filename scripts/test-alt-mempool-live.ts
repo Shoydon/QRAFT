@@ -7,7 +7,7 @@ import {createPqNote,serializePqNote} from '../src/lib/pq/note';
 import {DEFAULT_PQ_POOL} from '../src/lib/pq/registry';
 import manifest from '../public/pq-deployment.json';
 import type {ChainTransport} from '../src/lib/transport/types';
-const root='.local/alt-mempool-integration';await mkdir(root,{recursive:true,mode:0o700});
+const root=process.env.QRAFT_INTEGRATION_DIR??'.local/alt-mempool-integration';await mkdir(root,{recursive:true,mode:0o700});
 const save=(name:string,value:unknown)=>writeFile(`${root}/${name}`,JSON.stringify(value,null,2),{mode:0o600});
 let seed:Hex;
 try{seed=JSON.parse(await readFile(`${root}/seed.json`,'utf8')).seed;}catch(e){if(!e||typeof e!=='object'||!('code'in e)||e.code!=='ENOENT')throw e;seed=bytesToHex(crypto.getRandomValues(new Uint8Array(32)));await save('seed.json',{seed});}
@@ -22,6 +22,7 @@ const storage:PublicJournalStorage={getItem:k=>records[k]??null,setItem(k,v){rec
 const wallet=await PqAccountClient.create(transport,{seed:hexToBytes(seed),journalStorage:storage,withLock:async(_name,fn)=>fn(),onProgress:console.log,
  fetch:async(_input,init)=>new Response(JSON.stringify(await provisionPqAccount(JSON.parse(String(init?.body)).publicKey,async label=>{console.log(label);})),{headers:{'content-type':'application/json'}})});
 await save('backup.json',JSON.parse(wallet.backup()));console.log('PQ account',wallet.address);
+if(process.env.QRAFT_CREATE_ONLY==='1')process.exit(0);
 let note;try{note=JSON.parse(await readFile(`${root}/note.json`,'utf8'));}catch(e){if(!e||typeof e!=='object'||!('code'in e)||e.code!=='ENOENT')throw e;note=createPqNote(DEFAULT_PQ_POOL);await save('note.json',note);await writeFile(`${root}/note.txt`,serializePqNote(note),{mode:0o600});}
 let previous;try{previous=JSON.parse(await readFile(`${root}/result.json`,'utf8'));}catch(e){if(!e||typeof e!=='object'||!('code'in e)||e.code!=='ENOENT')throw e;}
 let result;

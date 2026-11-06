@@ -23,3 +23,11 @@ describe('EF sidecar', () => {
     await expect(submitToSidecar({ async request<T>(): Promise<T> { return '0x00' as T; } }, t.raw())).rejects.toThrow('another transaction');
   });
 });
+
+test('known sidecar submissions preserve the original transaction hash', async () => {
+  const t=tx();let calls=0;
+  const rpc={async request<T>():Promise<T>{calls++;throw Error('Frame transaction already known');}};
+  expect(await submitToSidecar(rpc,t.raw())).toBe(t.transactionHash());
+  expect(calls).toBe(1);
+  await expect(submitToSidecar({async request<T>():Promise<T>{throw Error('invalid signature');}},t.raw())).rejects.toThrow('invalid signature');
+});

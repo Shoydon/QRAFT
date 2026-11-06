@@ -14,7 +14,10 @@ public/proving/spend.wasm
 public/proving/spend.zkey
 public/proving/snarkjs.min.js
 test-results/
+.next-pq/
 playwright-report/
+.next-private/
+qraft-private-recovery*.json
 
 # Native PQ build outputs and local proofs
 **/target/

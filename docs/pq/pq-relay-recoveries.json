@@ -1,0 +1,67 @@
+{
+  "chainId": 1337,
+  "jobId": "366991e8eac3e42a832703c2f82ed4fa74850c067e6973b8f8febd6ba1131442",
+  "scope": "Exact signed batch resubmission after explicit sidecar cancellation, no new nonces",
+  "recoveries": [
+    {
+      "at": "2026-11-06T20:15:16.351Z",
+      "start": 361,
+      "hash": "0xe7fd7eb23e6ec25f7e106ca99fc784f27d1280e67a42b6b4520c3ad04b94dffe",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0xe7fd7eb23e6ec25f7e106ca99fc784f27d1280e67a42b6b4520c3ad04b94dffe"
+    },
+    {
+      "at": "2026-11-06T20:20:37.479Z",
+      "start": 387,
+      "hash": "0x16fdabb89b6b11fe4c603a90486a57fdef511f3fdeda67f26806b2e3a153789c",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0x16fdabb89b6b11fe4c603a90486a57fdef511f3fdeda67f26806b2e3a153789c"
+    },
+    {
+      "at": "2026-11-06T20:30:01.944Z",
+      "start": 433,
+      "hash": "0x1f5b13512f3504048d69bd92aa131bd628de31b0fcb8d853bc1c37cd7dc622c9",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0x1f5b13512f3504048d69bd92aa131bd628de31b0fcb8d853bc1c37cd7dc622c9"
+    },
+    {
+      "at": "2026-11-06T20:32:23.209Z",
+      "start": 441,
+      "hash": "0xb4c95ef56f3a7e58b8a05e9692da797510f3a843dbf0a60d330e38373af08a55",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0xb4c95ef56f3a7e58b8a05e9692da797510f3a843dbf0a60d330e38373af08a55"
+    },
+    {
+      "at": "2026-11-06T20:34:44.719Z",
+      "start": 451,
+      "hash": "0x8ad95d57eea79d45d863134098a14027a615cddd0685fcb3731f17790704dc80",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0x8ad95d57eea79d45d863134098a14027a615cddd0685fcb3731f17790704dc80"
+    },
+    {
+      "at": "2026-11-06T20:37:21.342Z",
+      "start": 459,
+      "hash": "0x5a394aab120a9c56d18e1470cf65c03ebb495ad7f817243eb81ab3570ac64c5e",
+      "priorStatus": "Cancelled",
+      "reason": "relayed 4 times without being included in a block",
+      "unchangedNonce": true,
+      "simulationStatus": "success",
+      "returned": "0x5a394aab120a9c56d18e1470cf65c03ebb495ad7f817243eb81ab3570ac64c5e"
+    }
+  ]
+}

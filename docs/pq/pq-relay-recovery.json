@@ -1,0 +1,35 @@
+{
+  "at": "2026-11-06T19:56:41.579Z",
+  "chainId": 1337,
+  "hash": "0xea92e49c2a88fc0ea11bc76f02ef602e212955ce49bad29e511281327cc24855",
+  "previousStatus": "Cancelled",
+  "reason": "relayed 4 times without being included in a block",
+  "unchangedNonce": true,
+  "simulation": {
+    "canonicalMempoolValid": true,
+    "canonicalMempoolViolation": null,
+    "erc7562Trace": null,
+    "erc7562TraceError": null,
+    "executionError": null,
+    "executionStatus": "success",
+    "frames": [
+      {
+        "gasUsed": "0x64",
+        "succeeded": true
+      },
+      {
+        "gasUsed": "0x8fdfdc",
+        "succeeded": true
+      },
+      {
+        "gasUsed": "0x8e51fb",
+        "succeeded": true
+      }
+    ],
+    "gasUsed": "0x13c7fe8",
+    "maxCost": "0xc4570e80",
+    "payer": "0x9cb781b58aab6f19beb9e6903fe569b055446c6e",
+    "prefixShape": "SelfVerify"
+  },
+  "returned": "0xea92e49c2a88fc0ea11bc76f02ef602e212955ce49bad29e511281327cc24855"
+}

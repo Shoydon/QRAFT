@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run build",
     "prepare:proving": "node scripts/prepare-proving.mjs",
-    "predev": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs",
-    "prebuild": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs",
+    "predev": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs && node scripts/check-private-artifacts.mjs",
+    "prebuild": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs && node scripts/check-private-artifacts.mjs",
     "protocol:build": "node scripts/build-protocol.mjs",
     "protocol:deploy": "node scripts/deploy.mjs",
     "test:protocol": "npm run protocol:build && npm run prepare:proving && node --experimental-strip-types scripts/test-protocol.mjs",
@@ -24,7 +24,11 @@
     "test:pq:crypto": "bun test tests/pq.test.ts",
     "prepare:pq": "node scripts/build-pq.mjs",
     "test:pq:export": "node scripts/test-pq-public-export.mjs",
-    "postinstall": "node scripts/patch-anon-rpc-headers.mjs"
+    "postinstall": "node scripts/patch-anon-rpc-headers.mjs",
+    "private:build": "node scripts/build-private-pool.mjs && node scripts/build-private-native.mjs",
+    "test:private:protocol": "node scripts/test-private-pool.mjs",
+    "test:private:browser": "node scripts/test-private-browser.mjs",
+    "test:private:e2e": "node scripts/test-private-e2e.mjs"
   },
   "dependencies": {
     "@anon-rpc/browser-harness": "0.4.0",

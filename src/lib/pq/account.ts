@@ -388,7 +388,7 @@ export class PqAccountClient {
         if (!this.key) failure('The PQ wallet was locked.');
         let tx = new FrameTx({ chainId: this.deployment.chainId, nonceKeys: [BigInt(this.deployment.contracts.validator.address)], nonceSeq: nonce, sender: this.address,
           maxPriorityFee: 1n, maxFee: 128n, signatures: this.deployment.chainId === 1337 ? [new FrameSig({ scheme: 0, signer: null, signature: `0x${'00'.repeat(2420)}` })] : [], frames: [
-            new Frame({ mode: FrameMode.VERIFY, flags: 2, target: this.address, gasLimit: this.deployment.chainId === 1337 ? 3000000n : 180000n, stateGasLimit: 0n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
+            new Frame({ mode: FrameMode.VERIFY, flags: 2, target: this.address, gasLimit: this.deployment.chainId === 1337 ? 2200000n : 180000n, stateGasLimit: 0n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
             new Frame({ mode: FrameMode.VERIFY, flags: 1, target: options.paymaster ?? pqPaymaster(this.deployment), gasLimit: 120000n, stateGasLimit: 97920n, data: encodeFunctionData({ abi: PAY_ABI, functionName: 'pay' }) }),
             new Frame({ mode: FrameMode.SENDER, target: options.to, gasLimit: this.deployment.chainId === 1337 ? 8000000n : 14500000n, stateGasLimit: this.deployment.chainId === 1337 ? 10000000n : 40000000n, value: options.value ?? 0n, data: options.data }),
           ] });

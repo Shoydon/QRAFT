@@ -62,4 +62,4 @@ Live scripts are explicitly state-changing and use ignored, private journals: `s
 
 ## Historical recovery
 
-`/legacy` retains the former V5 application for historical notes. Those notes are incompatible with the atomic pool and are never relabeled or migrated silently. Its 663-operation verifier, old deployments and historical evidence remain separate; the interrupted old chain-1337 run is not claimed as completed. No old verifier job is restarted by the new application.
+`/pq` runs the V5 hiding-STARK application on chain 1337, including browser proof creation, local verification, public-proof publication and the complete staged on-chain verifier. `/legacy` remains an alias for that component. These notes are incompatible with the atomic pool and are never relabeled or migrated silently. See [PQ setup](docs/pq/setup-1337.md) for operation and verification commands. The atomic application does not restart V5 proof jobs.

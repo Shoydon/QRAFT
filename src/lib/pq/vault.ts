@@ -85,7 +85,7 @@ function checkedCredential(credential: Credential | null, challenge: Uint8Array,
   if (new Uint8Array(authenticatorData).length < 37 || !(new Uint8Array(authenticatorData)[32]! & 4)) throw Error('Verify your identity with the passkey before unlocking this wallet.');
   return credential;
 }
-async function authenticate(metadata: PasskeyMetadata, signal?: AbortSignal): Promise<VaultSession> {
+export async function authenticate(metadata: PasskeyMetadata, signal?: AbortSignal): Promise<VaultSession> {
   capability();
   if (metadata.rpId !== window.location.hostname) throw Error('Open the original wallet domain to unlock this backup.');
   const challenge = random(32);

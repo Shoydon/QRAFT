@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "pool": "0x4749f594168F9679E30a2C07976897458112d852",
+  "transport": "Injected direct reads; actual UI provisioning API, shared relay API and native alternative-mempool payments",
+  "events": [
+    "alice created, encrypted recovery verified",
+    "bob created, encrypted recovery verified",
+    "Bob offline",
+    "Add ETH 0.00002 confirmed",
+    "Add ETH 0.00002 confirmed",
+    "Two deposits displayed as one 0.00004 ETH balance",
+    "Private payment after lost response/reload confirmed",
+    "Sender change is exactly 0.00001 ETH",
+    "Fresh device restores offline payment and same receiving identity",
+    "Withdraw 0.00001 confirmed"
+  ],
+  "withdrawalWei": "10000000000000",
+  "receiverRemainingEth": "0.00002"
+}

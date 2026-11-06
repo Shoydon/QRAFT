@@ -31,7 +31,7 @@ if(journal.genesisHash!==ALT_MEMPOOL.genesisHash||journal.operator!==account.add
 const save=()=>writeFile(file,JSON.stringify(journal,null,2),{mode:0o600});
 async function deploy(name:string,data:Hex){
  const salt=keccak256(stringToHex(`qraft:alt-mempool:v1:${name}`));const predicted=getCreate2Address({from:DEPLOYMENT_PROXY,salt,bytecode:data});
- let record=journal.transactions.find((r)=>r.name===name);
+ let record=journal.transactions.find((r)=>r.name===name&&r.inputHash===keccak256(data));
  if(record&&record.inputHash!==keccak256(data))throw Error('Deployment inputs changed; use a new deployment version');
  if(!record){
   const nonce=BigInt(await rpc.request<string>('eth_getTransactionCount',[account.address,'latest']));

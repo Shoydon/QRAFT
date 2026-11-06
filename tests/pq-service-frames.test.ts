@@ -40,3 +40,20 @@ test('native service receipts reject ordinary transactions, failed execution and
   expect(() => assertSuccessfulReceipt({ ...receipt, frameReceipts: [{ ...receipt.frameReceipts[0]!, status: '0x0' }, receipt.frameReceipts[1]!] }, 2)).toThrow();
   expect(() => assertSuccessfulReceipt({ ...receipt, frameReceipts: undefined }, 2)).toThrow();
 });
+
+test('EF setup calls use bounded gas and preserve signed historical budgets', async () => {
+  const setup = { ...operation, chainId: 1337, data: '0x' as Hex };
+  const plan = serviceFramePlan(setup).tx;
+  expect(plan.frames[1]!.gasLimit).toBe(500000n);
+  expect(plan.frames[1]!.stateGasLimit).toBe(1000000n);
+  const signed = signServiceFrame(plan, await operator.sign({ hash: plan.sigHash() }));
+  expect(verifyServiceFrame(signed.raw(), setup).sigHash()).toBe(signed.sigHash());
+  expect(() => verifyServiceFrame(signed.raw(), { ...setup, value: 124n })).toThrow('differs');
+});
+
+test('public proof bytecode uploads reserve state gas separately from execution', () => {
+  const {tx} = serviceFramePlan({...operation,chainId:1337,data:'0xff8d44dc'});
+  expect(tx.frames[1]!.gasLimit).toBe(8000000n);
+  expect(tx.frames[1]!.stateGasLimit).toBe(16000000n);
+  expect(tx.frames.reduce((sum,frame)=>sum+frame.gasLimit+frame.stateGasLimit,0n)).toBeLessThan(25000000n);
+});

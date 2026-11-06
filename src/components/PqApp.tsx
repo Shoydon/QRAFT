@@ -675,7 +675,7 @@ export function PqApp() {
     balance !== null && balance < BigInt(selectedPool.denominationWei);
   const recipientCheck = checkRecipient(recipient);
 
-  function renderProgress() {
+  function renderProgress(transaction = true) {
     const detail = progress === "Authorizing your transaction…"
       ? "The helper is preparing onchain verification of your ML-DSA-44 signature. Its operator pays for this preparation."
       : progress === "Checking your transaction…"
@@ -696,6 +696,7 @@ export function PqApp() {
         />
         </div>
         <Rail fraction={null} label="Transaction progress" />
+        {transaction ? <>
         <p className="text-xs leading-relaxed text-ink-60">{detail}</p>
         <TransactionRoute />
         <div className="border-t border-rule pt-4">
@@ -711,6 +712,7 @@ export function PqApp() {
             <Row label="Deposit paid by"><span>Your smart account</span></Row>
           </RowGroup>
         </div>
+        </> : null}
       </div>
     );
   }
@@ -749,7 +751,12 @@ export function PqApp() {
           <ol className="divide-y divide-rule">
             {result.receipt.frameReceipts?.map((frame, index) => (
               <li key={index} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <span>{index + 1} · {index === 0 ? "VERIFY · PQ authorization" : index === 1 ? "VERIFY · Gas sponsorship" : withdrawal ? "SENDER · Pool withdrawal" : "SENDER · Pool deposit"}</span>
+                <span>{index + 1} · {index === 0 ? "VERIFY · PQ authorization" : index === 1 ? "VERIFY · Gas sponsorship" : withdrawal ? "SENDER · Pool withdrawal" : "SENDER · Pool deposit"}
+                  {/^(0x[0-9a-f]+)$/i.test(frame.gasUsed) ? <span className="mt-1 block text-xs text-ink-60">
+                    {BigInt(frame.gasUsed).toLocaleString("en-US")} execution gas
+                    {frame.stateGasUsed && /^(0x[0-9a-f]+)$/i.test(frame.stateGasUsed) ? ` · ${BigInt(frame.stateGasUsed).toLocaleString("en-US")} state gas` : ""}
+                  </span> : null}
+                </span>
                 <span className="inline-flex shrink-0 items-center gap-2 text-xs text-[var(--state-good)]">
                   {BigInt(frame.status) === 1n ? <><CheckIcon width={16} height={16} aria-hidden="true" /> Confirmed</> : "Not completed"}
                 </span>
@@ -1190,7 +1197,7 @@ export function PqApp() {
                         </p>
                       </div>
                     ) : null}
-                    {withdrawStage === "checking" ? renderProgress() : null}
+                    {withdrawStage === "checking" ? renderProgress(false) : null}
                     {withdrawStage === "status" ? (
                       <div className="space-y-5">
                         <Hero

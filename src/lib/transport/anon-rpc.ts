@@ -145,7 +145,7 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
         // Bound each Nym tunnel attempt so one unreachable gateway does not
         // consume the entire startup window. Cover traffic stays enabled.
         config: TRANSPORT.worker.label === 'Nym'
-          ? { connectTimeoutMs: 20_000 }
+          ? { connectTimeoutMs: 20_000, iprAttemptTimeoutMs: 15_000, iprMaxAttempts: 3 }
           : TRANSPORT.gateways.length ? { gateways: TRANSPORT.gateways } : undefined,
         preExisting: { rpcProvider: bootstrapProvider(TRANSPORT.bootstrapRpcUrl as string) },
       });

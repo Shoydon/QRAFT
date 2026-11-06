@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { WORDMARK, TAGLINE, SHIPPED_DESCRIPTION } from "@/config/brand";
+import { WORDMARK, SHIPPED_DESCRIPTION } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { GitHubIcon } from "@/components/icons";
@@ -10,23 +10,23 @@ const REPO = "https://github.com/Shoydon/QRAFT";
 
 const STEPS = [
   {
-    title: 'Deposit',
-    body: "Choose a fixed ETH amount. Each amount has its own pool, where every deposit has the same value.",
+    title: 'Add ETH',
+    body: 'Move ETH into your private wallet. Incoming payments automatically become one balance.',
   },
   {
-    title: 'Keep the note',
-    body: 'Your browser makes a secret and never sends it anywhere. It is the only thing that can claim the deposit back.',
+    title: 'Send an exact amount',
+    body: 'Your device selects the funds and proves the payment locally. Any change stays in your wallet.',
   },
   {
-    title: 'Withdraw',
-    body: 'Your device proves the secret is real without showing which deposit it belongs to. The ETH arrives at a fresh address.',
+    title: 'Receive anywhere',
+    body: 'Receive while offline and recover on a new device with one encrypted backup. Withdraw to a public address when you need to.',
   },
 ] as const;
 
 export const metadata: Metadata = {
   title: `${WORDMARK} — ${SHIPPED_DESCRIPTION}`,
   description:
-    "A native ETH privacy pool with EIP-8141 frame transactions, Anon-RPC browser reads, and ML-DSA-44 wallet authorization.",
+    "One private ETH balance, exact payments, encrypted receiving and local proofs on the EF devnet.",
 };
 
 export default function LandingPage() {
@@ -53,11 +53,11 @@ export default function LandingPage() {
 
         <div className="mx-auto max-w-[58rem] pb-12 pt-16 text-center sm:pb-16 sm:pt-24">
           <h1 className="text-balance text-[clamp(2.25rem,5.2vw,4.5rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-ink">
-            {TAGLINE}
+            A private balance.<br/>A simpler way to pay.
           </h1>
           <p className="mx-auto mt-6 max-w-[36ch] text-base leading-relaxed text-ink-60 sm:text-lg">
-            Choose a fixed native ETH amount. Keep your note. Withdraw to a new
-            address.
+            Add ETH. Send what you mean. Receive while you’re away.
+            Your wallet takes care of the details.
           </p>
           <Link
             href="/app"
@@ -104,16 +104,17 @@ export default function LandingPage() {
                 {TRANSPORT.worker.anonymizing
                   ? `Browser reads use ${TRANSPORT.worker.label}, with no direct fallback.`
                   : "Browser reads use a non-anonymous diagnostic worker."}{" "}
-                The local gas helper uses direct RPC.
+                Private payments use an HTTPS relay that can see IP and timing.
               </dd>
             </div>
             <div className="grid gap-2 py-6 sm:grid-cols-[12rem_1fr] sm:gap-8 sm:py-7">
               <dt className="text-sm font-medium text-ink">
-                Post-quantum wallet stack
+                Keys and private proofs
               </dt>
               <dd className="max-w-[46ch] text-sm leading-relaxed text-ink-60">
-                ML-DSA-44 authorization, SHA3-512 notes, and transparent V5
-                proofs.
+                ML-DSA-44 authorization and ML-KEM encrypted delivery.
+                Local Groth16 proofs use conventional cryptography; the payment
+                system is not end-to-end post-quantum.
               </dd>
             </div>
           </dl>
@@ -127,9 +128,10 @@ export default function LandingPage() {
           </h2>
           <HowItWorks steps={STEPS} />
           <p className="mt-10 max-w-[56ch] text-sm leading-relaxed text-ink-60">
-            Both transactions are visible on the chain. What stays hidden is
-            which deposit paid for which withdrawal, and that holds only while
-            other deposits of the same size are sitting unspent alongside yours.
+            Deposits and withdrawals expose their public addresses and amounts.
+            Private sends keep their amounts inside encrypted payments, but
+            timing and network metadata can still allow correlation. This is an
+            experimental devnet wallet with a development proof setup.
           </p>
         </section>
       </main>

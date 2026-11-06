@@ -1,4 +1,5 @@
 import { PQ_POOLS } from './registry';
+import {publicBatchPlan,publicBatchFitsRelay,verifyPublicBatch,type PublicFrameCall} from './service-batch-frames';
 import { withCarrierLock } from './carrier-lock';
 /** Local gas/provisioning service. It never receives a user's seed or witness.
  * Its classical test carrier is bootstrap/gas infrastructure, not custody authority.
@@ -20,7 +21,7 @@ const chain=defineChain({id:manifest.chainId,name:manifest.chainName,nativeCurre
 const client=createPublicClient({cacheTime:0,transport:httpTransport()});
 function httpTransport(){
   // Imported statically via viem's standard transport below to keep all carrier requests server-side.
-  return http(manifest.rpcUrl,{timeout:60000,retryCount:0});
+  return http(manifest.rpcUrl,{timeout:60000,retryCount:2,retryDelay:1000});
 }
 import { http } from 'viem';
 const factoryAbi=parseAbi(['function predict(address implementation,bytes args,bytes32 salt) view returns(address)','function createAccount(address implementation,bytes args,bytes32 salt) payable returns(address)']);
@@ -110,6 +111,53 @@ export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed
   return deployment;
 }
 
+/** Freeze a simulated atomic group before sidecar disclosure. Caller holds the carrier lock. */
+async function publicBatch(label:string,calls:PublicFrameCall[]):Promise<number>{
+  const wallet=await carrier();
+  const operatorCode=await client.getCode({address:wallet.account.address});
+  if(operatorCode&&operatorCode!=='0x')throw Error('Public batch operator must use default EOA verification.');
+  const nonceKey=BigInt(keccak256(bytesToHex(new TextEncoder().encode(label))));
+  const file=join(root,`${nonceKey.toString(16).padStart(64,'0')}.batch.json`);
+  type BatchRecord=GasRecord&{count:number};
+  let record=await load<BatchRecord>(file);
+  const inputHash=(count:number)=>keccak256(bytesToHex(new TextEncoder().encode(JSON.stringify(calls.slice(0,count)))));
+  if(!record){
+    const nonce=BigInt(await client.getStorageAt({address:NONCE_MANAGER_LEGACY,slot:nonceSlot(wallet.account.address,nonceKey)})??'0x0');
+    if(nonce>BigInt(Number.MAX_SAFE_INTEGER))throw Error('Public batch nonce exceeds journal range.');
+    // Reduce group size only BEFORE signing intent is persisted or broadcast.
+    // Simulation executes the ordered calls together, including their state dependencies.
+    for(const count of [...new Set([Math.min(4,calls.length),Math.min(2,calls.length),1])]){
+      const plan=publicBatchPlan({operator:wallet.account.address,nonceKey,nonce,calls:calls.slice(0,count)});
+      // Bound relay payloads as well as gas; large openings use smaller groups.
+      if(!publicBatchFitsRelay(plan)){if(count>1)continue;throw Error('Public call exceeds the relay payload bound.');}
+      const tx=signServiceFrame(plan,await wallet.account.sign({hash:plan.sigHash()}));
+      const simulation=await client.request({method:'ethrex_simulateFrameTransaction',params:[tx.raw(),'latest']} as never) as unknown as FrameSimulation;
+      try{assertSuccessfulSimulation(simulation,count+1,true);}catch(error){if(count>1)continue;throw error;}
+      if(simulation.payer?.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Unexpected public batch payer.');
+      record={chainId:1337,count,nonce:Number(nonce),inputHash:inputHash(count),raw:tx.raw(),hash:tx.transactionHash()};await save(file,record);break;
+    }
+  }
+  if(!record||record.chainId!==1337||!Number.isInteger(record.count)||record.count<1||record.count>Math.min(4,calls.length)||record.inputHash!==inputHash(record.count)||keccak256(record.raw)!==record.hash)throw Error('Invalid saved public batch.');
+  const tx=verifyPublicBatch(record.raw,{operator:wallet.account.address,nonceKey,nonce:BigInt(record.nonce),calls:calls.slice(0,record.count)});
+  if((await serviceFrameSigner(tx)).toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Invalid public batch signer.');
+  type Receipt=FrameReceipt&{from:Hex};
+  const receipt=()=>client.request({method:'eth_getTransactionReceipt',params:[record!.hash]}) as unknown as Promise<Receipt|null>;
+  let confirmed=await receipt();
+  if(!confirmed){
+    if(BigInt(await client.getStorageAt({address:NONCE_MANAGER_LEGACY,slot:nonceSlot(wallet.account.address,nonceKey)})??'0x0')!==BigInt(record.nonce))throw Error('Reconcile the saved public batch nonce.');
+    await submitToSidecar({async request<T>(method:string,params:unknown[]):Promise<T>{
+      const response=await fetch(manifest.sidecarUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(60000)});
+      const body=await response.json();if(body.error)throw Error(body.error.message);return body.result as T;
+    }},record.raw);
+    const deadline=Date.now()+180000;
+    while(!confirmed&&Date.now()<deadline){confirmed=await receipt();if(!confirmed)await new Promise<void>(resolve=>setTimeout(resolve,1000));}
+  }
+  if(!confirmed)throw Error('Public batch confirmation is unresolved; preserve its journal.');
+  assertSuccessfulReceipt(confirmed,record.count+1);
+  if(confirmed.from.toLowerCase()!==wallet.account.address.toLowerCase()||confirmed.payer?.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Public batch sender or payer changed.');
+  return record.count;
+}
+
 /** Fixed public verifier calls only; these grants cannot authorize a withdrawal. */
 export async function runPublicProgram(label:string,calls:{to:Hex;data:Hex}[],progress:(done:number)=>Promise<void>):Promise<void>{
   const allowed=new Set([manifest.contracts.session.address.toLowerCase(),manifest.contracts.blobs.address.toLowerCase()]);
@@ -130,6 +178,12 @@ export async function runPublicProgram(label:string,calls:{to:Hex;data:Hex}[],pr
     }
     const completed=journal?.records.length??0;
     if(completed>calls.length)throw Error('Historical program exceeds its bound.');
+    const firstLegacy=join(root,`${keccak256(bytesToHex(new TextEncoder().encode(`${label}:native:0`)))}.json`);
+    const batchable=manifest.chainId===1337&&label.includes(':session:')&&!completed&&!await load<GasRecord>(firstLegacy);
+    if(batchable){
+      for(let i=0;i<calls.length;){i+=await publicBatch(`${label}:batch:${i}`,calls.slice(i,i+4));await progress(i);}
+      return;
+    }
     for(let i=0;i<calls.length;i++){
       if(i>=completed)await gasCall(`${label}:native:${i}`,calls[i]!.data,calls[i]!.to);
       await progress(i+1);

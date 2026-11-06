@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "flow": "Alice shields twice, joins two notes to pay Bob, Bob pays offline Carol, Carol decrypts and partially withdraws",
+  "measurements": [
+    {
+      "kind": 0,
+      "proveMs": 5407,
+      "gas": "1170554"
+    },
+    {
+      "kind": 0,
+      "proveMs": 5290,
+      "gas": "1148380"
+    },
+    {
+      "kind": 1,
+      "proveMs": 5336,
+      "gas": "1876847"
+    },
+    {
+      "kind": 1,
+      "proveMs": 5443,
+      "gas": "1852563"
+    },
+    {
+      "kind": 2,
+      "proveMs": 5432,
+      "gas": "1202264"
+    },
+    {
+      "kind": 2,
+      "proveMs": 5420
+    }
+  ],
+  "publicSignalMutations": 6,
+  "calldataMutations": 6,
+  "invalidWitnessesRejected": 6,
+  "payoutReversionAtomic": true,
+  "replayRejected": true,
+  "poolBalance": "3500"
+}
