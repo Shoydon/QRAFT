@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!--
+    Favicon cut of the QRAFT pool seal.
+    Master geometry: the Logo component in src/components/Logo.tsx.
+
+    Drawn at its own optical size rather than scaled down. The master's twelve
+    notes close into a solid band at a rendered 16px and the Q disappears
+    inside them — checked, not assumed — so this cut keeps only the sealed Q,
+    which is the part that still reads. The ring of identical notes belongs to
+    the mark at 32px and up.
+
+    The 6px seal is the hairline at this size: at a rendered 16px it is one
+    device pixel, which is what DESIGN.md's hairline rule is about. A 2.5px
+    stroke here would fall below one pixel and drop out entirely.
+
+    Paper tile rather than transparent, because a browser tab strip may be
+    dark and an ink tail on transparent vanishes there.
+  -->
+  <rect width="64" height="64" rx="14" fill="#faf9f7"/>
+  <defs>
+    <linearGradient id="qraft-icon-seal" gradientUnits="userSpaceOnUse" x1="14" y1="14" x2="50" y2="50">
+      <stop offset="0" stop-color="#d64545"/>
+      <stop offset="0.2" stop-color="#e08a3c"/>
+      <stop offset="0.4" stop-color="#c9a93a"/>
+      <stop offset="0.6" stop-color="#43935f"/>
+      <stop offset="0.8" stop-color="#3a76c4"/>
+      <stop offset="1" stop-color="#7a51c0"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round">
+    <path d="M52.3 38.4A20 20 0 1 0 38.4 52.3" stroke="url(#qraft-icon-seal)" stroke-width="6"/>
+    <path d="M40 40 55 55" stroke="#0d0d0f" stroke-width="6"/>
+  </g>
+</svg>
