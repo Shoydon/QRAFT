@@ -1481,10 +1481,14 @@ export function PqApp() {
                 {progress}
               </p>
             ) : null}
-            {!readReady ? (
-              <p className="text-xs text-ink-60">
-                Anonymous reads must connect before account ownership can be
-                verified.
+            {/* Two conditions gate this button, and naming only one of them
+                pointed at the transport while an unset env var was the real
+                blocker. */}
+            {serviceEnabled !== true || !readReady ? (
+              <p className="text-xs leading-relaxed text-ink-60">
+                {serviceEnabled !== true
+                  ? "Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server."
+                  : "Anonymous reads must connect before account ownership can be verified."}
               </p>
             ) : null}
           </div>

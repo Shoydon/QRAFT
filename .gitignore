@@ -28,3 +28,7 @@ packages/pq-hiding-stark/vendor/plonky3/
 
 # Generated wasm-bindgen package; deploy the pinned public assets instead.
 packages/pq-hiding-stark/wasm/pkg/
+
+# Wallet backup: holds the account seed, and the browser saves it wherever
+# downloads land — which can be the repo root.
+key.json

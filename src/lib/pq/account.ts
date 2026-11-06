@@ -170,7 +170,14 @@ async function postPublic(fetcher: PqFetch, path: string, body: unknown, signal?
   finally { reader.releaseLock(); }
   const bytes = new Uint8Array(length); let at = 0; for (const part of parts) { bytes.set(part, at); at += part.length; }
   let result: unknown; try { result = JSON.parse(new TextDecoder().decode(bytes)); } catch { failure('The local PQ helper response is invalid.'); }
-  if (!response.ok) failure('The local PQ helper could not complete this operation. Your key remains on this device.');
+  if (!response.ok) {
+    // The body is already parsed and usually carries the real cause.
+    // Dropping it left the interface saying only that something went
+    // wrong, which sent us to server logs for a missing file it knew about.
+    const reported = (result as { error?: unknown } | null)?.error;
+    const detail = typeof reported === 'string' && reported.trim() ? ` ${reported.trim().slice(0, 200)}` : '';
+    failure(`The local PQ helper could not complete this operation.${detail} Your key remains on this device.`);
+  }
   return result;
 }
 
