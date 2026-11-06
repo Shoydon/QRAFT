@@ -2,7 +2,8 @@ import type { SVGProps } from 'react';
 
 /**
  * Authored icon set: 24px grid, 1.5px stroke, round caps, currentColor.
- * No padlocks, shields, keyholes or eyes — see DESIGN.md.
+ * No shields, keyholes or eyes — see DESIGN.md. The lock glyph is a deliberate
+ * exception for the wallet row's lock action, kept to the same grid and stroke.
  */
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -120,6 +121,13 @@ export const CopyIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M9 9h9.5a.5.5 0 0 1 .5.5V19a.5.5 0 0 1-.5.5H9a.5.5 0 0 1-.5-.5V9.5A.5.5 0 0 1 9 9Z" />
     <path d="M15.5 6.5V5a.5.5 0 0 0-.5-.5H5.5A.5.5 0 0 0 5 5v10a.5.5 0 0 0 .5.5H6" />
+  </Icon>
+);
+
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4.75" y="10.5" width="14.5" height="9.75" rx="2" />
+    <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
   </Icon>
 );
 
