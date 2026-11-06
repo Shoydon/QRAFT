@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const PACKAGE=join(ROOT,'packages/pq-hiding-stark');
 const PROFILE='qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16';
-const BINARIES=['export_browser_v5','export_session_inputs_v5','export_session_fri_v5'];
+const BINARIES=['export_browser_v5','export_session_inputs_v5','export_session_fri_v5','public_profile_v5'];
 const json=async path=>JSON.parse(await readFile(path,'utf8'));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 async function bounded(path,max){
