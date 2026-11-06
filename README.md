@@ -1,6 +1,6 @@
 # QRAFT
 
-**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application adapted from Himitsu. Deposit **0.0001 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
+**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application. Deposit **0.0001 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
 
 The active application uses ML-DSA-44 account authorization, SHA3-512 notes and Merkle commitments, and the transparent V5 withdrawal proof. User signing seeds and note witnesses stay in the browser. This is experimental devnet software: the proof construction has a conditional security argument, not an independently established quantum-security certificate or a production audit. See [security boundaries](docs/pq/application-security.md).
 
@@ -62,8 +62,8 @@ The [live integration evidence](docs/pq/application-checks.json) records a fresh
 
 If Nym reads time out, open the read-path footer, reconnect anonymous reads, and retry the same backup or saved workflow. Never discard an unresolved signed intent or switch to a replacement nonce to work around a timeout.
 
-## Provenance and hackathon context
+## Source and license information
 
-Himitsu supplies the native frame codec, ML-DSA preparation and V5 proof implementation; QRAFT supplies the interface integration, local public helper, recovery boundaries and deployment checks. The sibling source repository is preserved separately. Historical Groth16 contracts and scripts remain as reference; the active `AppShell` loads only the PQ application and has no classical custody fallback. Legacy `protocol:*`, `prepare:proving` and `test:protocol` scripts do not exercise the active PQ path.
+Source attribution and dependency licensing are recorded in [NOTICE.md](NOTICE.md). Historical Groth16 contracts and scripts remain for development reference; the active `AppShell` loads the PQ application. Legacy `protocol:*`, `prepare:proving` and `test:protocol` scripts do not exercise the active PQ path.
 
-The [ETHGlobal Mumbai Ethereum Foundation prize page](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) and [official Anon-RPC wallet documentation](https://ethereum.github.io/anon-rpc/wallets/) inform the RPC integration. Reused implementation must be disclosed according to the event's rules; this repository does not represent all upstream work as newly created at the event.
+The [ETHGlobal Ethereum Foundation documentation](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) and [Anon-RPC wallet guide](https://ethereum.github.io/anon-rpc/wallets/) describe the network integration used here.
