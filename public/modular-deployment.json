@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "id": "qraft-erc8286-1337-v1",
+  "chainId": 1337,
+  "genesisHash": "0x2ad3f67b059fbde111ad7af27cfb4955d997351579612237ca0318937a5bae7a",
+  "rpcUrl": "https://altmempool.forshtat.com",
+  "sidecarUrl": "https://altmempool.forshtat.com/rpc",
+  "explorerUrl": "https://explorer.altmempool.wtf",
+  "denominationWei": "100000000000000",
+  "proofProfile": "Groth16-BN254-development-setup",
+  "walletAlgorithm": "ML-DSA-44",
+  "contracts": {
+    "walletVerifier": {
+      "address": "0x4EFEc12a8BD70a2D24F89622064ee083F7Ef0e9C",
+      "runtimeHash": "0x45b7e3c29830e134b026d6e9f738a343ad46cb06f84c80bfa8ac96f79ea6b97e",
+      "transactionHash": "0xa54b2b6e6b92bff7c504212485387612a3d6aacdbb043cf2a6924f74c9299c64",
+      "block": "5873",
+      "initDataHash": "0xa99bb3b9aa11dddc81519df5e64c8470cff694eb118fbfee1228c9a7590a435b"
+    },
+    "proofVerifier": {
+      "address": "0xfC20e0dD821305445d5941B320d11FC942C34181",
+      "runtimeHash": "0xeb2921f631788e67548c0e6ba6112e2fd1c7498382d55d8c1b4868092fa686a8",
+      "transactionHash": "0x9f41be36b9d5a136895190bfe09576ad743059ebe48a6a07344a7e2382a2318e",
+      "block": "5874",
+      "initDataHash": "0xc7a15bda9101f798647bb35138e0d3be50358385796e552a0e30340f57c9c285"
+    },
+    "pool": {
+      "address": "0x6bF551C5657d676aEe11A1519aDe1F126Cbdf2DA",
+      "runtimeHash": "0x504790d661058e2d6c149c8d57afe2fadf99ff4b55019dad01a54729938ff89b",
+      "transactionHash": "0xcc0edb5a99a7efbf5aa3c4bfdb63d1a22a7263d5e11e4df1fdbb17bfde38099c",
+      "block": "5875",
+      "initDataHash": "0xa15276c8d1d3325a37167f2aedd7efe29ad8dc76a10d8478877b772406151228"
+    },
+    "validator": {
+      "address": "0x30955e8D50967FD7C7c341274D7A7e72B9ea09f8",
+      "runtimeHash": "0x7715887d0164ff7fbfe3b6493f3dd0b7dc4d88d0dbcab66d69a640ee203368a2",
+      "transactionHash": "0xa30a59cdd552d932bc202a0464277932c60cb571ecc7074614005cc505ed24b7",
+      "block": "7644",
+      "initDataHash": "0xe4920cd9f0c36e2ac7cf5678f419dd3d23245c909f2312780bbc149f8d44ec3b"
+    },
+    "implementation": {
+      "address": "0x81D1ACb0EA656f17402685667842cab9116E6637",
+      "runtimeHash": "0x2c539d7979021e257fdab30313b26f2d659e2cb494f510a11324a179aaa2a22f",
+      "transactionHash": "0x75e4cfc417c931472526ffeff9a033f2b320de0fbc01b332662c2d6982931068",
+      "block": "7645",
+      "initDataHash": "0xb7487ae0c07990dfdb59be9434a53229c4539b5fa381372d735556028e96178b"
+    },
+    "factory": {
+      "address": "0xB7908eD99D9CBcBA711a7708986819121B1172D0",
+      "runtimeHash": "0x6750de740209a15eb88ad3571b9dc811db2ddb69683f40e2c68ab5cefd3afa1b",
+      "transactionHash": "0x620a2cf288298721a9d50c979d2349b806347a826726f06cc7f6654bb360c06f",
+      "block": "7646",
+      "initDataHash": "0x781c836a30e680db39edf235af0dc0a24a9a432348e201a90503ed631b1d039b"
+    },
+    "paymaster": {
+      "address": "0x8107c81f0A8560bE243Fb2fB3aaf61C5794bb9D3",
+      "runtimeHash": "0x663d45a7e9f12f897f94388552ba10e82e22467a8fdf7c76a490439fc46af10c",
+      "transactionHash": "0xd5b51b91025a26cfe6a5d0cbd18c1281c1ca79adce36857235c5877af6a16c60",
+      "block": "7647",
+      "initDataHash": "0xc083ee60eb872cb785a3af8de87aa77ef1c893db1022b7401517f9ef1ffda02c"
+    }
+  }
+}

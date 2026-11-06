@@ -3,10 +3,13 @@ import {resolve,posix} from 'node:path';
 import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import solc from 'solc';
+const provenance=JSON.parse(await readFile('packages/frame-account/contracts/vendor/erc8286/provenance.json','utf8'));
+for(const [name,hash] of Object.entries(provenance.sha256)){if(createHash('sha256').update(await readFile('packages/frame-account/contracts/vendor/erc8286/'+name)).digest('hex')!==hash)throw Error('Reference source changed: '+name);}
 const sources={};
-async function add(name){if(sources[name])return;const content=await readFile(name,'utf8');sources[name]={content};for(const m of content.matchAll(/import\s+(?:[^;]*?from\s+)?["']([^"']+)["']\s*;/g))await add(posix.normalize(posix.join(posix.dirname(name),m[1])));}
+async function add(name){if(sources[name])return;const content=await readFile(name.startsWith('@openzeppelin/contracts/')?'.local/frame-account-tools/openzeppelin/'+name.slice('@openzeppelin/contracts/'.length):name,'utf8');sources[name]={content};for(const m of content.matchAll(/import\s+(?:[^;]*?from\s+)?["']([^"']+)["']\s*;/g))await add(m[1].startsWith('.')?posix.normalize(posix.join(posix.dirname(name),m[1])):m[1]);}
 for(const name of await readdir('packages/atomic/contracts'))if(name.endsWith('.sol'))await add('packages/atomic/contracts/'+name);
 await add('protocol/contracts/SpendVerifier.sol');
+await add('packages/frame-account/contracts/vendor/erc8286/ERC8286AccountFactory.sol');
 const deps=JSON.parse(await readFile('.local/frame-account-tools/dependencies.json','utf8'));
 const compiler=resolve('.local/frame-account-tools/solc-eip8141');
 if(createHash('sha256').update(await readFile(compiler)).digest('hex')!==deps.compiler.sha256)throw Error('Compiler mismatch');

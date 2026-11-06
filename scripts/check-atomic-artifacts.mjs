@@ -1,9 +1,9 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const files=['scripts/build-atomic-verifier.mjs','scripts/build-atomic.mjs','scripts/generate-atomic-pool.mjs',
- ...['AtomicAccount','AtomicFactory','AtomicPool','AtomicPaymaster'].map(n=>`packages/atomic/contracts/${n}.sol`),
- ...['AtomicAccount','AtomicFactory','AtomicPool','AtomicPaymaster','MLDSA44Verifier','SpendVerifierStock'].map(n=>`packages/atomic/artifacts/${n}.json`),
- 'protocol/contracts/SpendVerifier.sol','packages/frame-account/contracts/vendor/erc8286/lib/LibERC8286.sol','packages/pq-hiding-stark/contracts/src/FastSha3_512.sol'];
+ ...['ModularAccount','ModularMldsaValidator','ModularPaymaster','AtomicAccount','AtomicFactory','AtomicPool','AtomicPaymaster'].map(n=>`packages/atomic/contracts/${n}.sol`),
+ ...['ModularAccount','ModularMldsaValidator','ModularPaymaster','AtomicAccount','AtomicFactory','AtomicPool','AtomicPaymaster','ERC8286AccountFactory','MLDSA44Verifier','SpendVerifierStock'].map(n=>`packages/atomic/artifacts/${n}.json`),
+ 'packages/frame-account/contracts/vendor/erc8286/ERC8286AccountFactory.sol','packages/frame-account/contracts/vendor/erc8286/provenance.json','protocol/contracts/SpendVerifier.sol','packages/frame-account/contracts/vendor/erc8286/lib/LibERC8286.sol','packages/pq-hiding-stark/contracts/src/FastSha3_512.sol'];
 const hashes=Object.fromEntries(await Promise.all(files.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
 const path='packages/atomic/integrity.json';
 if(process.argv.includes('--write'))await writeFile(path,JSON.stringify(hashes,null,2)+'\n');

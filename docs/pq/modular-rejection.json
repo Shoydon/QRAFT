@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "invalidSignatureRejected": true,
+  "validSignatureControlPassed": true,
+  "incorrectDepositValueNotSponsored": true
+}

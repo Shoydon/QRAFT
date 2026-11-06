@@ -42,3 +42,7 @@ packages/atomic/artifacts/*
 !packages/atomic/artifacts/AtomicPaymaster.json
 !packages/atomic/artifacts/MLDSA44Verifier.json
 !packages/atomic/artifacts/SpendVerifierStock.json
+!packages/atomic/artifacts/ModularAccount.json
+!packages/atomic/artifacts/ModularMldsaValidator.json
+!packages/atomic/artifacts/ModularPaymaster.json
+!packages/atomic/artifacts/ERC8286AccountFactory.json

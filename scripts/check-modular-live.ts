@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {encodeFunctionData,decodeFunctionResult,parseAbi,keccak256,type Hex,type Abi} from 'viem';
+import {modularRuntime,predictModular,modularConfig} from '../src/lib/atomic/modular';
+const m=JSON.parse(await readFile('public/modular-deployment.json','utf8'));
+const w=JSON.parse(await readFile('.local/modular-live/wallet-1.json','utf8'));
+const pin=(n:string)=>m.contracts[n].address as Hex;
+const rpc=async(method:string,params:unknown[])=>{const r=await fetch(m.sidecarUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});const j=await r.json();if(j.error)throw Error(j.error.message);return j.result;};
+const abi:Abi=parseAbi(['function accountId() view returns(string)','function keyCommitment() view returns(bytes32)','function supportsModule(uint256) view returns(bool)','function supportsApprovalMode(uint8) view returns(bool)','function executionRoute() view returns(uint8)','function isModuleInstalled(uint256,address,bytes) view returns(bool)','function installModule(uint256,address,bytes)','function uninstallModule(uint256,address,bytes)']);
+async function call(name:string,args:unknown[]=[]){return decodeFunctionResult({abi,functionName:name,data:await rpc('eth_call',[{to:w.address,data:encodeFunctionData({abi,functionName:name,args})},'latest'])});}
+assert.equal(await call('accountId'),'qraft.erc8286.1.0.0');assert.equal(await call('supportsModule',[11n]),true);assert.equal(await call('supportsModule',[1n]),false);assert.equal(await call('executionRoute'),0);
+for(const mode of [0,1,2,3])assert.equal(await call('supportsApprovalMode',[mode]),mode===2);
+assert.equal(await call('isModuleInstalled',[11n,pin('validator'),'0x']),true);
+const commitment=await call('keyCommitment') as Hex;
+assert.equal((await rpc('eth_getCode',[w.address,'latest'])).toLowerCase(),modularRuntime(pin('implementation'),pin('validator'),commitment).toLowerCase());
+assert.equal(predictModular(pin('factory'),pin('implementation'),pin('validator'),commitment).toLowerCase(),w.address.toLowerCase());
+for(const method of ['installModule','uninstallModule'])await assert.rejects(call(method,[11n,pin('validator'),'0x']));
+const factoryAbi=parseAbi(['function predict(address,bytes,bytes32) view returns(address)']);
+const predicted=decodeFunctionResult({abi:factoryAbi,functionName:'predict',data:await rpc('eth_call',[{to:pin('factory'),data:encodeFunctionData({abi:factoryAbi,functionName:'predict',args:[pin('implementation'),modularConfig(pin('validator'),commitment),commitment]})},'latest'])});assert.equal(predicted.toLowerCase(),w.address.toLowerCase());
+await writeFile('docs/pq/modular-conformance.json',JSON.stringify({chainId:1337,account:w.address,runtimeHash:keccak256(await rpc('eth_getCode',[w.address,'latest'])),checks:['account identity','module type','approval scopes','execution route','installed validator','clone runtime','client and factory prediction','unauthorized module installation/uninstallation rejected'],passed:true},null,2)+'\n');console.log('MODULAR INTERFACE AND ACCESS CHECKS PASSED');

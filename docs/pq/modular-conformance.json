@@ -1,0 +1,16 @@
+{
+  "chainId": 1337,
+  "account": "0x68cdbE7ceeDAbf0f9aFB32C04EBF98594a285476",
+  "runtimeHash": "0x81a3e2f0fbdca027f76f137416fc5e60fc6ec934b7e5c83346a8336278664482",
+  "checks": [
+    "account identity",
+    "module type",
+    "approval scopes",
+    "execution route",
+    "installed validator",
+    "clone runtime",
+    "client and factory prediction",
+    "unauthorized module installation/uninstallation rejected"
+  ],
+  "passed": true
+}
