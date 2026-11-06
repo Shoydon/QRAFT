@@ -1,120 +1,105 @@
 {
   "version": 1,
   "profile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
-  "chainId": 8141,
-  "chainName": "Ethrex devnet",
-  "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
-  "rpcUrl": "https://rpc1.privacy.ethrex.xyz",
+  "chainId": 1337,
+  "chainName": "EF alt-mempool devnet",
+  "genesisHash": "0x2ad3f67b059fbde111ad7af27cfb4955d997351579612237ca0318937a5bae7a",
+  "rpcUrl": "https://altmempool.forshtat.com",
   "denominationWei": "100000000000000",
-  "pool": "0x66Ff71F39c9b6d46556769C479FFe29C0ad85854",
-  "deploymentBlock": 714455,
-  "anchorBlock": 714473,
-  "anchorHash": "0xe651be98932d456c13b5e2495487e13186291bdbea6ab24256ac06af7562cc4f",
+  "pool": "0x89F9d218f67CE41625c546eAe09DCa1CA6CD122E",
+  "deploymentBlock": 4346,
+  "anchorBlock": 4347,
+  "anchorHash": "0x3f03d9623057d29cc9586a3f9d22c3d9a1b26c2016e7fdb4b3d2a08ce391bb47",
   "contracts": {
     "f1600": {
-      "address": "0x6fdaD07f0cC27Cc762040991BB9679f802A0C673",
+      "address": "0x507Ec463a3c01779115cD68bCF037e61A6E80681",
       "runtimeHash": "0x4afb4435879cdf8e50474c7aab2bc3a679caed432550ad6dba64f509309a817b",
-      "transactionHash": "0xf03f1a3d82f873b55a052a294b9cb05e2a301e888fa8d252cca82d5b2e732bf7",
-      "block": "623935",
-      "initDataHash": "0x6726cabb2efced615373b8d404e5e33cd985677f56aa37a4abd4fe8f07807f9b",
-      "reused": true
+      "transactionHash": "0xee472f53212690f49f5b1c029da3b9ad6c9f84ad1c60ecc58f20e4eb14ecae14",
+      "block": "4335",
+      "initDataHash": "0x81675bfff69f4e37d27e85571d1a5f8cbd8c21df79a2d56630b3f551719cd6c6"
     },
     "mldsaVerifier": {
-      "address": "0x8A56b0682d89304b8B2c369d1b2480943dcf69D3",
-      "runtimeHash": "0xbffc3fcee255b89545b68a56697ef4f48f7390ee799e1a781bc30babde13bd3b",
-      "transactionHash": "0xad48c0f92426d54557b0f49152b7c1c6b9a3c8368771936eddb1ba4d884c9c0b",
-      "block": "623943",
-      "initDataHash": "0xa6a9e9c253a3ae4103e6ab03c25802bd7134a383e662e4fa0f6fefcad2b3fb72",
-      "reused": true
+      "address": "0x6248EF93Ab7072CB5c1Ac026F4Daeb97c700AE39",
+      "runtimeHash": "0xd7202d67bb7487d1ad0cbe98c94277f5a3117a1f9e16adc960a5afa3a70c8f8f",
+      "transactionHash": "0xe683a8b5f03c421237a5d7534e70692a2aedfd8124ba44a6f2e204c625b314d2",
+      "block": "4336",
+      "initDataHash": "0x3feb53282b6ccef89414d316248dc45c6f554e4c28b9097ac8f85b262388719f"
     },
     "blobs": {
-      "address": "0xc15a247e00788d6628cC5624278beB680262dA14",
+      "address": "0xBA9A538730ada22deB7A689193320eBe03DF36a5",
       "runtimeHash": "0x16bb9738609de70bd2365260d46e326679294c475bafd324c0c63d0baa9a9b0f",
-      "transactionHash": "0xcaf99be3719955944747f97135fb1e49ec8297df4807c9f3bb98e95928d3f89b",
-      "block": "620952",
-      "reused": true
+      "transactionHash": "0x2069e63c4905380ce136b1a61fc2f302705335f536e8360bccadce3e7a512289",
+      "block": "4337",
+      "initDataHash": "0x475658fd040eacb1340733fd5814f5d968939a15de61d148f394886e1c5d0edb"
     },
     "validator": {
-      "address": "0xde3d185340cc2B22AE72E8962AB1096b85a7Bb72",
-      "runtimeHash": "0xfe688724525c330b8a6880684b64bdd3acdda6e7e38064d2fefc00efc9220099",
-      "transactionHash": "0xc8b33a3699fd809093715f8dd68537a97260fe95c8cea2e8a2127a0796cd87a2",
-      "block": "714428",
-      "initDataHash": "0x5441d344ee126b4f727b47dc01f87b2bc8c7ee82e5f8b01cbd46bc90e27357f8"
+      "address": "0xEa140A0090011BD8Fc57a5B887f53E5bfCae6393",
+      "runtimeHash": "0x025347592edac0a034f88965827b726a3578f35a8404b7a73548a35a1225d985",
+      "transactionHash": "0x6e182b97fb708911025de7335cfef594cfeb302dc3b9665a43b6436e805f2195",
+      "block": "4338",
+      "initDataHash": "0xc7fa59e017e7cb701915c8ddccff5db8af1bd4f57053a55841406da12d4be090"
     },
     "implementation": {
-      "address": "0x0aC4D738abC4750DFd93dA1E0851Ca3dDdE86c6f",
-      "runtimeHash": "0x23eb15193c4e9fa1e1dd742f076a7830bfc57fc0d2809d4d9fbcc62dc1e1cb4a",
-      "transactionHash": "0xccbda96b6c6b1e10f987baf4f6d34727554ab3ec47ac038b7b0412015f3f5128",
-      "block": "714433",
-      "initDataHash": "0x250b3276c471d81cb1277a03f7a8914979b958dcbfd32b12df051a29a63f95f4"
+      "address": "0x397AB017440fF4f567E31F7860c5C1ba183cb3af",
+      "runtimeHash": "0x54911e8302bf653273d4a050fe48279bc8a8d56d26688c582d4910c2af9e94ca"
     },
     "factory": {
-      "address": "0xC885570d7566BcaAB5b3BA626B8ef5eFDBB04726",
+      "address": "0xdD769B161115EEE493a8C6797cb8CB80Efb73051",
       "runtimeHash": "0xee03c662e098175bc7b1e0fe2a5e80750c0801e091516f15593f764c2d80311c",
-      "transactionHash": "0x0a4c1241ba0fd13585a7398e5518be78edfdd6cb44f1b5b1ca0527f8ed2bd189",
-      "block": "714436",
+      "transactionHash": "0x7f40f554ec3eec6b8905c9f0b63849ad3ccff2fb7c388816e17b29468430cee4",
+      "block": "4340",
       "initDataHash": "0x147f5adfbe96c71e94103fff363cbd3edae5401863017784c6683c1d97f6fd6c"
     },
     "air": {
-      "address": "0x514f173d387e2043A3D5e17c5cF94Fe02d4dA8c4",
+      "address": "0x4C1a085ad3952Bb4a01c43E5F1E7C38c0035AD8d",
       "runtimeHash": "0xe8656f214d68e0e97aacf31942bf627295b582778ee8be2d212922d500434312",
-      "transactionHash": "0x09a28b871f0e98929695e88d7f73dd694c2c6e700c17badd9a79d80ad50aeca6",
-      "block": "714437",
+      "transactionHash": "0x3c787546cd6c5158b319f2e0509ecc58df9f7d0f0c8c9fabd0426734ce75ac95",
+      "block": "4341",
       "initDataHash": "0xd39b9305c0adcccf59b086f5bb78b5ccd9235241ca5403f8a39fb1e091ba14c1"
     },
     "arithmetic": {
-      "address": "0x53de5638f918Acb9A099C02627De48FDF66Cbf00",
+      "address": "0xD5F6Dfc7850f7aCD9C4Ba2D8e2C826454ea07d93",
       "runtimeHash": "0x70fe70b7cb96b3c207a96bd1d5630d675315caaf99c26f6a77308f7ef74a551f",
-      "transactionHash": "0x0a752e3bf80b02591ed12dd42a958ffea0c466755f48874a3b9bd3f6c906dcbf",
-      "block": "714438",
+      "transactionHash": "0xceaa84661dfd7ef21491369fbf472b694fd7736ab48830cdfa9f7bbf5b272b89",
+      "block": "4342",
       "initDataHash": "0x571a1e48acead5042d6bdf0418e3cab4e5c57448fe4a3390d9f3c6172f9a19a1"
     },
     "authentication": {
-      "address": "0x7e933FD9422f9B9d6110a098714a195696c8DdDe",
+      "address": "0x946B14930a8C19D6eAF8Bba3e4871f3158FbcD43",
       "runtimeHash": "0x72141db6cb1bfe2fca15ef2059212360b5cefdf0908f1bc7fd72df4fbb7836b5",
-      "transactionHash": "0x134360496ad042f5e4216acd7e6976f9ee755946ed0528b991d469f042edd376",
-      "block": "714439",
+      "transactionHash": "0x873359a1d1196d66c42f64683d1aed3d43a1e0679819f9652cec15566fa46dc5",
+      "block": "4343",
       "initDataHash": "0x47177963a42d418c0ccba76bf7aa44932121d439f66c23a9b48691ecd8f8963c"
     },
     "stream": {
-      "address": "0xf815C0D1F9fc357581c83CD960A0c941048315CD",
+      "address": "0xA4fdBC58f1168B8a3f3A5459DEe2cC57c816C6aB",
       "runtimeHash": "0xd38ab7d497a0f330323ade9271a6f21ab6072c9f40ef0a1db99dd733af257774",
-      "transactionHash": "0x01e07af783065c3c7af6febb0502085af543c2fe72391bce88491a23df0398e1",
-      "block": "714440",
+      "transactionHash": "0x496e71a2a375c208251866c555ae67dde0391ea78df9fc5c4330ce12e902a790",
+      "block": "4344",
       "initDataHash": "0xa20b5a3b998771f360e2ccc19b9e2a7d1d4769eff997c714a48558e8aac68fc2"
     },
     "session": {
-      "address": "0xA0190d83e1928B1a2502F904b70C95EbB6a65Fe9",
-      "runtimeHash": "0x2241d9fe987553d333c9f286ccf9ce1dea4c9bc0b0e38edf190182332f09e520",
-      "transactionHash": "0x3893a9886549733e1a27f1ca3323e042219c23ed317b107a90d6c0a83483cbe2",
-      "block": "714453",
-      "initDataHash": "0x1137039573e592f3e773883dcd8c6587203c63dd71883a3866aa05a5180c3ea9"
+      "address": "0xe80Fa1Ba0590d3C4eF8469E24cc1d5928A7fa2aC",
+      "runtimeHash": "0x450e5809a70e573a27b732e54a2f626a6429939b2429fe56a8499d0feb56a8da",
+      "transactionHash": "0x53da3c254a8b6c526db6931e48b19c3b1268246ee842e7bba759726c4910ab1b",
+      "block": "4345",
+      "initDataHash": "0x1bac58efc772a78d2d606d6c79161260e81788c1d8a312193a437c335598b334"
     },
     "pool": {
-      "address": "0x66Ff71F39c9b6d46556769C479FFe29C0ad85854",
-      "runtimeHash": "0xb8bdaa7f8ccdf7f283216e703277cbe3dfb00dd717fe9ee94ad4824d903cf692",
-      "transactionHash": "0x5889fbf278eede8c1c702c5db13eea1d34ed01ea74018f9db9205ed6db9988fe",
-      "block": "714455",
-      "initDataHash": "0xda405c4a86ea131d2564ff75e1b7feedf0ebc6d3067b21dae7d27fd64f15715e"
+      "address": "0x89F9d218f67CE41625c546eAe09DCa1CA6CD122E",
+      "runtimeHash": "0xc6541faee0e5099f9d99cf180b46c72c4aaa314f660a7a5c068632bbd0d953c3",
+      "transactionHash": "0x5d46dde431861a9917ee6636ca97f4269f520df1d4509b622fae31cb2ffa73b3",
+      "block": "4346",
+      "initDataHash": "0xa0ae845dc2b648fa84e05049aaa58f7ec319944245c38ec7362cfbb7ab7251a0"
     },
     "paymaster": {
-      "address": "0xEB3EE7B120452C83be9C5B3F30Cf5937748a1191",
-      "runtimeHash": "0x3f208e7d3390c94df9b096d6224c978e49a1221d2d64ee12953bf2b34d6ef626",
-      "transactionHash": "0xf4416a5012bcb10d837b1ca49369b1fa797e87098608089040807deafa2bc736",
-      "block": "714456",
-      "initDataHash": "0xbf0b403b52eab182acd24a45a5f0946696b48951e2f3f79dc29d4d1389ab037e"
+      "address": "0xba1BD2aF23278D1B56c150928450d9f7A4b9F4eD",
+      "runtimeHash": "0x2ecd9972b38ff67a010a92c70a4ba10631f064ffe91a811db06f7481cd0670ea"
     }
   },
-  "applicationEnabled": true,
-  "deploymentStatus": "verified-qraft-sponsored-deployment",
-  "deploymentNote": "QRAFT namespace contracts and bounded native-frame paymaster deployed and runtime-verified.",
-  "sponsorship": {
-    "chainId": 8141,
-    "paymaster": "0xEB3EE7B120452C83be9C5B3F30Cf5937748a1191",
-    "fundingHash": "0x84f1057d2aef76b7b2d0204b466168efa95ee9ce6778a5ede171d4aa3d1fd81e",
-    "initialFundingWei": "1000000000000000",
-    "nonceLimit": 1000,
-    "accountScopes": 2,
-    "frameCount": 3
-  }
+  "applicationEnabled": false,
+  "deploymentStatus": "blocked-sidecar-opcode-admission",
+  "deploymentNote": "Chain 1337 infrastructure is deployed. PQ execution simulation succeeds, but the sidecar rejects sender GAS opcode (OP-011). Transactions remain disabled until admission is resolved.",
+  "sidecarUrl": "https://altmempool.forshtat.com/rpc",
+  "explorerBase": "https://explorer.altmempool.wtf"
 }

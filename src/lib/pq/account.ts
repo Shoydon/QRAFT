@@ -2,7 +2,8 @@
 
 import { bytesToHex, concat, decodeFunctionResult, encodeFunctionData, encodePacked, getCreate2Address, hexToBytes, keccak256, numberToHex, parseAbi, type Hex } from 'viem';
 import { createKey, preparePublicKey, signAuthorization, verifyAuthorization, type PQKey } from '../../../packages/pq-account/src/keys';
-import { Frame, FrameMode, FrameTx, NONCE_MANAGER_LEGACY, assertSuccessfulReceipt, assertSuccessfulSimulation, decodeFrameTransaction, nonceSlot, type FrameReceipt, type FrameSimulation } from '../../../packages/frame-account/src/frametx';
+import { Frame, FrameMode, FrameSig, FrameTx, NONCE_MANAGER_LEGACY, assertSuccessfulReceipt, assertSuccessfulSimulation, decodeFrameTransaction, nonceSlot, type FrameReceipt, type FrameSimulation } from '../../../packages/frame-account/src/frametx';
+import { submitToSidecar } from '../../../packages/frame-account/src/alt-mempool';
 import manifest from '../../../public/pq-deployment.json';
 import { PQ_POOLS } from './registry';
 import type { ChainTransport } from '../transport/types';
@@ -22,6 +23,7 @@ function failure(message: string): never { throw Error(message); }
 
 export interface PqAccountDeployment {
   applicationEnabled?: boolean;
+  deploymentNote?: string;
   chainId: number;
   genesisHash: string;
   anchorBlock: number;
@@ -61,8 +63,8 @@ function transactionSponsor(tx: FrameTx, deployment: PqAccountDeployment): Hex {
 
 export function assertSponsoredPqTransaction(tx: FrameTx, deployment: PqAccountDeployment = manifest): void {
   const [authorization, payment, execution] = tx.frames;
-  if (tx.chainId !== BigInt(deployment.chainId) || tx.nonceKeys.length !== 1 || tx.nonceKeys[0] !== BigInt(deployment.contracts.validator.address) || tx.nonceSeq >= 1000n || tx.signatures.length !== 0 || tx.maxFee > 128n || tx.maxPriorityFee > 1n || tx.maxBlobFee !== 0n || tx.blobHashes.length !== 0 || tx.frames.length !== PQ_FRAME_COUNT ||
-    !authorization || authorization.mode !== FrameMode.VERIFY || authorization.flags !== 2 || authorization.target !== tx.sender || authorization.value !== 0n || authorization.gasLimit > 180000n || authorization.stateGasLimit !== 0n || authorization.data !== encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) ||
+  if (tx.chainId !== BigInt(deployment.chainId) || tx.nonceKeys.length !== 1 || tx.nonceKeys[0] !== BigInt(deployment.contracts.validator.address) || tx.nonceSeq >= 1000n || (deployment.chainId === 1337 ? tx.signatures.length !== 1 || tx.signatures[0]!.scheme !== 0 || tx.signatures[0]!.signer !== null || tx.signatures[0]!.msg !== '0x' || tx.signatures[0]!.signature.length !== 4842 : tx.signatures.length !== 0) || tx.maxFee > 128n || tx.maxPriorityFee > 1n || tx.maxBlobFee !== 0n || tx.blobHashes.length !== 0 || tx.frames.length !== PQ_FRAME_COUNT ||
+    !authorization || authorization.mode !== FrameMode.VERIFY || authorization.flags !== 2 || authorization.target !== tx.sender || authorization.value !== 0n || authorization.gasLimit > (deployment.chainId === 1337 ? 3000000n : 180000n) || authorization.stateGasLimit !== 0n || authorization.data !== encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) ||
     !payment || payment.mode !== FrameMode.VERIFY || payment.flags !== 1 || !payment.target || !registeredSponsor(payment.target, deployment) || payment.value !== 0n || payment.gasLimit > 120000n || payment.stateGasLimit > 97920n || payment.data !== encodeFunctionData({ abi: PAY_ABI, functionName: 'pay' }) ||
     !execution || execution.mode !== FrameMode.SENDER || execution.flags !== 0 || execution.gasLimit > 14500000n || execution.stateGasLimit > 40000000n || execution.data.length > 250002) failure('Unsupported sponsored PQ transaction.');
 }
@@ -91,7 +93,7 @@ export function derivePqAccount(publicKey: Hex, rowAddresses: readonly Hex[], de
 }
 
 export async function verifyPqDeployment(transport: ChainTransport, deployment: PqAccountDeployment = manifest): Promise<void> {
-  if (deployment.applicationEnabled === false) failure('The QRAFT protocol requires a fresh deployment. Transactions are disabled.');
+  if (deployment.applicationEnabled === false) failure(deployment.deploymentNote ?? 'The QRAFT protocol requires a fresh deployment. Transactions are disabled.');
   pqPaymaster(deployment);
   const [chainId, genesis, anchor] = await Promise.all([
     transport.request<Hex>('eth_chainId'),
@@ -355,6 +357,7 @@ export class PqAccountClient {
     const entry = value as PublicTransactionJournal;
     if (entry.version !== JOURNAL_VERSION || entry.chainId !== this.deployment.chainId || entry.genesisHash !== this.deployment.genesisHash || !isHex(entry.publicKey, KEY_BYTES) || !equal(entry.publicKey, this.publicKey) || !isHex(entry.account, 20) || !equal(entry.account, this.address) || !wholeHex(entry.raw) || !isHex(entry.hash, 32) || keccak256(entry.raw) !== entry.hash || !isHex(entry.authorizationSignature, 2420) || !['prepared', 'broadcasting', 'submitted', 'unknown'].includes(entry.state) || typeof entry.cacheReady !== 'boolean') failure('The public transaction journal binding is invalid. Preserve it for reconciliation.');
     const tx = decodeFrameTransaction(entry.raw);
+    if (this.deployment.chainId === 1337 && tx.signatures[0]?.signature !== entry.authorizationSignature) failure('Saved wire signature differs from the authorized intent.');
     assertSponsoredPqTransaction(tx, this.deployment);
     if (tx.chainId !== BigInt(this.deployment.chainId) || !equal(tx.sender, this.address) || tx.nonceKeys.length !== 1 || tx.nonceKeys[0] !== BigInt(this.deployment.contracts.validator.address) || !verifyAuthorization(hexToBytes(this.publicKey), tx.sigHash(), entry.authorizationSignature)) failure('The saved transaction does not belong to this PQ account.');
     return entry;
@@ -383,16 +386,17 @@ export class PqAccountClient {
         options.signal?.throwIfAborted(); options.onProgress?.('Preparing your transaction…'); await this.verifyContext(options.paymaster);
         const nonce = await this.nonce(); options.signal?.throwIfAborted();
         if (!this.key) failure('The PQ wallet was locked.');
-        const tx = new FrameTx({ chainId: this.deployment.chainId, nonceKeys: [BigInt(this.deployment.contracts.validator.address)], nonceSeq: nonce, sender: this.address,
-          maxPriorityFee: 1n, maxFee: 128n, signatures: [], frames: [
-            new Frame({ mode: FrameMode.VERIFY, flags: 2, target: this.address, gasLimit: 180000n, stateGasLimit: 0n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
+        let tx = new FrameTx({ chainId: this.deployment.chainId, nonceKeys: [BigInt(this.deployment.contracts.validator.address)], nonceSeq: nonce, sender: this.address,
+          maxPriorityFee: 1n, maxFee: 128n, signatures: this.deployment.chainId === 1337 ? [new FrameSig({ scheme: 0, signer: null, signature: `0x${'00'.repeat(2420)}` })] : [], frames: [
+            new Frame({ mode: FrameMode.VERIFY, flags: 2, target: this.address, gasLimit: this.deployment.chainId === 1337 ? 3000000n : 180000n, stateGasLimit: 0n, data: encodeFunctionData({ abi: VERIFY_ABI, functionName: 'verify', args: ['0x'] }) }),
             new Frame({ mode: FrameMode.VERIFY, flags: 1, target: options.paymaster ?? pqPaymaster(this.deployment), gasLimit: 120000n, stateGasLimit: 97920n, data: encodeFunctionData({ abi: PAY_ABI, functionName: 'pay' }) }),
-            new Frame({ mode: FrameMode.SENDER, target: options.to, gasLimit: 14500000n, stateGasLimit: 40000000n, value: options.value ?? 0n, data: options.data }),
+            new Frame({ mode: FrameMode.SENDER, target: options.to, gasLimit: this.deployment.chainId === 1337 ? 8000000n : 14500000n, stateGasLimit: this.deployment.chainId === 1337 ? 10000000n : 40000000n, value: options.value ?? 0n, data: options.data }),
           ] });
         assertSponsoredPqTransaction(tx, this.deployment);
         const signature = signAuthorization(this.key, tx.sigHash());
+        if (this.deployment.chainId === 1337) tx = new FrameTx({ ...tx, signatures: [new FrameSig({ scheme: 0, signer: null, signature })] });
         const entry: PublicTransactionJournal = { version: 2, chainId: this.deployment.chainId, genesisHash: this.deployment.genesisHash, publicKey: this.publicKey,
-          account: this.address, raw: tx.raw(), hash: tx.transactionHash(), authorizationSignature: signature, cacheReady: false, state: 'prepared' };
+          account: this.address, raw: tx.raw(), hash: tx.transactionHash(), authorizationSignature: signature, cacheReady: this.deployment.chainId === 1337, state: 'prepared' };
         this.saveJournal(entry); // No seed or witness: persist the frozen public intent before disclosure.
         return await this.resume(entry, options);
       } catch (error) {
@@ -434,6 +438,7 @@ export class PqAccountClient {
     options.signal?.throwIfAborted(); await this.verifyContext(transactionSponsor(decodeFrameTransaction(entry.raw), this.deployment));
     const existing = await this.receipt(entry); if (existing) return existing;
     const tx = decodeFrameTransaction(entry.raw);
+    if (this.deployment.chainId === 1337 && tx.signatures[0]?.signature !== entry.authorizationSignature) failure('Saved wire signature differs from the authorized intent.');
     if (await this.nonce() !== tx.nonceSeq) failure('The saved native nonce changed without the expected receipt.');
     if (!entry.cacheReady) {
       options.onProgress?.('Authorizing your transaction…');
@@ -445,16 +450,19 @@ export class PqAccountClient {
     if (await this.nonce() !== tx.nonceSeq) failure('The keyed nonce changed while the authorization was prepared.');
     options.onProgress?.('Checking your transaction…');
     const simulated = await this.transport.request<FrameSimulation>('ethrex_simulateFrameTransaction', [entry.raw, 'latest']);
-    assertSuccessfulSimulation(simulated, PQ_FRAME_COUNT);
+    assertSuccessfulSimulation(simulated, PQ_FRAME_COUNT, this.deployment.chainId === 1337);
     if (!simulated.payer || !equal(simulated.payer, transactionSponsor(tx, this.deployment))) failure('The native simulation selected another gas payer.');
     options.signal?.throwIfAborted();
     entry.state = 'broadcasting'; this.saveJournal(entry);
     options.onProgress?.('Submitting your transaction…');
     try {
-      const hash = await this.transport.request<Hex>('eth_sendRawTransaction', [entry.raw]);
+      const hash = this.deployment.chainId === 1337 ? await submitToSidecar(this.transport, entry.raw) : await this.transport.request<Hex>('eth_sendRawTransaction', [entry.raw]);
       if (hash !== entry.hash) failure('Unexpected native transaction hash.');
       entry.state = 'submitted'; this.saveJournal(entry);
-    } catch { entry.state = 'unknown'; this.saveJournal(entry); }
+    } catch (error) {
+      entry.state = 'unknown'; this.saveJournal(entry);
+      return { kind: 'unknown', hash: entry.hash, reason: `Submission was not acknowledged: ${error instanceof Error ? error.message : 'RPC error'}. The signed intent is preserved; reconcile this hash before retrying.` };
+    }
     const deadline = Date.now() + (options.timeoutMs ?? 180_000);
     while (Date.now() < deadline && !options.signal?.aborted) {
       const result = await this.receipt(entry); if (result) return result;

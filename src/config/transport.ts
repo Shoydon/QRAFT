@@ -42,6 +42,7 @@ const requestedWorker = process.env.NEXT_PUBLIC_ANON_RPC_WORKER as AnonWorkerId 
  * rather than reading directly.
  */
 export const TRANSPORT = {
+  submissionRpcUrl: pqManifest.chainId === 1337 ? 'https://altmempool.forshtat.com/rpc' : pqManifest.rpcUrl,
   worker:
     requestedWorker && requestedWorker in ANON_WORKERS
       ? ANON_WORKERS[requestedWorker]

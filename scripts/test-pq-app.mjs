@@ -36,7 +36,7 @@ try{
  const creationError=page.getByRole('dialog',{name:'PQ wallet',exact:true}).getByRole('alert');
  await backup.or(creationError).first().waitFor({timeout:1000000});
  if(await creationError.isVisible())throw Error('Wallet creation stopped: '+await creationError.innerText());
- await page.getByRole('dialog',{name:'Your wallet is ready',exact:true}).getByRole('button',{name:'Continue to wallet',exact:true}).click();
+ await page.getByRole('dialog',{name:'Your wallet is ready',exact:true}).getByRole('button',{name:'Close',exact:true}).click();
  await page.getByRole('button',{name:/^0x/}).first().click();
  await download(page.getByRole('button',{name:'Download PQ wallet backup',exact:true}),walletPath);
  wallet=JSON.parse(await readFile(walletPath));
@@ -56,8 +56,7 @@ try{
  depositAccountBalanceBefore=await rpc.getBalance({address:wallet.address});
  await page.getByRole('button',{name:'Deposit 0.0001 ETH',exact:true}).click();
  await confirmed(360000);
- await page.getByRole('button',{name:'Copy hash',exact:true}).filter({visible:true}).click();
- depositHash=await page.evaluate(()=>navigator.clipboard.readText());
+ depositHash=(await page.getByRole('link',{name:'View transaction on EF alternative-mempool explorer',exact:true}).filter({visible:true}).getAttribute('href')).split('/tx/')[1];
  const depositReceipt=await rpc.request({method:'eth_getTransactionReceipt',params:[depositHash]});
  assert.equal(depositReceipt.payer.toLowerCase(),manifest.contracts.paymaster.address.toLowerCase());
  assert.equal(depositReceipt.frameReceipts.length,3);assert(depositReceipt.frameReceipts.every(frame=>frame.status==='0x1'));
@@ -81,7 +80,7 @@ try{
   const message=await sheet.getByRole('alert').innerText();if(attempt>=2||!/timed out|timeout|network|fetch/i.test(message))throw Error('Wallet recovery stopped: '+message);
   console.log('Anonymous RPC timed out during public ownership checks; explicitly reconnecting Nym and retrying the same backup.');
   await sheet.getByRole('button',{name:'Close',exact:true}).click();
-  await page.getByRole('button',{name:/Ethrex devnet.*reads/}).click();
+  await page.getByRole('button',{name:/EF devnet 1337/}).click();
   const reads=page.getByRole('dialog',{name:'Read path and security scope',exact:true});await reads.getByRole('button',{name:'Reconnect anonymous reads',exact:true}).click();await reads.getByRole('button',{name:'Close',exact:true}).click();
   await page.getByRole('button',{name:'Connect wallet',exact:true}).click();
  }

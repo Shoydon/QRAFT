@@ -12,7 +12,7 @@ test('distinct fixed pools preserve the original pool and bind notes to their am
   expect(() => parsePqNote(text, { ...extra, denominationWei: DEFAULT_PQ_POOL.denominationWei })).toThrow();
 });
 test('pool registry rejects conflicting identities, other networks, and substituted verifier infrastructure', () => {
-  for (const changed of [{ pool: DEFAULT_PQ_POOL.pool }, { denominationWei: DEFAULT_PQ_POOL.denominationWei }, { paymaster: DEFAULT_PQ_POOL.paymaster }, { chainId: 1337 }, { verifier: numberToHex(44, { size: 20 }) }, { denominationWei: '0' }, { runtimeHash: '0x' }, { deploymentBlock: -1 }]) {
+  for (const changed of [{ pool: DEFAULT_PQ_POOL.pool }, { denominationWei: DEFAULT_PQ_POOL.denominationWei }, { paymaster: DEFAULT_PQ_POOL.paymaster }, { chainId: DEFAULT_PQ_POOL.chainId + 1 }, { verifier: numberToHex(44, { size: 20 }) }, { denominationWei: '0' }, { runtimeHash: '0x' }, { deploymentBlock: -1 }]) {
     expect(() => validatePqPools(DEFAULT_PQ_POOL, [{ ...extra, ...changed }])).toThrow();
   }
 });

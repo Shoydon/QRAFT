@@ -11,6 +11,7 @@ interface IQraftPoolAmount {
 
 contract QraftPoolPaymaster {
     address public immutable owner;
+    uint256 public immutable deploymentChainId;
     address public immutable implementation;
     bytes32 public immutable implementationHash;
     address public immutable validator;
@@ -23,7 +24,8 @@ contract QraftPoolPaymaster {
     uint256 public immutable DENOMINATION;
 
     constructor(address owner_, address implementation_, address validator_, address pool_, address verifier_, address blobs_) {
-        require(block.chainid == 8141 && owner_ != address(0), "chain/owner");
+        require((block.chainid == 8141 || block.chainid == 1337) && owner_ != address(0), "chain/owner");
+        deploymentChainId = block.chainid;
         require(implementation_.code.length != 0 && validator_.code.length != 0, "account dependencies");
         require(pool_.code.length != 0 && verifier_.code.length != 0 && blobs_.code.length != 0, "protocol dependencies");
         owner = owner_; implementation = implementation_; validator = validator_;
@@ -34,6 +36,13 @@ contract QraftPoolPaymaster {
     }
 
     receive() external payable {}
+
+    /// @notice Stake only sponsor funds; this never grants execution authority over a wallet.
+    function stake(address registry, uint32 delay) external payable {
+        require(msg.sender == owner && registry != address(0), "owner/registry");
+        (bool ok,) = registry.call{value: msg.value}(abi.encodeWithSignature("addStake(uint32)", delay));
+        require(ok, "stake failed");
+    }
 
     function supportsAccount(address account) public view returns (bool) {
         if (implementation.codehash != implementationHash || validator.codehash != validatorHash) return false;
@@ -63,16 +72,16 @@ contract QraftPoolPaymaster {
     function fp(uint256 i, uint256 p) private view returns (uint256 value) { assembly { value := frameparam(i, p) } }
 
     function pay() external {
-        require(block.chainid == 8141 && F.currentFrameIndex() == 1 && F.frameCount() == 3, "chain/shape");
+        require(block.chainid == deploymentChainId && F.currentFrameIndex() == 1 && F.frameCount() == 3, "chain/shape");
         address sender = F.txSender();
         require(supportsAccount(sender) && F.nonceKeyCount() == 1 && F.nonceKey0() == uint160(validator), "QRAFT account");
-        require(F.txNonce() < NONCE_LIMIT && F.signatureCount() == 0, "nonce/signatures");
+        require(F.txNonce() < NONCE_LIMIT && F.signatureCount() == (deploymentChainId == 1337 ? 1 : 0), "nonce/signatures");
         require(txp(6) <= MAX_COST && txp(3) <= 1 && txp(4) <= 128 && txp(5) == 0 && txp(7) == 0, "fee budget");
         require(F.frameTarget(0) == sender && F.frameModeOf(0) == F.MODE_VERIFY && F.frameFlags(0) == 2 && fp(0, 8) == 0, "execution approval");
         require(keccak256(F.frameData(0)) == keccak256(abi.encodeWithSignature("verify(bytes)", bytes(""))), "verify data");
         require(F.frameTarget(1) == address(this) && F.frameModeOf(1) == F.MODE_VERIFY && F.frameFlags(1) == 1, "payment frame");
         require(F.frameDataLength(1) == 4 && fp(1, 8) == 0, "payment data/value");
-        require(fp(0, 1) <= 180000 && fp(0, 9) == 0 && fp(1, 1) <= 120000 && fp(1, 9) <= 97920, "prefix budget");
+        require(fp(0, 1) <= (deploymentChainId == 1337 ? 3000000 : 180000) && fp(0, 9) == 0 && fp(1, 1) <= 120000 && fp(1, 9) <= 97920, "prefix budget");
         require(F.frameModeOf(2) == F.MODE_SENDER && F.frameFlags(2) == 0, "execution frame");
         require(fp(2, 1) <= 14500000 && fp(2, 9) <= 40000000 && fp(2, 4) <= 125000, "execution budget");
         require(allowedAction(F.frameTarget(2), fp(2, 8), F.frameData(2)), "unsupported action");

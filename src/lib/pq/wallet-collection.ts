@@ -1,6 +1,7 @@
+import manifest from '../../../public/pq-deployment.json';
 import { parseWalletVault, type WalletVault } from './vault';
 
-export const WALLET_COLLECTION_KEY = 'qraft:wallets:v1';
+export const WALLET_COLLECTION_KEY = `qraft:wallets:v1:${manifest.chainId}`;
 export interface SavedWallet { name: string; vault: WalletVault }
 
 export function nextWalletName(wallets: readonly SavedWallet[]): string {

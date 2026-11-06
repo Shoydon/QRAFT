@@ -10,12 +10,13 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { preparePublicKey, verifyAuthorization } from '../../../packages/pq-account/src/keys';
 import { decodeFrameTransaction, nonceSlot, NONCE_MANAGER_LEGACY, assertSuccessfulReceipt, assertSuccessfulSimulation, type FrameReceipt, type FrameSimulation } from '../../../packages/frame-account/src/frametx';
 import { DEPLOYMENT_PROXY, DEPLOYMENT_PROXY_HASH, SERVICE_NONCE_KEY, serviceFramePlan, signServiceFrame, serviceFrameSigner, verifyServiceFrame } from './service-frames';
+import { submitToSidecar } from '../../../packages/frame-account/src/alt-mempool';
 import manifest from '../../../public/pq-deployment.json';
 import { recoverProvisionedPqAccount, assertSponsoredPqTransaction } from './account';
 import type { ChainTransport } from '../transport/types';
 
-const root=resolve('.local/pq-service');
-const chain=defineChain({id:8141,name:'Ethrex devnet',nativeCurrency:{name:'Test ETH',symbol:'ETH',decimals:18},rpcUrls:{default:{http:[manifest.rpcUrl]}}});
+const root=resolve(`.local/pq-service-${manifest.chainId}`);
+const chain=defineChain({id:manifest.chainId,name:manifest.chainName,nativeCurrency:{name:'Test ETH',symbol:'ETH',decimals:18},rpcUrls:{default:{http:[manifest.rpcUrl]}}});
 const client=createPublicClient({cacheTime:0,transport:httpTransport()});
 function httpTransport(){
   // Imported statically via viem's standard transport below to keep all carrier requests server-side.
@@ -30,7 +31,7 @@ export interface PublicPqAccount {
   deploymentTransactionHash?:Hex;
 }
 export function serviceStatus():{enabled:boolean;reason:string|null}{
-  if(!manifest.applicationEnabled)return{enabled:false,reason:'Wallet creation is paused until the QRAFT contracts are deployed and verified.'};
+  if(!manifest.applicationEnabled)return{enabled:false,reason:manifest.deploymentNote};
   if(process.env.QRAFT_LOCAL_PQ_SERVICE!=='1')return{enabled:false,reason:'The local account service is not enabled. Enable it to create a wallet.'};
   return{enabled:true,reason:null};
 }
@@ -43,10 +44,10 @@ async function save(path:string,value:unknown){
 async function load<T>(path:string):Promise<T|null>{try{return JSON.parse(await readFile(path,'utf8')) as T;}catch(e){if(e&&typeof e==='object'&&'code'in e&&e.code==='ENOENT')return null;throw e;}}
 async function carrier(){
   if(!serviceEnabled())throw Error('Local PQ provisioning is not enabled.');
-  const path=process.env.QRAFT_DEPLOYER_KEY_FILE??'.local/deployer.json';
+  const path=process.env.QRAFT_DEPLOYER_KEY_FILE??(manifest.chainId===1337?'.local/alt-mempool-deployment/operator.json':'.local/deployer.json');
   if((await stat(/* turbopackIgnore: true */ path)).mode&0o077)throw Error('The local test gas key must be protected.');
   const key=JSON.parse(await readFile(/* turbopackIgnore: true */ path,'utf8')) as {chainId:number;privateKey:Hex};
-  if(key.chainId!==8141||await client.getChainId()!==8141||(await client.getBlock({blockNumber:0n})).hash!==manifest.genesisHash)throw Error('PQ test-chain identity mismatch.');
+  if(key.chainId!==manifest.chainId||await client.getChainId()!==manifest.chainId||(await client.getBlock({blockNumber:0n})).hash!==manifest.genesisHash)throw Error('PQ test-chain identity mismatch.');
   return createWalletClient({account:privateKeyToAccount(key.privateKey),chain,transport:httpTransport()});
 }
 async function singleWriter<T>(fn:()=>Promise<T>,onWait?:()=>Promise<void>):Promise<T>{
@@ -54,6 +55,7 @@ async function singleWriter<T>(fn:()=>Promise<T>,onWait?:()=>Promise<void>):Prom
 }
 interface GasRecord{hash:Hex;raw:Hex;nonce:number;inputHash:Hex;chainId:number;}
 export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed?:(hash:Hex)=>void):Promise<Hex|null>{
+  await mkdir(root,{recursive:true,mode:0o700});
   const wallet=await carrier();
   const operatorCode=await client.getCode({address:wallet.account.address});
   if(operatorCode&&operatorCode!=='0x')throw Error('The native service operator must use the protocol default EOA verification code.');
@@ -63,18 +65,19 @@ export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed
   const inputHash=keccak256(concat([to??'0x',data,bytesToHex(new TextEncoder().encode(String(value)))]));
   let record=await load<GasRecord>(file);
   if(record&&record.inputHash!==inputHash)throw Error('Saved public operation differs from this request.');
-  const nonce=async()=>BigInt(await client.getStorageAt({address:NONCE_MANAGER_LEGACY,slot:nonceSlot(wallet.account.address,SERVICE_NONCE_KEY)})??'0x0');
+  const nonceKey=record?.raw.startsWith('0x06')?decodeFrameTransaction(record.raw).nonceKeys[0]! : manifest.chainId===1337?BigInt(operation):SERVICE_NONCE_KEY;
+  const nonce=async()=>BigInt(await client.getStorageAt({address:NONCE_MANAGER_LEGACY,slot:nonceSlot(wallet.account.address,nonceKey)})??'0x0');
   if(!record){
     const current=await nonce();if(current>BigInt(Number.MAX_SAFE_INTEGER))throw Error('Service nonce exceeds journal range.');
-    const plan=serviceFramePlan({operator:wallet.account.address,nonce:current,data,to,value,salt:operation});
+    const plan=serviceFramePlan({chainId:manifest.chainId,nonceKey,operator:wallet.account.address,nonce:current,data,to,value,salt:operation});
     const tx=signServiceFrame(plan.tx,await wallet.account.sign({hash:plan.tx.sigHash()}));
     const simulation=await client.request({method:'ethrex_simulateFrameTransaction',params:[tx.raw(),'latest']} as never) as unknown as FrameSimulation;
-    assertSuccessfulSimulation(simulation,2);
+    assertSuccessfulSimulation(simulation,2,manifest.chainId===1337);
     if(simulation.payer?.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Native service simulation charged another payer.');
-    record={chainId:8141,nonce:Number(current),raw:tx.raw(),hash:tx.transactionHash(),inputHash};
+    record={chainId:manifest.chainId,nonce:Number(current),raw:tx.raw(),hash:tx.transactionHash(),inputHash};
     await save(file,record);
   }
-  if(keccak256(record.raw)!==record.hash||record.chainId!==8141)throw Error('Invalid saved public operation.');
+  if(keccak256(record.raw)!==record.hash||record.chainId!==manifest.chainId)throw Error('Invalid saved public operation.');
   type Receipt=FrameReceipt&{contractAddress:Hex|null;from:Hex};
   const receipt=()=>client.request({method:'eth_getTransactionReceipt',params:[record!.hash]}) as unknown as Promise<Receipt|null>;
   let confirmed=await receipt();
@@ -84,13 +87,13 @@ export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed
     onConfirmed?.(record.hash);
     return confirmed.contractAddress??null;
   }
-  const tx=verifyServiceFrame(record.raw,{operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation});
+  const tx=verifyServiceFrame(record.raw,{chainId:manifest.chainId,nonceKey,operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation});
   if((await serviceFrameSigner(tx)).toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Saved native service signature does not belong to this operator.');
   if(!confirmed){
     const known=await client.request({method:'eth_getTransactionByHash',params:[record.hash]});
     if(!known){
       if(await nonce()!==BigInt(record.nonce))throw Error('The saved native service nonce changed. Reconcile this hash before continuing.');
-      const returned=await client.sendRawTransaction({serializedTransaction:record.raw});if(returned!==record.hash)throw Error('Native service broadcast returned another hash.');
+      const returned=manifest.chainId===1337?await submitToSidecar({async request<T>(method:string,params:unknown[]):Promise<T>{const response=await fetch('https://altmempool.forshtat.com/rpc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(60000)});const body=await response.json();if(body.error)throw Error(body.error.message);return body.result as T;}},record.raw):await client.sendRawTransaction({serializedTransaction:record.raw});if(returned!==record.hash)throw Error('Native service broadcast returned another hash.');
     }
     const deadline=Date.now()+180000;
     while(!confirmed&&Date.now()<deadline){
@@ -101,7 +104,7 @@ export async function gasCall(label:string,data:Hex,to?:Hex,value=0n,onConfirmed
   if(!confirmed)throw Error('Native service receipt is unavailable. Preserve the saved transaction.');
   assertSuccessfulReceipt(confirmed,2);
   if(confirmed.payer?.toLowerCase()!==wallet.account.address.toLowerCase()||confirmed.from.toLowerCase()!==wallet.account.address.toLowerCase())throw Error('Native service receipt sender or payer changed.');
-  const deployment=serviceFramePlan({operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation}).deployment;
+  const deployment=serviceFramePlan({chainId:manifest.chainId,nonceKey,operator:wallet.account.address,nonce:record.nonce,data,to,value,salt:operation}).deployment;
   if(deployment){const code=await client.getCode({address:deployment});if(!code||code==='0x')throw Error('Native data deployment did not install code.');}
   onConfirmed?.(record.hash);
   return deployment;
@@ -120,7 +123,7 @@ export async function runPublicProgram(label:string,calls:{to:Hex;data:Hex}[],pr
     if(journal){
       if(journal.records.length>calls.length)throw Error('Historical program exceeds its bound.');
       for(const [index,record] of journal.records.entries()){
-        if(record.chainId!==8141||keccak256(record.raw)!==record.hash||record.inputHash!==keccak256(calls[index]!.data))throw Error('Invalid historical public operation.');
+        if(record.chainId!==manifest.chainId||keccak256(record.raw)!==record.hash||record.inputHash!==keccak256(calls[index]!.data))throw Error('Invalid historical public operation.');
         const receipt=await client.request({method:'eth_getTransactionReceipt',params:[record.hash]}) as {status:Hex}|null;
         if(!receipt||receipt.status!=='0x1')throw Error('Reconcile the historical public program before native-frame recovery. No ordinary transaction was broadcast.');
       }
@@ -173,6 +176,10 @@ export async function provisionPqAccount(publicKey:Hex,onProgress:(label:string)
     let deploymentTransactionHash:Hex|undefined;
     await gasCall(`${keyId}:account`,encodeFunctionData({abi:factoryAbi,functionName:'createAccount',args:[manifest.contracts.implementation.address as Hex,cloneArgs,salt]}),manifest.contracts.factory.address as Hex,0n,hash=>{deploymentTransactionHash=hash;});
     if((await client.getCode({address}))?.toLowerCase()!==runtime.toLowerCase())throw Error('PQ account runtime/configuration mismatch.');
+    if(manifest.chainId===1337){
+      await onProgress('Staking your smart account for the alternative mempool');
+      await gasCall(`${keyId}:stake`,encodeFunctionData({abi:parseAbi(['function stakeForAltMempool() payable']),functionName:'stakeForAltMempool'}),address,12000000000000000n);
+    }
     await onProgress('Funding the devnet deposit balance');
     await gasCall(`${keyId}:test-principal`, '0x', address, 100000000000000n);
     const result={publicKey,address,descriptor,descriptorRuntime,rows,cloneArgs,salt,runtime,deploymentTransactionHash};await save(path,result);return result;

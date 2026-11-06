@@ -17,12 +17,12 @@ class MemoryJournal implements PublicJournalStorage {
   setItem(key: string, value: string) { this.values.set(key, value); }
   removeItem(key: string) { this.values.delete(key); }
 }
-function fixture() {
+function fixture(chainId = 8141) {
   const key = createKey(new Uint8Array(32).fill(44)); // Public test-only deterministic vector.
   const publicKey = bytesToHex(key.publicKey);
   const contracts = Object.fromEntries(Object.entries(realManifest.contracts).map(([name, pin]) => [name, { address: pin.address, runtimeHash: keccak256('0x6000') }])) as PqAccountDeployment['contracts'];
   const deployment: PqAccountDeployment = {
-    ...realManifest,
+    ...realManifest, chainId,
     applicationEnabled: true,
     contracts: { ...contracts, paymaster: { address: sponsor, runtimeHash: keccak256('0x6000') } },
   };
@@ -31,6 +31,7 @@ function fixture() {
   for (const row of account.rows) codes.set(row.address.toLowerCase(), row.runtime);
   codes.set(descriptor.toLowerCase(), account.descriptorRuntime); codes.set(account.address.toLowerCase(), account.runtime);
   const state = { nonce: 0n, sent: [] as Hex[], receipt: false, sendFailure: false, missingFrame: false, payer: sponsor, simulationPayer: sponsor, chainId: deployment.chainId, alteredFactory: false };
+  let simulatedRaw: Hex | null = null;
   const methods: string[] = [];
   const transport: ChainTransport = {
     getStatus: () => ({ phase: 'ready', network: 'test', detail: null, code: null, lastLatencyMs: 0, requestCount: methods.length }),
@@ -43,9 +44,9 @@ function fixture() {
       if (method === 'eth_call') return encodeAbiParameters([{ type: 'address' }], [state.alteredFactory ? numberToHex(3000, { size: 20 }) : account.address]) as T;
       if (method === 'eth_getStorageAt') return numberToHex(state.nonce, { size: 32 }) as T;
       if (method === 'eth_getBalance') return '0x100000000000000' as T;
-      if (method === 'ethrex_simulateFrameTransaction') return { valid: true, prefixShape: 'test', payer: state.simulationPayer, maxCost: '0x1', violation: null, gasUsed: '0x1', frames: Array.from({length:3},()=>({ gasUsed: '0x1', succeeded: true })), executionStatus: 'success', executionError: null } as T;
-      if (method === 'eth_sendRawTransaction') {
-        const raw = params[0] as Hex; state.sent.push(raw);
+      if (method === 'ethrex_simulateFrameTransaction') { simulatedRaw = params[0] as Hex; return { valid: true, prefixShape: 'test', payer: state.simulationPayer, maxCost: '0x1', violation: null, gasUsed: '0x1', frames: Array.from({length:3},()=>({ gasUsed: '0x1', succeeded: true })), executionStatus: 'success', executionError: null } as T; }
+      if (method === 'eth_sendRawTransaction' || method === 'eth_sendFrameTransaction') {
+        const raw = method === 'eth_sendFrameTransaction' ? simulatedRaw! : params[0] as Hex; state.sent.push(raw);
         if (state.sendFailure) throw Error('Lost network acknowledgement');
         state.receipt = true; state.nonce += 1n; return keccak256(raw) as T;
       }
@@ -190,7 +191,7 @@ test('reconciliation checks its expected hash inside the account lock before any
 
 test('a deployment awaiting the QRAFT namespace migration rejects before any RPC or submission', async () => {
   const f = fixture();
-  await expect(verifyPqDeployment(f.transport, { ...realManifest, applicationEnabled: false })).rejects.toThrow('fresh deployment');
+  await expect(verifyPqDeployment(f.transport, { ...realManifest, applicationEnabled: false, deploymentNote: undefined })).rejects.toThrow('fresh deployment');
   expect(f.methods).toHaveLength(0);
   expect(f.state.sent).toHaveLength(0);
 });
@@ -255,4 +256,17 @@ test('legacy backup acknowledgement metadata does not block unlocked signing', a
   expect((await restored.send({ to: sponsor, data: '0x' })).kind).toBe('confirmed');
   expect(f.state.sent.length).toBe(1);
   original.lock(); restored.lock();
+});
+
+test('EF wallet carries PQ signature in VERIFY transaction and never calls cache helper', async () => {
+  const f = fixture(1337); const client = await PqAccountClient.create(f.transport, f.options);
+  const result = await client.send({ to: realManifest.pool as Hex, data: '0x1234', timeoutMs: 1000 });
+  expect(result.kind).toBe('confirmed');
+  expect(f.methods).toContain('eth_sendFrameTransaction');
+  expect(f.methods).not.toContain('eth_sendRawTransaction');
+  expect(f.posts.some(post => post.path === '/api/pq/cache')).toBe(false);
+  const tx = decodeFrameTransaction(f.state.sent[0]!);
+  expect(tx.signatures).toHaveLength(1);
+  expect(tx.signatures[0]!.signature).toHaveLength(4842);
+  expect(tx.frames[0]!.gasLimit).toBe(3000000n);
 });

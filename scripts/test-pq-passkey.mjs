@@ -55,7 +55,7 @@ try {
   assert.notEqual(await page.locator('#account').textContent(), 'locked', await page.locator('#error').textContent());
   assert.equal(await page.evaluate(() => window.setupStarts), 1, 'New-wallet creation must open setup');
   const address = await page.locator('#account').textContent();
-  const vaultText = await page.evaluate(() => localStorage.getItem('qraft:passkey-wallet:v1'));
+  const vaultText = await page.evaluate(() => localStorage.getItem('qraft:passkey-wallet:v1:1337'));
   const vault = JSON.parse(vaultText); assert.ok(vault.ciphertext); assert.equal(vault.seed, undefined); assert.equal(vault.address, address);
   const before = assertions; await page.reload();
   await page.getByRole('button', { name: 'Wallet found · Unlock with passkey', exact: true }).waitFor();
@@ -104,7 +104,7 @@ try {
   await page.getByRole('button', { name: 'Wallet found · Unlock with passkey', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('#account').textContent !== 'locked');
   assert.equal(await page.locator('#account').textContent(), address, 'Switching must restore the original wallet');
-  const collection = JSON.parse(await page.evaluate(() => localStorage.getItem('qraft:wallets:v1')));
+  const collection = JSON.parse(await page.evaluate(() => localStorage.getItem('qraft:wallets:v1:1337')));
   assert.deepEqual(collection.map(wallet => wallet.name), ['Deposits', 'Withdrawals']);
   assert.ok(collection.every(wallet => wallet.vault.ciphertext && wallet.vault.seed === undefined));
   const assertionsBeforeReload = assertions; await page.reload();

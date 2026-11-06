@@ -1,7 +1,8 @@
+import manifest from '../../../public/pq-deployment.json';
 /** Browser-only encrypted custody. WebAuthn PRF output never leaves this device. */
 import type { Hex } from 'viem';
 
-export const WALLET_VAULT_KEY = 'qraft:passkey-wallet:v1';
+export const WALLET_VAULT_KEY = `qraft:passkey-wallet:v1:${manifest.chainId}`;
 const encoder = new TextEncoder();
 const KIND = 'qraft-passkey-wallet';
 export interface WalletSecrets {

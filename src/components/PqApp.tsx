@@ -111,13 +111,13 @@ function TransactionReference({ hash, copyLabel }: { hash: Hex; copyLabel?: stri
   const [copied, setCopied] = useState(false);
   if (!copyLabel) return (
     <a
-      href={`https://dora.privacy.ethrex.xyz/tx/${hash}`}
+      href={`https://explorer.altmempool.wtf/tx/${hash}`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="View transaction on Ethrex explorer"
+      aria-label="View transaction on EF alternative-mempool explorer"
       className="text-sm text-ink-60 underline underline-offset-4 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
     >
-      dora.privacy.ethrex.xyz ↗
+      explorer.altmempool.wtf ↗
     </a>
   );
   return (
@@ -701,7 +701,7 @@ export function PqApp() {
         <div className="border-t border-rule pt-4">
           <p className="mb-2 text-xs text-ink-60">EIP-8141 · 3 frames in one transaction</p>
           <ol className="divide-y divide-rule text-sm">
-            <li className="flex justify-between gap-4 py-2"><span>1 · VERIFY · Your smart account</span><span className="text-right text-xs text-ink-60">Check cached PQ authorization</span></li>
+            <li className="flex justify-between gap-4 py-2"><span>1 · VERIFY · Your smart account</span><span className="text-right text-xs text-ink-60">Verify ML-DSA-44 signature</span></li>
             <li className="flex justify-between gap-4 py-2"><span>2 · VERIFY · QRAFT paymaster</span><span className="text-right text-xs text-ink-60">Approve gas payment</span></li>
             <li className="flex justify-between gap-4 py-2"><span>3 · SENDER · Pool deposit</span><span className="text-right text-xs text-ink-60">Transfer {AMOUNT} ETH into the pool</span></li>
           </ol>
@@ -1030,7 +1030,7 @@ export function PqApp() {
                         {depositInsufficient ? (
                           <Notice tone="bad" title="Not enough native ETH">
                             This account needs {AMOUNT} ETH for the deposit. The
-                            paymaster covers gas. Fund its address on chain 8141 before
+                            paymaster covers gas. Fund its address on chain 1337 before
                             depositing.
                           </Notice>
                         ) : null}
@@ -1444,7 +1444,7 @@ export function PqApp() {
                 }
                 pulse={status.phase === "starting"}
               >
-                Ethrex devnet · {status.network} reads
+                EF devnet 1337 · {status.network} RPC
                 {TRANSPORT.worker.anonymizing ? "" : " (not anonymous)"} ·{" "}
                 {readReady
                   ? "worker ready"
@@ -1538,7 +1538,7 @@ export function PqApp() {
               ) : null}
               {serviceEnabled === null ? <p className="text-xs text-ink-60">Checking the local gas helper…</p> : null}
               {serviceEnabled === false ? (
-                <p className="text-xs leading-relaxed text-ink-60">{serviceReason ?? "Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 8141 key at .local/deployer.json, and restart the server. You can still import an existing backup."}</p>
+                <p className="text-xs leading-relaxed text-ink-60">{serviceReason ?? "Local account provisioning is off. Set QRAFT_LOCAL_PQ_SERVICE=1, supply a funded chain 1337 key at .local/alt-mempool-deployment/operator.json, and restart the server. You can still import an existing backup."}</p>
               ) : null}
             </div>
             {!busy && (!readReady || !!walletError) ? (

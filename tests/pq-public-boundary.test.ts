@@ -1,7 +1,7 @@
 import {expect,test} from 'bun:test';
 import {validatePublicStatement} from '../src/lib/pq/jobs';
 import manifest from '../public/pq-deployment.json';
-const statement=()=>({profile:manifest.profile,root:Array(64).fill(0),nullifier:Array(64).fill(0),context:Array(64).fill(0),publicContext:{chainIdHex:`0x${(8141).toString(16).padStart(64,'0')}`,poolHex:manifest.pool,recipientHex:`0x${'11'.repeat(20)}`,relayerHex:`0x${'00'.repeat(20)}`,denomination:manifest.denominationWei,fee:'0',deadline:'1800000000'}});
+const statement=()=>({profile:manifest.profile,root:Array(64).fill(0),nullifier:Array(64).fill(0),context:Array(64).fill(0),publicContext:{chainIdHex:`0x${manifest.chainId.toString(16).padStart(64,'0')}`,poolHex:manifest.pool,recipientHex:`0x${'11'.repeat(20)}`,relayerHex:`0x${'00'.repeat(20)}`,denomination:manifest.denominationWei,fee:'0',deadline:'1800000000'}});
 test('public encoder persistence boundary rejects nested secret and witness fields',()=>{
  for(const forbidden of ['secret','witness','seed']){const input=statement();Object.assign(input.publicContext,{[forbidden]:'must-never-be-persisted'});expect(()=>validatePublicStatement(input)).toThrow('fixed public');}
 });

@@ -6,17 +6,17 @@ export const SERVICE_NONCE_KEY = 0x5152414654n;
 export const DEPLOYMENT_PROXY = '0x4e59b44847b379578588920cA78FbF26c0B4956C' as Hex;
 export const DEPLOYMENT_PROXY_HASH = '0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989' as Hex;
 
-export interface ServiceFrameOperation { operator: Hex; nonce: number | bigint; data: Hex; to?: Hex; value?: bigint; salt: Hex }
+export interface ServiceFrameOperation { chainId?: number; nonceKey?: bigint; operator: Hex; nonce: number | bigint; data: Hex; to?: Hex; value?: bigint; salt: Hex }
 
 export function serviceFramePlan(operation: ServiceFrameOperation) {
   const { operator, nonce, data, to, salt } = operation;
   const value = operation.value ?? 0n;
   if (!to && value !== 0n) throw Error('Public data deployment cannot receive ETH.');
   const deployment = !to ? getCreate2Address({ from: DEPLOYMENT_PROXY, salt, bytecode: data }) : null;
-  const tx = new FrameTx({ chainId: 8141, nonceKeys: [SERVICE_NONCE_KEY], nonceSeq: nonce, sender: operator,
+  const tx = new FrameTx({ chainId: operation.chainId ?? 8141, nonceKeys: [operation.nonceKey ?? SERVICE_NONCE_KEY], nonceSeq: nonce, sender: operator,
     maxPriorityFee: 1n, maxFee: 128n, signatures: [new FrameSig({ scheme: SigScheme.SECP256K1, signer: operator, signature: `0x${'00'.repeat(65)}` })], frames: [
       new Frame({ mode: FrameMode.VERIFY, flags: 3, target: operator, gasLimit: 30000n, stateGasLimit: 97920n, data: '0x' }),
-      new Frame({ mode: FrameMode.SENDER, target: to ?? DEPLOYMENT_PROXY, gasLimit: 14500000n, stateGasLimit: 40000000n, value, data: to ? data : concat([salt, data]) }),
+      new Frame({ mode: FrameMode.SENDER, target: to ?? DEPLOYMENT_PROXY, gasLimit: operation.chainId === 1337 && !to ? 8000000n : 14500000n, stateGasLimit: operation.chainId === 1337 ? to ? 10000000n : 16000000n : 40000000n, value, data: to ? data : concat([salt, data]) }),
     ] });
   return { tx, deployment };
 }

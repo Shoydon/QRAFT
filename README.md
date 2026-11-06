@@ -1,12 +1,12 @@
 # QRAFT
 
-**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application. Choose **0.0001, 0.001, 0.01, or 0.1 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
+**Quantum-Resistant Anonymous Frame Transactions** — a native ETH privacy-pool application. Deposit **0.0001 ETH**, save a private note, and withdraw the same amount in native ETH to a recipient. No wrapped asset, token approval or swap is involved.
 
 The active application uses ML-DSA-44 account authorization, SHA3-512 notes and Merkle commitments, and the transparent V5 withdrawal proof. User signing seeds and note witnesses stay in the browser. This is experimental devnet software: the proof construction has a conditional security argument, not an independently established quantum-security certificate or a production audit. See [security boundaries](docs/pq/application-security.md).
 
 ## Deployment status
 
-The active QRAFT namespace account, native-frame paymaster, and V5 contracts are deployed on Ethrex chain 8141. The default pool is pinned in [pq-deployment.json](public/pq-deployment.json); three additional pool/sponsor pairs are pinned in [pq-pools.json](public/pq-pools.json). Each amount has a separate anonymity set. See [fixed ETH pools](docs/pq/pools.md).
+The active configuration targets the EF alternative-mempool devnet, chain **1337**. Shared contracts are pinned in [pq-deployment.json](public/pq-deployment.json). The default 0.0001 ETH pool is deployed; additional denominations are not yet activated on this network. Transactions are currently disabled: PQ execution simulation succeeds, but the sidecar rejects the sender under its GAS opcode rule (OP-011). See [EF track status](docs/pq/ef-track.md).
 
 Wallet creation follows a public provisioning job and independently verifies ownership through Nym before opening. Creation can take several minutes. Local helper requests queue behind one shared gas-carrier lock across processes; interrupted locks require journal reconciliation.
 
@@ -31,12 +31,12 @@ Account creation and public proof processing require the optional local helper. 
 
 ```dotenv
 QRAFT_LOCAL_PQ_SERVICE=1
-QRAFT_DEPLOYER_KEY_FILE=.local/deployer.json
+QRAFT_DEPLOYER_KEY_FILE=.local/alt-mempool-deployment/operator.json
 ```
 
-Supply a funded, disposable **chain 8141** gas-carrier key in that protected JSON file, with fields `chainId` (8141) and `privateKey` (0x-prefixed 32-byte key). Protect it with `chmod 600 .local/deployer.json`. Never use a mainnet key. No key is shipped. This workspace already has local test configuration; restart after changing environment variables.
+Supply a funded, disposable **chain 1337** gas-carrier key in that protected JSON file, with fields `chainId` (1337) and `privateKey` (0x-prefixed 32-byte key). Protect it with `chmod 600 .local/alt-mempool-deployment/operator.json`. Never use a mainnet key. No key is shipped. This workspace already has local test configuration; restart after changing environment variables.
 
-The helper provisions public ML-DSA account data, funds 0.0001 test ETH as initial deposit principal, caches already signed authorizations and pays for public proof computation. It cannot produce an ML-DSA authorization or withdraw from the pool without a valid note proof. All new helper writes use native type-0x06 frames, including account/public-key deployment, test funding, ML-DSA authorization preparation and public proof computation. The operator uses the protocol default EOA verification code and pays for these public operations; user deposits and withdrawals retain ML-DSA authorization and paymaster sponsorship. It uses direct RPC, so this local configuration does **not** provide anonymity for all traffic. Keep it bound to loopback; it is not an authenticated public faucet or hosted service.
+The helper provisions public ML-DSA account data, funds 0.0001 test ETH as initial deposit principal, stakes newly created accounts and pays for public proof computation. It cannot produce an ML-DSA authorization or withdraw from the pool without a valid note proof. All new helper writes use native type-0x06 frames, including account/public-key deployment, test funding, public proof computation. The operator uses the protocol default EOA verification code and pays for these public operations; user deposits and withdrawals retain ML-DSA authorization and paymaster sponsorship. It uses direct RPC, so this local configuration does **not** provide anonymity for all traffic. Keep it bound to loopback; it is not an authenticated public faucet or hosted service.
 
 ## Try the flow
 
@@ -52,7 +52,7 @@ Desktop Chromium is recommended. V5 proving currently uses approximately **2.04 
 
 ## Network and verification
 
-The default deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): Ethrex devnet **8141**, RPC `https://rpc1.privacy.ethrex.xyz`, native pool `0x66Ff71F39c9b6d46556769C479FFe29C0ad85854`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
+The default deployment is pinned in [public/pq-deployment.json](public/pq-deployment.json): EF devnet **1337**, execution RPC `https://altmempool.forshtat.com`, sidecar `https://altmempool.forshtat.com/rpc`. Genesis, an anchor block, contract runtime hashes, denomination and account configuration are checked before use. A devnet reset invalidates the deployment and its notes.
 
 Browser chain requests use the official Nym Anon-RPC worker by default and stop on failure, with no automatic direct fallback. The worker lookup uses a direct Ethereum bootstrap RPC. Explicit passthrough mode is labelled non-anonymous. The local helper and CLI diagnostics use direct RPC. See [.env.example](.env.example).
 
@@ -77,7 +77,7 @@ If Nym reads time out, open the read-path footer, reconnect anonymous reads, and
 - **Privacy:** signing seeds and note witnesses stay in the browser. Default chain reads use Nym. The bootstrap provider sees the worker lookup, and the helper sees public account/proof data and uses direct RPC. Timing, gas funding, pool size, and recipient reuse can link activity. No third-party analytics are configured.
 - **Security:** ML-DSA authorization, deployment pins, local proof verification, and recoverable transaction journals protect the application flow. The proof is experimental; external consensus and transport are outside its post-quantum claim. Keep both backups.
 
-For exact EF endpoints, deployment prerequisites, and implemented versus pending features, see [EF track status](docs/pq/ef-track.md). The historical pool is on chain 8141; the EF alternative mempool target is chain 1337. A paymaster and sidecar integration are still pending.
+For exact EF endpoints, deployment prerequisites, and implemented versus pending features, see [EF track status](docs/pq/ef-track.md). The historical pool is on chain 8141; the EF alternative mempool target is chain 1337. The client submits JSON frame transactions with `eth_sendFrameTransaction`. PQ signatures are verified directly in the sender VERIFY frame; application writes have no canonical-mempool fallback. Shared infrastructure bootstrap is explicitly separate.
 
 ## Source and license information
 

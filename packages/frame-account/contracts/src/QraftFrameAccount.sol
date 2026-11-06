@@ -19,6 +19,15 @@ contract QraftFrameAccount is ERC8286FrameAccount {
         MLDSA_VALIDATOR_CODE_HASH = validator.codehash;
     }
 
+    /// @notice Anyone can fund this account's fixed devnet stake; no wallet balance is spent.
+    function stakeForAltMempool() external payable {
+        require(block.chainid == 1337 && msg.value != 0, "chain/value");
+        (bool ok,) = address(0xD51c04d7A0B01124E84DE152F4e56d9eeCB22D2F).call{value: msg.value}(
+            abi.encodeWithSignature("addStake(uint32)", uint32(86400))
+        );
+        require(ok, "stake failed");
+    }
+
     function _initialModes() private pure returns (bytes32[] memory modes) {
         modes = new bytes32[](4);
         modes[0] = LibERC8286.FRAME_MODE_SINGLE;

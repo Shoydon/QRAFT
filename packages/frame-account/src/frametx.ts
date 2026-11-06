@@ -1,7 +1,7 @@
 import { concat, fromRlp, keccak256, numberToHex, toRlp, type Hex } from 'viem';
 export type { Hex } from 'viem';
-/** Pinned to live chain8141 ethrex64b8fc09d47d7787eb1a4e3f082aa9e831dc5f8c.
- * Historical eight-field envelope; no legacy recent-roots envelope field.
+/** Chain 1337 uses the EF sidecar nine-field envelope with recent roots.
+ * Historical chain 8141 fixtures retain the eight-field envelope.
  * This codec neither signs nor submits transactions. */
 export const FRAME_CODEC_PIN = '64b8fc09d47d7787eb1a4e3f082aa9e831dc5f8c';
 export const HEGOTA_CHAIN_ID = 8141;
@@ -87,7 +87,7 @@ export class FrameTx {
     }
     Object.freeze(this);
   }
-  private envelope(elide: boolean): Rlp[] { return [rlpInt(this.chainId), this.nonceKeys.map(rlpInt), rlpInt(this.nonceSeq), this.sender, this.frames.map(f => f.toRlp()), this.signatures.map(s => s.toRlp(elide)), [rlpInt(this.maxPriorityFee), rlpInt(this.maxFee), rlpInt(this.maxBlobFee)], [...this.blobHashes]]; }
+  private envelope(elide: boolean): Rlp[] { const fields: Rlp[] = [rlpInt(this.chainId), this.nonceKeys.map(rlpInt), rlpInt(this.nonceSeq), this.sender, this.frames.map(f => f.toRlp()), this.signatures.map(s => s.toRlp(elide)), [rlpInt(this.maxPriorityFee), rlpInt(this.maxFee), rlpInt(this.maxBlobFee)], [...this.blobHashes]]; if (this.chainId === 1337n) fields.push([]); return fields; }
   encode(): Hex { return toRlp(this.envelope(false)); }
   raw(): Hex { const raw = concat(['0x06', this.encode()]); if ((raw.length - 2) / 2 > MAX_CANONICAL_TX_BYTES) throw Error('Canonical transaction exceeds128KiB admission policy'); return raw; }
   sigHash(): Hex { return keccak256(concat(['0x06', toRlp(this.envelope(true))])); }
@@ -99,7 +99,10 @@ function decodeInt(node: Rlp): bigint { const b = leaf(node); if (b.startsWith('
 function optionalAddress(node: Rlp): Hex | null { const b = leaf(node); if (b === '0x') return null; if (b.length !== 42) throw Error('Wrong address width'); return b; }
 export function decodeFrameTransaction(rawInput: Hex): FrameTx {
   const raw = bytes(rawInput); if (!raw.startsWith('0x06') || (raw.length - 2) / 2 > MAX_CANONICAL_TX_BYTES) throw Error('Wrong transaction type/size');
-  const v = list(fromRlp(`0x${raw.slice(4)}`, 'hex') as Rlp, 8);
+  const v = list(fromRlp(`0x${raw.slice(4)}`, 'hex') as Rlp);
+  const expectedFields = decodeInt(v[0]!) === 1337n ? 9 : 8;
+  if (v.length !== expectedFields) throw Error('Wrong frame envelope for chain');
+  if (expectedFields === 9 && list(v[8]!).length !== 0) throw Error('Recent-root references are not supported by this account profile');
   const tx = new FrameTx({ chainId: decodeInt(v[0]!), nonceKeys: list(v[1]!).map(decodeInt), nonceSeq: decodeInt(v[2]!), sender: optionalAddress(v[3]!) ?? (() => { throw Error('Sender cannot be empty'); })(),
     frames: list(v[4]!).map(x => { const f = list(x, 6), gas = list(f[3]!, 2); return new Frame({ mode: Number(decodeInt(f[0]!)), flags: Number(decodeInt(f[1]!)), target: optionalAddress(f[2]!), gasLimit: decodeInt(gas[0]!), stateGasLimit: decodeInt(gas[1]!), value: decodeInt(f[4]!), data: leaf(f[5]!) }); }),
     signatures: list(v[5]!).map(x => { const s = list(x, 4); return new FrameSig({ scheme: Number(decodeInt(s[0]!)), signer: optionalAddress(s[1]!), msg: leaf(s[2]!), signature: leaf(s[3]!) }); }),
@@ -107,9 +110,9 @@ export function decodeFrameTransaction(rawInput: Hex): FrameTx {
   if (tx.raw() !== raw) throw Error('Noncanonical frame encoding'); return tx;
 }
 export function nonceKeysHash(keys: readonly Numeric[]): Hex { return keccak256(concat([numberToHex(BigInt(keys.length), { size: 32 }), ...keys.map(x => numberToHex(integer(x), { size: 32 }))])); }
-export interface FrameSimulation { valid: boolean; prefixShape: string | null; payer: Hex | null; maxCost: Hex; violation: string | null; gasUsed: Hex | null; frames: { gasUsed: Hex; succeeded: boolean }[] | null; executionStatus: string | null; executionError: string | null }
-export function assertSuccessfulSimulation(result: FrameSimulation, expectedFrames: number): void {
-  if (!result.valid || result.violation || result.executionError || result.executionStatus !== 'success' || !result.payer || result.gasUsed === null || result.frames?.length !== expectedFrames || result.frames.some(f => f.succeeded !== true)) throw Error('Frame admission/execution simulation did not fully succeed');
+export interface FrameSimulation { valid?: boolean; canonicalMempoolValid?: boolean; prefixShape: string | null; payer: Hex | null; maxCost: Hex; violation: string | null; gasUsed: Hex | null; frames: { gasUsed: Hex; succeeded: boolean }[] | null; executionStatus: string | null; executionError: string | null }
+export function assertSuccessfulSimulation(result: FrameSimulation, expectedFrames: number, alternative = false): void {
+  if (!(result.valid === true || alternative && typeof result.canonicalMempoolValid === 'boolean') || result.violation || result.executionError || result.executionStatus !== 'success' || !result.payer || result.gasUsed === null || result.frames?.length !== expectedFrames || result.frames.some(f => f.succeeded !== true)) throw Error('Frame admission/execution simulation did not fully succeed');
 }
 export interface FrameReceipt { type: Hex; status: Hex; payer?: Hex; frameReceipts?: { status: Hex; gasUsed: Hex; logs: unknown[] }[] }
 /** Standard receipt formatters may discard frameReceipts/payer: fetch raw JSON-RPC. */

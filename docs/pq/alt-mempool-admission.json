@@ -1,0 +1,155 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hash": "0xdd98edef75ab9a306031fb9756e56f4ef341c88a932991e8a4e5d09ce35eab2b",
+    "entry": null,
+    "admission": {
+      "id": 225,
+      "txHash": "0xdd98edef75ab9a306031fb9756e56f4ef341c88a932991e8a4e5d09ce35eab2b",
+      "sender": "0xb7b255ec611f4a936921e6c5d45383294dd8b2cd",
+      "nonce": "0x0",
+      "nonceKeys": [
+        "0xea140a0090011bd8fc57a5b887f53e5bfcae6393"
+      ],
+      "at": 1793974166453,
+      "source": "rpc",
+      "outcome": "rejected",
+      "errorCode": -32502,
+      "checks": [
+        {
+          "rule": "gas-limit",
+          "verdict": "pass"
+        },
+        {
+          "rule": "recent-root",
+          "verdict": "pass"
+        },
+        {
+          "rule": "prefix",
+          "verdict": "pass"
+        },
+        {
+          "rule": "structure",
+          "verdict": "pass"
+        },
+        {
+          "rule": "signature",
+          "verdict": "pass"
+        },
+        {
+          "rule": "simulation",
+          "verdict": "pass"
+        },
+        {
+          "rule": "trace-alignment",
+          "verdict": "pass"
+        },
+        {
+          "rule": "OP-061",
+          "verdict": "pass"
+        },
+        {
+          "rule": "execution",
+          "verdict": "pass"
+        },
+        {
+          "rule": "trace-alignment",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "out-of-gas",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "OP-011",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "fail",
+          "detail": "sender uses banned opcode: GAS"
+        },
+        {
+          "rule": "create",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "storage",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "COD-010",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "entrypoint-access",
+          "frameIndex": 0,
+          "entity": "sender",
+          "verdict": "pass"
+        },
+        {
+          "rule": "mempool",
+          "verdict": "skipped"
+        }
+      ],
+      "frames": [
+        {
+          "mode": 1,
+          "flags": 2,
+          "target": "0xb7b255ec611f4a936921e6c5d45383294dd8b2cd",
+          "limits": {
+            "execution": "0x2dc6c0",
+            "state": "0x0"
+          },
+          "value": "0x0",
+          "data": "0x8e760afe00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "mode": 1,
+          "flags": 1,
+          "target": "0xba1bd2af23278d1b56c150928450d9f7a4b9f4ed",
+          "limits": {
+            "execution": "0x1d4c0",
+            "state": "0x17e80"
+          },
+          "value": "0x0",
+          "data": "0x1b9265b8"
+        },
+        {
+          "mode": 2,
+          "flags": 0,
+          "target": "0x89f9d218f67ce41625c546eae09dca1ca6cd122e",
+          "limits": {
+            "execution": "0x7a1200",
+            "state": "0x989680"
+          },
+          "value": "0x5af3107a4000",
+          "data": "0x515c6e25bb536b74463f2417d22293cf629a002bccacfc97f6bfb6ba248ecfab30325baf0f2f03bc1a22532f3d844cb46956ece9290d3b138038729471f55a257921c024"
+        }
+      ],
+      "frameStatuses": [
+        "success",
+        "success",
+        "success"
+      ]
+    },
+    "events": [
+      {
+        "seq": 678,
+        "txHash": "0xdd98edef75ab9a306031fb9756e56f4ef341c88a932991e8a4e5d09ce35eab2b",
+        "at": 1793974166675,
+        "kind": "rejected",
+        "reason": "sender uses banned opcode: GAS"
+      }
+    ]
+  }
+}

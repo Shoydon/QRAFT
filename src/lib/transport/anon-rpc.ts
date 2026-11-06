@@ -217,7 +217,7 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
       if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       const id = ++requestId;
       const started = performance.now();
-      const res = await w.fetch(TRANSPORT.readRpcUrl as string, {
+      const res = await w.fetch(method === 'eth_sendFrameTransaction' || method.startsWith('skandha_') || method === 'eth_getFrameTransactionReceipt' ? TRANSPORT.submissionRpcUrl : TRANSPORT.readRpcUrl as string, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),

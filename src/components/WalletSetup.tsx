@@ -21,7 +21,7 @@ export function walletSetupStep(label: string): number | null {
   if (label === "Generating your signing key locally") return 1;
   if (label === "Deploying the public key descriptor") return 6;
   if (label === "Deploying your smart account") return 7;
-  if (label === "Funding the devnet deposit balance") return 8;
+  if (label === "Funding the devnet deposit balance" || label === "Staking your smart account for the alternative mempool") return 8;
   if (label === "Verifying your deployed smart account") return 9;
   return null;
 }

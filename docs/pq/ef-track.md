@@ -1,47 +1,37 @@
-# EF Mumbai integration and deployment status
+# EF integration status
 
-Checked on November 6, 2026. The [EF prize page](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) has separate Anon-RPC, frame alternative mempool, and CROPS tracks. It permits one EF prize per project. Anon-RPC qualification requires anonymous RPC reads by default; alternative mempool qualification requires actual sidecar submission or an admitted transaction. A native frame receipt alone does not establish alternative mempool use.
+The active application targets **chain 1337**, using EIP-8141 frame transactions. The proposal number 8141 is not the network ID. The [official devnet guide](https://docs.altmempool.wtf/guides/devnet/) and [workshop](https://github.com/forshtat/mempool-workshop) specify this network.
 
-## Use Nym for anonymous browser reads
+## Routes
 
-The default is `@anon-rpc/browser-harness` 0.4.0 with the official Nym specifier on Ethereum mainnet:
+| Purpose | Endpoint |
+| --- | --- |
+| Execution and simulation | `https://altmempool.forshtat.com` |
+| Alternative-mempool submission | `https://altmempool.forshtat.com/rpc` |
+| Explorer | `https://explorer.altmempool.wtf/` |
 
-```
-0x3aCD9742C68F6d993066Ae25533e09b9e1f60eD0
-```
+Browser RPC uses the official Nym worker by default, including sidecar submission. There is no automatic direct fallback. Nym hides the browser IP from the destination RPC; it does not hide public transaction contents, addresses, amounts, or timing correlations. Worker discovery uses a direct Ethereum bootstrap RPC. The local public-data/proof helper and CLI tests use direct RPC; their traffic is not anonymous.
 
-The [official wallet guide](https://ethereum.github.io/anon-rpc/wallets/) documents this worker. Nym needs no Tor KPS gateway configuration. Its approximately 18 MB bundle and mixnet connection can delay startup. Worker readiness is separate from a successful RPC request; new account creation checks the RPC chain before asking the helper to provision or fund anything.
+The client encodes the devnet's nine-field type-0x06 envelope and submits JSON using `eth_sendFrameTransaction`. It checks the returned hash against the signed intent. PQ authorization is verified directly in the sender VERIFY frame, with a larger verification budget than the standard public mempool permits. The sender and paymaster stake in the devnet registry. Application and public-helper writes use the sidecar with no canonical fallback.
 
-The direct bootstrap endpoint, `https://ethereum-rpc.publicnode.com`, reads the worker specifier. Browser chain requests then use the sandboxed, hash-pinned worker to reach `https://rpc1.privacy.ethrex.xyz`. Connection failures stop reads; they do not enable direct fallback. The local gas/proof helper and CLI diagnostics use direct RPC. Passthrough is explicitly non-anonymous and is not the default. Tor is an optional separately configured worker, not a silent fallback.
+One-time shared infrastructure deployment uses explicit native execution-RPC transactions where necessary: the cryptographic primitive deployment exceeds the sidecar's 25-million-gas transaction budget. Those bootstrap receipts are not presented as alternative-mempool evidence.
 
-## Keep the active deployment distinct from the EF sidecar devnet
+## Evidence and limitations
 
-| Purpose | Network / endpoint | Current status |
-| --- | --- | --- |
-| Active PQ wallet and privacy pool | Ethrex chain **8141**, `https://rpc1.privacy.ethrex.xyz` | Deployed; manifest pins genesis, anchor, and runtimes |
-| EF frame execution RPC | Chain **1337**, `https://altmempool.forshtat.com` | Reachable; not the active QRAFT deployment |
-| EF mining sidecar | `https://altmempool.forshtat.com/rpc` | Alternative mempool endpoint |
-| EF gateway sidecar | `https://altmempoolgateway.forshtat.com/rpc` | Workshop submission endpoint; gossips to miner and forwards reads |
-| EF explorer | `https://explorer.altmempool.wtf/` | Use for admission/inclusion evidence |
+The following native transaction was submitted through the sidecar and included successfully:
 
-The [devnet guide](https://docs.altmempool.wtf/guides/devnet/) documents chain 1337 and the execution/mining endpoints. The [workshop source](https://github.com/forshtat/mempool-workshop) uses the gateway endpoint. Both networks answered chain-ID probes during this check. Endpoint availability does not establish contract compatibility or admission.
+[Chain-1337 sidecar probe](https://explorer.altmempool.wtf/tx/0x878a98ba54c02ccafc67fbd5d6e7c2d028eb05cd87e25911b83d5c9a23290ad8)
 
-For an EF alternative mempool deployment, deploy **both the paymaster and privacy pool on chain 1337**, alongside compatible account factory, ML-DSA verifier, and proof-verifier infrastructure. The current chain-8141 manifest must not be pointed at chain 1337: those addresses, code hashes, notes, and transaction encoding belong to the existing deployment.
+The account implementation deployment also passed sidecar admission and inclusion:
 
-Before that deployment:
+[Account implementation deployment](https://explorer.altmempool.wtf/tx/0xc58aa78e4f140df7055d6073d7172ff10c0cc07cb49bb7ca115615b33ed6d747)
 
-1. Pin the execution fork and sidecar version from the workshop, and inspect live `skandha_config`. The workshop pins EIP revisions; it does not promise compatibility with every latest draft.
-2. Port and test frame encoding, verification prefix, keyed nonces (nonce manager `0x…8250`), recent roots (`0x…8272`), gas accounting, and paymaster sponsorship against that fork. Existing chain-8141 raw frames are not evidence of compatibility.
-3. Deploy and fund the compatible infrastructure. Verify factory/paymaster stake, delay, reputation, and storage access against actual sidecar admission rules. Keep user authorization ML-DSA; an operator funding transaction does not make transport or consensus post-quantum.
-4. Produce a separate chain-1337 manifest with independently checked genesis, anchor, runtimes, account configuration, pool denomination, and addresses. Preserve existing chain-8141 note recovery.
-5. Submit through `eth_sendFrameTransaction` to the gateway sidecar, inspect admission/status and `eth_getFrameTransactionReceipt`, and save explorer evidence. Direct execution `eth_sendRawTransaction` or privileged submission bypasses this admission evidence.
+These are operator-authorized infrastructure transactions, not proof of a sponsored PQ deposit or full withdrawal. Fresh PQ account creation and staking succeeded through the sidecar. The sponsored PQ deposit passed execution simulation, but sidecar admission rejected it under OP-011: `sender uses banned opcode: GAS`. The manifest disables application transactions until this is resolved. See [the public admission report](alt-mempool-admission.json). No deposit or withdrawal success is claimed on 1337. The devnet has also admitted transactions and subsequently cancelled them after four relays without inclusion; admission alone must not be labelled confirmation. The client preserves pending signed intents for reconciliation.
 
-The current workshop documents a faucet; the generated devnet guide still describes shared-key funding and no faucet. Prefer current workshop source and the live explorer, and recheck before funding. These are disposable devnets that can reset.
+The historical [complete withdrawal evidence](application-checks.json) belongs to the previous chain-8141 deployment and does not establish chain-1337 withdrawal success. Only the default 0.0001 ETH pool is currently activated on 1337.
 
-## What the application currently demonstrates
+## Track scope
 
-The active chain-8141 application has recorded a native 0.0001 ETH deposit, browser V5 proof, 663 public verifier calls, recovery after a browser restart, and exact native ETH withdrawal. See [recorded integration evidence](application-checks.json). That prior run is not a fresh sidecar test.
+The [EF prize page](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) lists Anon-RPC, alternative mempool, and CROPS tracks, with at most one EF prize per project. Submission code and explorer evidence support alternative-mempool review; final eligibility and awards are determined by judges. A short demonstration video remains a submission deliverable.
 
-The active chain-8141 pools have bounded paymasters for native deposit and withdrawal gas. The helper uses native operator frames for public setup and computation, including factory account creation and test principal funding. **Chain-1337 alternative mempool submission is not implemented.** No ERC-4337 paymaster or bundler endpoint is interchangeable with this EIP-8141 sidecar.
-
-ML-DSA authorization, SHA3-512 notes, and the transparent proof are the application security scope. The proof remains experimental. Ethereum/devnet consensus, Nym, TLS, operator gas keys, and availability have separate limits. See [security boundaries](application-security.md).
+README documents CROPS properties and limitations. There are no configured third-party analytics. ML-DSA-44 authorization, SHA3-512 notes, and the transparent proof cover application cryptography; consensus, TLS, Nym, operator keys, and availability have separate assumptions. The proof remains experimental. See [security boundaries](application-security.md) and [licenses](../../NOTICE.md).
