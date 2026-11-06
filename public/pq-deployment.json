@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "profile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "chainId": 8141,
+  "chainName": "Ethrex devnet",
+  "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+  "rpcUrl": "https://rpc1.privacy.ethrex.xyz",
+  "denominationWei": "100000000000000",
+  "pool": "0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a",
+  "deploymentBlock": 623947,
+  "anchorBlock": 623947,
+  "anchorHash": "0x6111ecef5730d203d99160adfbcaebaf12f66734f04176b2936d90558b6aae31",
+  "contracts": {
+    "f1600": {
+      "address": "0x6fdaD07f0cC27Cc762040991BB9679f802A0C673",
+      "runtimeHash": "0x4afb4435879cdf8e50474c7aab2bc3a679caed432550ad6dba64f509309a817b",
+      "transactionHash": "0xf03f1a3d82f873b55a052a294b9cb05e2a301e888fa8d252cca82d5b2e732bf7",
+      "block": "623935",
+      "initDataHash": "0x6726cabb2efced615373b8d404e5e33cd985677f56aa37a4abd4fe8f07807f9b"
+    },
+    "mldsaVerifier": {
+      "address": "0x8A56b0682d89304b8B2c369d1b2480943dcf69D3",
+      "runtimeHash": "0xbffc3fcee255b89545b68a56697ef4f48f7390ee799e1a781bc30babde13bd3b",
+      "transactionHash": "0xad48c0f92426d54557b0f49152b7c1c6b9a3c8368771936eddb1ba4d884c9c0b",
+      "block": "623943",
+      "initDataHash": "0xa6a9e9c253a3ae4103e6ab03c25802bd7134a383e662e4fa0f6fefcad2b3fb72"
+    },
+    "validator": {
+      "address": "0x33325D351bb20fA9A1CA3C50E1dc17217D7c65b4",
+      "runtimeHash": "0x1e03d898ac890baf513d0d3ea44135778d936bc522ea05aaeb7c5d5804f08cd4",
+      "transactionHash": "0x0bd760efee876e1fd66e9b989d048c3ce6feb1062ce505e0a01490dd189afda7",
+      "block": "623944",
+      "initDataHash": "0xa2ece5c49d25997d84c5cc7d3782999697aab9d2e5cee20b0377bc642e84f0c4"
+    },
+    "implementation": {
+      "address": "0x758710224bf0A435e6a80E0b30f7b7a7676eEbD8",
+      "runtimeHash": "0x74e1281c7375f9c7eb51700757a3571cdbf553001888ca140b3caceaf39956fc",
+      "transactionHash": "0xa50a82fc779c5f3324c25b4db9220b13cfeaa880befb787fec2844931b71e656",
+      "block": "623945",
+      "initDataHash": "0x888695c15f3e90fe7772d2b124ec93f323bc287ad2d8699f2353506855e61253"
+    },
+    "factory": {
+      "address": "0xFE65eFFAae71a4600FDdD052FD09F56c5b35b565",
+      "runtimeHash": "0xee03c662e098175bc7b1e0fe2a5e80750c0801e091516f15593f764c2d80311c",
+      "transactionHash": "0x915a4506f204e1edef4f397fe9737306ccb1f4d8bcfa1320f5cdff1902ec4151",
+      "block": "623946",
+      "initDataHash": "0x147f5adfbe96c71e94103fff363cbd3edae5401863017784c6683c1d97f6fd6c"
+    },
+    "air": {
+      "address": "0x4e0E53DaF211Bd7c04e3DfeB88ddC4b4cEB7fF57",
+      "runtimeHash": "0xd61befa197669d4d38c3ef7ad536ecd6af14946a611228f6db5ade87b425072f",
+      "transactionHash": "0x3058a420963f7f9f4d002fd74ed6cd3f97b70bff1d795fb7d4eb408ee3eb4c21",
+      "block": "620949",
+      "reused": true
+    },
+    "blobs": {
+      "address": "0xc15a247e00788d6628cC5624278beB680262dA14",
+      "runtimeHash": "0x16bb9738609de70bd2365260d46e326679294c475bafd324c0c63d0baa9a9b0f",
+      "transactionHash": "0xcaf99be3719955944747f97135fb1e49ec8297df4807c9f3bb98e95928d3f89b",
+      "block": "620952",
+      "reused": true
+    },
+    "arithmetic": {
+      "address": "0x4672BbF253B520e43BC18C1dEF006cB6d6f30Ad9",
+      "runtimeHash": "0x85d460e2ca7580be436da4d2aabb905d2cba1c931e7b266823808fc868c4eb7d",
+      "transactionHash": "0x7e4300a7487e03ebb200df2cc0913899bec28dff916080196329904c89381ace",
+      "block": "621439",
+      "reused": true
+    },
+    "authentication": {
+      "address": "0xcf6261eE5bD0aeaa13e7C1BF57919c5815d36B3E",
+      "runtimeHash": "0x31b311c6078533f4ec036f8f4a509583279143b293df23b99efaa6bd6f919351",
+      "transactionHash": "0x5082c3a004713a1b7fcc274157bd698ff3b707ea1d0e287910f30969e7407bdb",
+      "block": "621441",
+      "reused": true
+    },
+    "stream": {
+      "address": "0x87FB425d7ef9a88c0cAf8b95B2056D7651cE564f",
+      "runtimeHash": "0x93e3d934a6e7b23e1370eba032c2f927fd783c30c0fc1a189bf40ecfba31ebb5",
+      "transactionHash": "0x61fda1123ee384a8c54de32d5cc732aab7d76186a33f084231d7c452db3ccf15",
+      "block": "621442",
+      "reused": true
+    },
+    "session": {
+      "address": "0xfd502CB18B96E93d357af3651dB918EC50A487Bb",
+      "runtimeHash": "0x615bef8390fde565c7b8f517a3eeae2b92131fa83137dde70c4dfcaf2df9c8b1",
+      "transactionHash": "0xeccb7490de88f8ef36243e18f0b2b32be9bcdd6c9fa617690809919f46b3c4ec",
+      "block": "621444",
+      "reused": true
+    },
+    "pool": {
+      "address": "0x4D0f4a4a33B58Ca6D9c443ba17078FaA27419D6a",
+      "runtimeHash": "0x60ed226ef160aa8e830bb968bf5aea09c905f09074af3a8e6bbc1e47f0f697ce",
+      "transactionHash": "0xb9f95c8e9213f2ccbe7ea3fe78ac7d98685c9f7637133cf3034ba2020c757a3c",
+      "block": "623947",
+      "initDataHash": "0x3e9d57ffee69c84e56f4f30cabceab0847427fcb0cacdece1dbdaa74d969fc39"
+    }
+  },
+  "applicationEnabled": false,
+  "deploymentStatus": "requires-qraft-namespace-deployment",
+  "deploymentNote": "Contract pins are historical. Deploy and verify the QRAFT namespace contracts before enabling transactions."
+}

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "id": "qraft:8141:0x06319a9230ebdca4bdf510ed7504e3d33d45d511:0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+  "chainId": 8141,
+  "chainName": "Ethrex devnet",
+  "rpcUrl": "https://rpc1.privacy.ethrex.xyz",
+  "genesisHash": "0x2036e3fe3eaaa15382a9befde816137b6b2cda1e3df8ca0c92e89bc17a3fca5a",
+  "deploymentBlock": 705198,
+  "anchorBlock": 705203,
+  "anchorHash": "0xce91dc60655545e38e7ba2f44108a50d14bca2d68e892b629268dc3e0423c9f0",
+  "explorerBase": null,
+  "pools": [
+    {
+      "ref": "eth-0.01",
+      "address": "0x06319a9230ebdca4bdf510ed7504e3d33d45d511",
+      "denominationWei": "10000000000000000"
+    },
+    {
+      "ref": "eth-0.1",
+      "address": "0xf0120f122ca376d7319928f700d322ca9a93058e",
+      "denominationWei": "100000000000000000"
+    },
+    {
+      "ref": "eth-1",
+      "address": "0x542c640a4493422c9bbac16f96d79ced2a9050d7",
+      "denominationWei": "1000000000000000000"
+    },
+    {
+      "ref": "eth-10",
+      "address": "0xa5428435e3d04ee1e990ab48cf5fd254813ae98e",
+      "denominationWei": "10000000000000000000"
+    }
+  ],
+  "codeHashes": {
+    "0x485eaf575412ae48212012e7e3db4adbdb1afdca": "0x354b26999e434f8256d168395315e1f51fc15bf49bf2e6bb58fc549bd597e7da",
+    "0x7add8158e091a74b0f7d6eb5204269df67de8fd0": "0xf849b4fc2eabf9ead24e4fbbd9abf3a0dce79dd1c9cbecc08c7953a4e194f739",
+    "0x06319a9230ebdca4bdf510ed7504e3d33d45d511": "0x22396b9694f5633b55d6b83710953137fb3535f83188c70fa5a7349733ada520",
+    "0xf0120f122ca376d7319928f700d322ca9a93058e": "0x9e9d1152e7f67b22a22e17491aa054f0e13ebeb41f0375d9d9cef68e2c1295a6",
+    "0x542c640a4493422c9bbac16f96d79ced2a9050d7": "0x26df1fdead5ac064776bca6decb89349cc4a60025b5e9d67e1464fce19c0e3c3",
+    "0xa5428435e3d04ee1e990ab48cf5fd254813ae98e": "0x7bad6d0d9c96304e77dfb1f8a2347844aa2366738df4c9246916f6c1c3ffcf67"
+  },
+  "artifacts": {
+    "spend.wasm": "df96c0544bc26687acf3b8e55a1af2074847d148ba3b78a8c0710b56089e06fd",
+    "spend.zkey": "dca802f130775a745e2c4cfaa3661ec3d0faf488ff3c2fe6cc4b538c77210079",
+    "verification_key.json": "a0b5e591a1c9f3a5f502d440289146538c9fa0e35693ecc1fdb5d11bbf3968ac"
+  },
+  "transactions": [
+    {
+      "contract": "Poseidon",
+      "hash": "0xe977ab8278c6a9a1374452af31bae3f3e03091b82dad0c7328f2e90a111697ff",
+      "address": "0x485eaf575412ae48212012e7e3db4adbdb1afdca",
+      "block": 705198
+    },
+    {
+      "contract": "SpendVerifierStock",
+      "hash": "0xd88e86dfc228a9d10c1fd630ee983784b8376401cab4c628fbda94bb74294cac",
+      "address": "0x7add8158e091a74b0f7d6eb5204269df67de8fd0",
+      "block": 705199
+    },
+    {
+      "contract": "NativePool",
+      "hash": "0x0e17c03bd7bfb39cdb78fdb96a1bf1950ca0812016ae3886fc9d23ddfd044138",
+      "address": "0x06319a9230ebdca4bdf510ed7504e3d33d45d511",
+      "block": 705200
+    },
+    {
+      "contract": "NativePool",
+      "hash": "0x79debe66d57fedefb2ff0b4464b707fd6909f6addce9db92a9a3db831b79718d",
+      "address": "0xf0120f122ca376d7319928f700d322ca9a93058e",
+      "block": 705201
+    },
+    {
+      "contract": "NativePool",
+      "hash": "0xb0991ef8c4d7767d58ec845e4d94fc2594d23ec80a2b74318cc67330bf42a705",
+      "address": "0x542c640a4493422c9bbac16f96d79ced2a9050d7",
+      "block": 705202
+    },
+    {
+      "contract": "NativePool",
+      "hash": "0x6bad589fcc4b21968920b4190190076048fff92b7917125c731b48c0c0dc48ed",
+      "address": "0xa5428435e3d04ee1e990ab48cf5fd254813ae98e",
+      "block": 705203
+    }
+  ]
+}

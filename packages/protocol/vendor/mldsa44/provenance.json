@@ -1,0 +1,19 @@
+{
+  "repository": "https://github.com/fireblocks-labs/evm-ml-dsa-verifier",
+  "commit": "cca262b537a5ac2ee55efb427e5c61de0308e566",
+  "sha256": {
+    "LICENSE": "819c7c05673a72f38824225d46ac36068272a416874f9f8af62d3dd54ac672fe",
+    "README.md": "efbd60051de4c6c92fecce30c02d6fa7bb47c0d86f173786351ef6748f95c4d0",
+    "docs/SAFETY.md": "898aa50b1229b676fb646c40895bfc1e41491934715c36d4747c2ae8f4fb5cf3",
+    "helpers/README.md": "8dd19f1dee1a4baeaecdae2a00355e3138b58ec325824ea372c661281f078196",
+    "helpers/f1600_170.hex": "f26320c4be54bdf71270d0ca92a6cf665966f0a320b84676aa75d5fa3dc612c4",
+    "prepare/mldsa_min.py": "1035735af5cab2310ed0ebcdee9a4f6c614369e3c114e5d995837f4764910d2d",
+    "prepare/prepare.py": "92a817269979de4c6ddf50ae19d1f9ea7bebcaea56857adb24ca3469ee9b1132",
+    "src/Decode.sol": "62800c6dc97625581add1aaae8650f344fd1f165f7ac53d2632dc5c995758a9f",
+    "src/FastKeccak170.sol": "a0b8b0c01542264b192b3697f5e2d078dd173506b89fd824df32707e6ee2c3cd",
+    "src/IMLDSAVerifier.sol": "de2461a26d1ed4306a6888e998d06c725960f6556a945516e9d93f7564fcf379",
+    "src/InvNtt.sol": "b097bdd5a4881559abe91303239b3f12e1a2a74be48894b7134efc48be0a125c",
+    "src/MLDSA44Verifier.sol": "e73fbc14792d8a48869476e54ad58cae2b78dab0930a9f0bda0aa1363db7176e",
+    "src/Ntt.sol": "87b2d1b4d88312b40694163c0656e5435d06221a18625cce65dbcf1f9674795f"
+  }
+}

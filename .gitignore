@@ -1,0 +1,30 @@
+node_modules
+.next
+out
+build
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.vercel
+.local/
+.env
+protocol/build/
+public/proving/spend.wasm
+public/proving/spend.zkey
+public/proving/snarkjs.min.js
+test-results/
+playwright-report/
+
+# Native PQ build outputs and local proofs
+**/target/
+**/artifacts/
+**/out/
+packages/**/cache/
+**/benchmark-results/
+**/__pycache__/
+*.pyc
+packages/pq-hiding-stark/vendor/plonky3/
+
+# Generated wasm-bindgen package; deploy the pinned public assets instead.
+packages/pq-hiding-stark/wasm/pkg/

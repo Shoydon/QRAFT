@@ -1,0 +1,31 @@
+{
+  "profile": "v5-spbcs",
+  "experimental": true,
+  "applicationEnabled": false,
+  "externalRequests": [],
+  "consoleEntries": [],
+  "errors": [],
+  "protocolProfile": "qraft-withdrawal-v5-spbcs-stream-writeback-goldilocks5-q320-b16",
+  "proofBytes": 10315729,
+  "proveMs": 8475.199999988079,
+  "proveLinearMemoryBytes": 2190737408,
+  "verifyMs": 161.30000001192093,
+  "verifyLinearMemoryBytes": 56033280,
+  "totalMs": 9384.5,
+  "publicVkPostcardHex": "060c019eb192c989e284e415a3c4d9cf94f7d2a6298ddab3d1e1908994ef018db6fdafbdceefceb401f3a3de8bab94deeeb30199ebe6e2eeaac8c1c801ef96d8c8c1e085c39501f4dceaf8deb3def4a501",
+  "checks": {
+    "valid": true,
+    "changedRoot": true,
+    "changedNullifier": true,
+    "changedContext": true,
+    "corruptedProof": true,
+    "changedSecret": true,
+    "nonBooleanDirection": true,
+    "trailingBytes": true
+  },
+  "witnessExported": false,
+  "proofExported": true,
+  "workersTerminatedAfterEveryOperation": true,
+  "success": true,
+  "validationNote": "An earlier run returned false on immediate browser verification; native verification and subsequent independent browser verification accepted that proof. A fresh complete run passed. The transient discrepancy is unresolved; evaluate before enabling a live deployment."
+}

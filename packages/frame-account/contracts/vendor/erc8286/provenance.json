@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/chiranjeev13/erc8286-playground",
+  "commit": "ee599b1f84ab7425a90df2eaebf27f679f7d5303",
+  "license": "CC0-1.0",
+  "sha256": {
+    "ERC8286FrameAccount.sol": "4d2043678185b50fa9ce1f1ce67dbf75d6206f15eb8a161e34f28e61559750df",
+    "ERC8286AccountFactory.sol": "d1d91afd11cc8664fb4d208f8e4a6f560c96dd61bb5a6def24f822a4f8b657c7",
+    "lib/LibCloneConfig.sol": "369b4d3b9fc84eadf0972e4cf6d921c9ff3049092214c4025ce66efa09e9481c",
+    "lib/LibERC8286.sol": "707126fe7a5eadc7fe87373e2484552bc2af3c5befcebd0af69bead8d24f879b",
+    "lib/LibFrameTxDigest.sol": "b6b4974f6507382c3bbfcb8a89268960482cddb8e71aa6932e0594f8abdc9563",
+    "interfaces/IERC8286FrameAccount.sol": "ed9a8445d456f9f8af7da05d8303c092988aa37217cad2031c1273f434f3563c",
+    "interfaces/IFrameValidator.sol": "b6ce351ddf9f6f3ce888c2d4b754436d55a9142b97dad7023348586087e10c0b"
+  }
+}

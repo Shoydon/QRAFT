@@ -1,0 +1,30 @@
+[package]
+name = "qraft-direct-hiding-research"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[features]
+hash-metrics = []
+
+[dependencies]
+p3-air = { path = "vendor/plonky3/air" }
+p3-field = { path = "vendor/plonky3/field" }
+p3-goldilocks = { path = "vendor/plonky3/goldilocks" }
+p3-keccak-air = { path = "vendor/plonky3/keccak-air" }
+p3-matrix = { path = "vendor/plonky3/matrix" }
+p3-uni-stark = { path = "vendor/plonky3/uni-stark" }
+sha3 = "0.12.0"
+postcard = { version = "1.1.3", features = ["alloc"] }
+serde_json = "1"
+rand = "0.10.1"
+p3-challenger = { path = "vendor/plonky3/challenger" }
+p3-commit = { path = "vendor/plonky3/commit" }
+p3-dft = { path = "vendor/plonky3/dft" }
+p3-fri = { path = "vendor/plonky3/fri" }
+p3-merkle-tree = { path = "vendor/plonky3/merkle-tree" }
+p3-symmetric = { path = "vendor/plonky3/symmetric" }
+tiny-keccak = { version = "2.0.2", features = ["keccak", "cshake"] }
+blake2 = "0.10.6"
+sha2 = "=0.10.9"
+serde = { version = "1.0.229", features = ["derive"] }
