@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { Hex } from "viem";
 import Link from "next/link";
-import { WORDMARK, TAGLINE } from "@/config/brand";
+import { WORDMARK } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
 import { checkRecipient, formatEth, truncateMiddle } from "@/lib/format";
 import { createAnonRpcTransport } from "@/lib/transport/anon-rpc";
@@ -39,6 +39,8 @@ import { StepRail } from "./StepRail";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  CheckIcon,
+  CopyIcon,
   DownloadIcon,
   FileIcon,
   RetryIcon,
@@ -177,7 +179,8 @@ export function PqApp() {
   const [unspent, setUnspent] = useState<number | null>(null);
   const [depositStage, setDepositStage] = useState<DepositStage>("amount");
   const [depositNote, setDepositNote] = useState<PqNote | null>(null);
-  const [noteDownloaded, setNoteDownloaded] = useState(false);
+  const [noteCopied, setNoteCopied] = useState(false);
+  const [noteCopyFailed, setNoteCopyFailed] = useState(false);
   const [noteAcknowledged, setNoteAcknowledged] = useState(false);
   const [depositOwner, setDepositOwner] = useState<Hex | null>(null);
   const [depositResult, setDepositResult] = useState<PqSendResult | null>(null);
@@ -344,16 +347,22 @@ export function PqApp() {
   function generateNote() {
     if (busyRef.current) return;
     setDepositNote(createPqNote(PQ_DEPLOYMENT));
-    setNoteDownloaded(false);
+    setNoteCopied(false);
+    setNoteCopyFailed(false);
     setNoteAcknowledged(false);
     setDepositResult(null);
     setDepositError(null);
     setDepositStage("note");
   }
-  function downloadNote() {
+  async function copyNote() {
     if (!depositNote) return;
-    saveText(serializePqNote(depositNote), `qraft-pq-note-${stamp()}.txt`);
-    setNoteDownloaded(true);
+    try {
+      await navigator.clipboard.writeText(serializePqNote(depositNote));
+      setNoteCopyFailed(false);
+      setNoteCopied(true);
+    } catch {
+      setNoteCopyFailed(true);
+    }
   }
   function acceptDeposit(result: PqSendResult) {
     setDepositResult(result);
@@ -372,7 +381,7 @@ export function PqApp() {
       !account ||
       !depositNote ||
       !walletBackedUp ||
-      !noteDownloaded ||
+      !noteCopied ||
       !noteAcknowledged ||
       !begin(
         reconcile
@@ -717,7 +726,7 @@ export function PqApp() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="px-4 py-3.5 sm:px-6">
-        <div className="mx-auto flex max-w-[34rem] items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -740,21 +749,9 @@ export function PqApp() {
               : "Create or import PQ wallet"}
           </Button>
         </div>
-        <h1 className="mx-auto mt-5 max-w-[34rem] text-balance text-center text-sm font-medium leading-relaxed text-ink-60 sm:text-base">
-          {TAGLINE}
-        </h1>
       </header>
       <main className="flex flex-1 flex-col px-4 pb-6 sm:pt-5 sm:px-6">
         <div className="mx-auto w-full max-w-[34rem]">
-          {serviceEnabled === false ? (
-            <div className="mb-4">
-              <Notice tone="unknown" title="Local PQ helper is unavailable">
-                Start the configured local QRAFT service to provision accounts
-                and prepare public verification calls. No simulated or classical
-                transaction path is substituted.
-              </Notice>
-            </div>
-          ) : null}
           {account?.pending && !busy ? (
             <div className="mb-4">
               <Notice
@@ -883,28 +880,46 @@ export function PqApp() {
                             <Mono>{noteReference(depositNote)}</Mono>
                           </p>
                         </div>
-                        <Button
-                          variant={noteDownloaded ? "secondary" : "primary"}
-                          className="w-full"
-                          icon={<DownloadIcon width={17} height={17} />}
-                          onClick={downloadNote}
-                        >
-                          {noteDownloaded
-                            ? "Download note again"
-                            : "Download PQ note file"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <input
+                            readOnly
+                            aria-label="Private note, hidden"
+                            value={"*".repeat(44)}
+                            className="min-w-0 flex-1 rounded-control border border-rule bg-sunk px-3.5 font-mono text-sm tracking-[0.15em] text-ink-45"
+                          />
+                          <Button
+                            variant={noteCopied ? "secondary" : "primary"}
+                            className="shrink-0"
+                            icon={
+                              noteCopied ? (
+                                <CheckIcon width={17} height={17} />
+                              ) : (
+                                <CopyIcon width={17} height={17} />
+                              )
+                            }
+                            onClick={() => void copyNote()}
+                          >
+                            {noteCopied ? "Copied" : "Copy note"}
+                          </Button>
+                        </div>
+                        {noteCopyFailed ? (
+                          <p className="text-xs text-state-bad" role="alert">
+                            Your browser would not give this page the clipboard.
+                            Copy is unavailable here.
+                          </p>
+                        ) : null}
                         <label className="flex gap-3 rounded-control border border-rule p-3.5 text-sm leading-relaxed">
                           <input
                             type="checkbox"
                             className="mt-1 size-4 shrink-0 accent-[var(--color-ink)]"
-                            disabled={!noteDownloaded}
+                            disabled={!noteCopied}
                             checked={noteAcknowledged}
                             onChange={(event) =>
                               setNoteAcknowledged(event.target.checked)
                             }
                           />
                           <span>
-                            I saved this note file somewhere I can find it
+                            I saved this note somewhere I can find it
                             again. Losing it means losing access to this
                             deposit.
                           </span>
@@ -920,7 +935,7 @@ export function PqApp() {
                           <Button
                             variant="primary"
                             className="flex-1"
-                            disabled={!noteDownloaded || !noteAcknowledged}
+                            disabled={!noteCopied || !noteAcknowledged}
                             onClick={() => setDepositStage("confirm")}
                           >
                             Continue
@@ -1420,13 +1435,6 @@ export function PqApp() {
           ) : null}
         </div>
       </main>
-      <footer className="px-4 pb-6">
-        <p className="mx-auto max-w-[34rem] text-center text-[0.6875rem] leading-relaxed text-ink-45">
-          Experimental PQ application security on a disposable testnet. Ethereum
-          consensus, TLS and Nym transport have separate security limits. Use
-          test ETH only.
-        </p>
-      </footer>
       <Sheet
         open={walletOpen}
         onClose={() => setWalletOpen(false)}
