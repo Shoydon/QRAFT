@@ -7,7 +7,7 @@ try{
  const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',ctap2Version:'ctap2_1',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
  await page.goto(process.env.QRAFT_PRIVATE_TEST_URL??'http://localhost:3109/app');
  await page.getByText('Nym connected',{exact:true}).waitFor({timeout:250000});
- await page.getByRole('button',{name:'Create private wallet',exact:true}).click();
+ await page.getByRole('button',{name:'Create ERC-8286 PQ wallet',exact:true}).click();
  await page.getByRole('dialog',{name:'Your recovery file',exact:true}).waitFor();await page.keyboard.press('Escape');
  await page.getByText('Balance up to date',{exact:true}).waitFor({timeout:180000});
  const status=await page.evaluate(()=>window.__qraftPageConnection.transport.getStatus());

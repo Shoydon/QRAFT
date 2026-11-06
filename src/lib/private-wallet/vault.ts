@@ -27,3 +27,14 @@ export async function decryptLocal<T>(text:string,session:VaultSession):Promise<
  const bytes=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromBase64(v.iv),additionalData:encoder.encode('qraft-private-local-v1')},session.key,fromBase64(v.ciphertext)));
  try{return JSON.parse(new TextDecoder().decode(bytes)) as T;}finally{bytes.fill(0);}
 }
+
+/** Portable encrypted vault; requires the original PRF-capable passkey. */
+export function parsePrivateBackup(text:string,domain:PoolDomain):PrivateVault {
+ if(text.length>16384)throw Error('Wallet backup is too large');
+ try{
+  const v=JSON.parse(text),m=v?.metadata;
+  if(v.kind!=='qraft-private-vault'||v.version!==1||JSON.stringify(v.domain)!==JSON.stringify(domain)||typeof v.owner!=='string'||!/^\d{1,77}$/.test(v.owner)||!m||m.kind!=='qraft-passkey-wallet'||m.version!==1||typeof m.rpId!=='string'||m.rpId.length>253||typeof m.origin!=='string'||new URL(m.origin).hostname!==m.rpId||typeof m.credentialId!=='string'||m.credentialId.length>4096||fromBase64(m.credentialId).length===0||fromBase64(m.prfSalt).length!==32||fromBase64(m.hkdfSalt).length!==32||fromBase64(v.iv).length!==12||fromBase64(v.ciphertext).length!==48)throw Error();
+  if(Object.keys(v).sort().join()!==['kind','version','metadata','domain','owner','iv','ciphertext'].sort().join())throw Error();
+  return v;
+ }catch{throw Error('Choose a valid passkey-protected backup for this pool');}
+}

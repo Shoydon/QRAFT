@@ -19,6 +19,11 @@ export class PrivateWalletEngine{
  readonly domain;readonly address:Hex;readonly receivingAddress:string;readonly storage:string;
  snapshot:PrivateSnapshot|null=null;publicBalance:bigint|null=null;intent:Intent|null=null;quarantineUntil=0n;
  private refreshing:Promise<void>|null=null;private verified=false;
+ private syncState:'idle'|'loading'|'ready'|'error'='idle';
+ private syncListeners=new Set<()=>void>();
+ subscribeSync=(listener:()=>void)=>{this.syncListeners.add(listener);return()=>{this.syncListeners.delete(listener);};};
+ getSyncState=()=>this.syncState;
+ private publishSync(state:typeof this.syncState){this.syncState=state;for(const listener of this.syncListeners)listener();}
  private controller=new AbortController();
  readonly rpc:PrivateRpc;
  constructor(readonly manifest:PrivateDeployment,readonly keys:PrivateKeys,readonly session:VaultSession,rpc:PrivateRpc,readonly status:(s:string)=>void){
@@ -57,7 +62,7 @@ export class PrivateWalletEngine{
   assertPrivateSettlement(receipt,{hash,id:this.intent.id,pool:this.domain.pool,paymaster:this.manifest.contracts.paymaster.address});
  }
  async quarantine(){const head=await this.rpc.request<{timestamp:Hex}>('eth_getBlockByNumber',['latest',false]);this.quarantineUntil=BigInt(head.timestamp)+300n;localStorage.setItem(this.storage+':recovery',String(this.quarantineUntil));}
- async refresh(){if(this.refreshing)return this.refreshing;this.refreshing=this.sync();try{await this.refreshing;}finally{this.refreshing=null;}}
+ async refresh(){if(this.refreshing)return this.refreshing;this.publishSync('loading');this.refreshing=this.sync();try{await this.refreshing;this.publishSync('ready');}catch(error){this.publishSync('error');throw error;}finally{this.refreshing=null;}}
  private async sync(){
   this.status('Syncing your private balance');
   if(!this.verified){

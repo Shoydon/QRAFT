@@ -5,4 +5,4 @@ export const WORDMARK = 'QRAFT';
 export const TAGLINE = 'Quantum-Resistant Anonymous Frame Transactions';
 
 /** Active application scope; external consensus and transport have separate limits. */
-export const SHIPPED_DESCRIPTION = 'Private ETH wallet with local proofs and PQ authorization';
+export const SHIPPED_DESCRIPTION = 'ERC-8286 PQ wallet with private ETH payments and local proofs';

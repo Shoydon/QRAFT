@@ -4,32 +4,32 @@
   "measurements": [
     {
       "kind": 0,
-      "proveMs": 5407,
-      "gas": "1170554"
+      "proveMs": 5189,
+      "gas": "1170506"
     },
     {
       "kind": 0,
-      "proveMs": 5290,
-      "gas": "1148380"
+      "proveMs": 5118,
+      "gas": "1148356"
     },
     {
       "kind": 1,
-      "proveMs": 5336,
-      "gas": "1876847"
+      "proveMs": 5424,
+      "gas": "1876871"
     },
     {
       "kind": 1,
-      "proveMs": 5443,
-      "gas": "1852563"
+      "proveMs": 5486,
+      "gas": "1852575"
     },
     {
       "kind": 2,
-      "proveMs": 5432,
-      "gas": "1202264"
+      "proveMs": 5652,
+      "gas": "1202216"
     },
     {
       "kind": 2,
-      "proveMs": 5420
+      "proveMs": 5104
     }
   ],
   "publicSignalMutations": 6,

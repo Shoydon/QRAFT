@@ -69,3 +69,7 @@ Files: `src/components/PrivateWalletApp.tsx`, app route, scoped styles, wallet w
 - Task 5 core flows implemented and browser-tested; exact V1 UI limits are recorded in design section 15.
 - Verification: 89 unit tests, typecheck, lint and production build pass. Real local adversarial proof tests and live native shield/send/withdraw pass. Production browser E2E with real provisioning/relay/sidecar passes, including offline recovery and a dropped response. Separate real-Nym app startup and balance sync pass.
 - Additional full-Nym integration attempt confirmed both deposits and the private payment, then stalled on reload reconciliation. It was stopped after roughly 15 minutes; full Nym recovery/withdrawal remains unverified. See `docs/pq/private-wallet-e2e-nym-attempt.json`. Timed-out reads now reconnect before retrying; submissions are not automatically retried by this wrapper.
+
+## Hackathon update: passkey-only backup
+
+Password-based recovery has been removed. The downloaded file is now the encrypted private vault, including its passkey credential metadata. Export verifies it with the original passkey; import authenticates that same credential and never creates a replacement passkey. Restoring requires the original PRF-capable passkey on the same QRAFT domain. There is no independent recovery if that credential is lost. The five-minute spending quarantine and pending-journal reset remain. Earlier password/new-passkey recovery descriptions and recorded E2E results describe the previous implementation and are superseded by this update.

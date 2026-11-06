@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { WORDMARK, SHIPPED_DESCRIPTION } from "@/config/brand";
+import { WORDMARK, TAGLINE, SHIPPED_DESCRIPTION } from "@/config/brand";
 import { TRANSPORT } from "@/config/transport";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { GitHubIcon } from "@/components/icons";
@@ -11,22 +11,22 @@ const REPO = "https://github.com/Shoydon/QRAFT";
 const STEPS = [
   {
     title: 'Add ETH',
-    body: 'Move ETH into your private wallet. Incoming payments automatically become one balance.',
+    body: 'Move ETH into your ERC-8286 PQ wallet. Incoming payments automatically become one balance.',
   },
   {
     title: 'Send an exact amount',
-    body: 'Your device selects the funds and proves the payment locally. Any change stays in your wallet.',
+    body: 'Your device selects the funds and proves the payment locally. Any change stays in your ERC-8286 PQ wallet.',
   },
   {
-    title: 'Receive anywhere',
-    body: 'Receive while offline and recover on a new device with one encrypted backup. Withdraw to a public address when you need to.',
+    title: 'Receive payments',
+    body: 'Share your private receiving address to receive payments. Restore your encrypted backup with your original passkey.',
   },
 ] as const;
 
 export const metadata: Metadata = {
   title: `${WORDMARK} — ${SHIPPED_DESCRIPTION}`,
   description:
-    "One private ETH balance, exact payments, encrypted receiving and local proofs on the EF devnet.",
+    "One private ETH balance, exact payments, encrypted receiving and local proofs with sponsored gas.",
 };
 
 export default function LandingPage() {
@@ -53,11 +53,10 @@ export default function LandingPage() {
 
         <div className="mx-auto max-w-[58rem] pb-12 pt-16 text-center sm:pb-16 sm:pt-24">
           <h1 className="text-balance text-[clamp(2.25rem,5.2vw,4.5rem)] font-semibold leading-[1.04] tracking-[-0.045em] text-ink">
-            A private balance.<br/>A simpler way to pay.
+            {TAGLINE}
           </h1>
           <p className="mx-auto mt-6 max-w-[36ch] text-base leading-relaxed text-ink-60 sm:text-lg">
-            Add ETH. Send what you mean. Receive while you’re away.
-            Your wallet takes care of the details.
+            Deposit ETH, send and receive private payments, and manage everything in one balance.
           </p>
           <Link
             href="/app"
@@ -71,7 +70,7 @@ export default function LandingPage() {
       <main className="mx-auto w-full max-w-[52rem] flex-1 px-5 sm:px-8">
         <section aria-labelledby="stack-title" className="pb-14 sm:pb-20">
           <h2 id="stack-title" className="sr-only">
-            Protocol and wallet stack
+            Protocol and ERC-8286 PQ wallet
           </h2>
           <dl className="divide-y divide-rule border-y border-rule">
             <div className="grid gap-2 py-6 sm:grid-cols-[12rem_1fr] sm:gap-8 sm:py-7">
@@ -131,7 +130,7 @@ export default function LandingPage() {
             Deposits and withdrawals expose their public addresses and amounts.
             Private sends keep their amounts inside encrypted payments, but
             timing and network metadata can still allow correlation. This is an
-            experimental devnet wallet with a development proof setup.
+            experimental ERC-8286 PQ wallet with a development proof setup.
           </p>
         </section>
       </main>

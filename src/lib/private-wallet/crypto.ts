@@ -1,7 +1,6 @@
 import {ml_kem768} from '@noble/post-quantum/ml-kem.js';
 import {hkdf} from '@noble/hashes/hkdf.js';
 import {sha256} from '@noble/hashes/sha2.js';
-import {scryptAsync} from '@noble/hashes/scrypt.js';
 import {concatBytes} from '@noble/hashes/utils.js';
 import {bytesToHex,hexToBytes,type Hex} from 'viem';
 import {ENVELOPE_BYTES,FIELD,noteCommitment,ownerCommitment,validateNote,type PoolDomain,type PrivateNote} from './model';
@@ -70,27 +69,4 @@ export async function decryptNote(domain:PoolDomain,keys:Pick<PrivateKeys,'recei
   const note={owner:BigInt(bytesToHex(plain.slice(0,32))),amount:BigInt(bytesToHex(plain.slice(32,48))),rho:BigInt(bytesToHex(plain.slice(48,80))),commitment};
   if(note.owner!==keys.owner)return null;validateNote(domain,note);return note;
  }catch{return null;}finally{plain?.fill(0);}
-}
-const recoveryHeader=(domain:PoolDomain,salt:string)=>({kind:'qraft-private-recovery',version:1,domain,salt,kdf:'scrypt-32768-8-1'});
-async function recoveryKey(password:string,salt:Uint8Array){
- const raw=await scryptAsync(password,salt,{N:32768,r:8,p:1,dkLen:32,maxmem:64*1024*1024});
- try{return await crypto.subtle.importKey('raw',copy(raw),'AES-GCM',false,['encrypt','decrypt']);}finally{raw.fill(0);}
-}
-export async function exportRecovery(master:Uint8Array,domain:PoolDomain,password:string):Promise<string>{
- if(master.length!==32||password.length<12)throw Error('Use a recovery password of at least 12 characters');
- const salt=random(32),iv=random(12),header=recoveryHeader(domain,base64(salt)),key=await recoveryKey(password,salt);
- const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:utf8.encode(JSON.stringify(header))},key,copy(master));
- return JSON.stringify({...header,iv:base64(iv),ciphertext:base64(new Uint8Array(ciphertext))});
-}
-export async function importRecovery(text:string,password:string,domain:PoolDomain):Promise<PrivateKeys>{
- if(text.length>8192)throw Error('Recovery file is too large');
- let plain:Uint8Array|undefined;
- try{
-  const file=JSON.parse(text);if(file.kind!=='qraft-private-recovery'||file.version!==1||file.kdf!=='scrypt-32768-8-1'||!sameDomain(file.domain,domain))throw Error();
-  const salt=unbase64(file.salt),iv=unbase64(file.iv),ciphertext=unbase64(file.ciphertext);
-  if(salt.length!==32||iv.length!==12||ciphertext.length!==48)throw Error();
-  const key=await recoveryKey(password,salt),header=recoveryHeader(file.domain,file.salt);
-  plain=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:copy(iv),additionalData:utf8.encode(JSON.stringify(header))},key,copy(ciphertext)));
-  return derivePrivateKeys(plain);
- }catch{throw Error('Recovery failed: check the password, backup and selected pool');}finally{plain?.fill(0);}
 }

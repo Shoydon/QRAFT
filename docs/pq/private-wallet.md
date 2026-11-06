@@ -97,3 +97,19 @@ ETH only; full pool history scanning; four inputs/two outputs; explicit combinat
 ### Nym integration result
 
 The full live browser flow passed with injected test reads. A separate actual-Nym full-flow attempt confirmed two deposits and successfully settled the private payment, but stalled while reconciling a deliberately dropped relay response after reload. It did not complete recovery and withdrawal through Nym; see `private-wallet-e2e-nym-attempt.json`. The app now reconnects on timed-out read retries while retaining the exact pending payment. Browser regression coverage injects a timeout and verifies that reconnect restores discovery. A full uninterrupted Nym E2E pass is still outstanding; mixnet availability remains a demo risk.
+
+## Hackathon update: passkey-only backup
+
+Password-based recovery has been removed. The downloaded file is now the encrypted private vault, including its passkey credential metadata. Export verifies it with the original passkey; import authenticates that same credential and never creates a replacement passkey. Restoring requires the original PRF-capable passkey on the same QRAFT domain. There is no independent recovery if that credential is lost. The five-minute spending quarantine and pending-journal reset remain. Earlier password/new-passkey recovery descriptions and recorded E2E results describe the previous implementation and are superseded by this update.
+
+## Public faucet funding
+
+The top-right wallets dialog shows the selected public address, Copy, public ETH balance and **Fund** for the selected public ERC-8286 PQ address, even before private discovery finishes. The app's origin-checked `/api/private/faucet` route calls the provided gateway's `skandha_explorer_faucet`; it verifies the network genesis first and sends only the public address. No operator key or private-wallet secret is involved. The response is shown as submitted, with its transaction link; refreshing reads the actual public balance. Funding does not itself shield the ETH.
+
+The [gateway API](https://github.com/forshtat/mempool-workshop-sidecar/blob/master/docs/sidecar_explorer.md#skandha_explorer_faucet) documents a 1 ETH drip with per-address and global limits. Rejections are displayed without an automatic repeat request. Run `QRAFT_TEST_FAUCET=1 QRAFT_PRIVATE_TEST_URL=http://localhost:3110 node scripts/test-private-browser.mjs` to verify the real drip, receipt, recipient, value and displayed balance.
+
+## EIP-8141 transaction audit
+
+QRAFT deposits, private sends, note combination, withdrawals, and ERC-8286 account creation/staking are constructed as `FrameTx` (type `0x06`). Normal app submissions use `eth_sendFrameTransaction`; confirmation requires a type-6 receipt and successful expected frames. Infrastructure bootstrap scripts also construct type-6 envelopes, even where they explicitly use the execution node's raw-transaction endpoint.
+
+The external gateway faucet is an exception: confirmed transfer `0xfcc09960ef14adeb4fdc1f400f2c37b47218657af391f706ac3e2179e92ce41c` is type `0x2`, with no frame receipts. The faucet API accepts only an address, so QRAFT cannot select its transaction type. A strict all-8141 funding path requires a different faucet implementation or a QRAFT-operated frame sender; the existing faucet must not be presented as an 8141 transaction.

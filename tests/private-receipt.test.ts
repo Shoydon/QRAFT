@@ -16,3 +16,7 @@ test('only the exact pool settlement and sponsor confirm a private payment',()=>
  expect(()=>assertPrivateSettlement({...receipt,payer:receipt.from},expected)).toThrow();
  expect(()=>assertPrivateSettlement({...receipt,frameReceipts:receipt.frameReceipts!.map((f,i)=>i===2?{...f,status:'0x0'}:f)},expected)).toThrow();
 });
+
+test('private payments reject non-EIP-8141 receipt types even with matching settlement logs',()=>{
+ for(const type of ['0x0','0x1','0x2','0x3','0x4'] as Hex[])expect(()=>assertPrivateSettlement({...receipt,type},expected)).toThrow();
+});

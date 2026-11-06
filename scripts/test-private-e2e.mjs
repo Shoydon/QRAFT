@@ -18,14 +18,14 @@ async function device(waitForNetwork=true){
  await page.goto(base+'/app');if(realNym&&waitForNetwork)await page.getByText('Nym connected',{exact:true}).waitFor({timeout:300000});return{context,page};
 }
 async function create(page,name,offline=false){
- await page.getByRole('button',{name:'Create private wallet',exact:true}).click();await page.getByLabel('Recovery password',{exact:true}).fill('private-e2e-recovery-password');const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download encrypted recovery file',exact:true}).click();await(await download).saveAs(root+'/'+name+'-recovery.json');await page.getByRole('button',{name:'I saved the file and password',exact:true}).click();if(!offline)await waitSync(page);events.push(name+' created'+(offline?' offline':'')+', encrypted recovery verified');
+ await page.getByRole('button',{name:'Create ERC-8286 PQ wallet',exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Download encrypted recovery file',exact:true}).click();await(await download).saveAs(root+'/'+name+'-recovery.json');await page.getByRole('button',{name:'I saved the file',exact:true}).click();if(!offline)await waitSync(page);events.push(name+' created'+(offline?' offline':'')+', encrypted recovery verified');
 }
 async function receiving(page){await page.getByRole('button',{name:'Receive',exact:true}).click();const value=await page.getByLabel('Private receiving address',{exact:true}).inputValue();await page.keyboard.press('Escape');return value;}
 async function settle(page,label){
  const deadline=Date.now()+(realNym?600000:330000);
  while(Date.now()<deadline){
   if(await page.getByText('Payment confirmed',{exact:true}).first().isVisible().catch(()=>false)){events.push(label+' confirmed');console.log(label,'confirmed');return;}
-  const busy=await page.locator('button[aria-busy="true"]').count();
+  const busy=await page.locator('main[aria-busy="true"]').count();
   if(!busy){
    if(await page.getByRole('dialog').isVisible().catch(()=>false))await page.keyboard.press('Escape');
    const check=page.getByRole('button',{name:'Check payment',exact:true});
@@ -48,8 +48,8 @@ async function payment(page,kind,amount,recipient){
 async function waitSync(page){const deadline=Date.now()+(realNym?600000:60000);let reconnects=0;while(Date.now()<deadline){if(await page.getByText('Balance up to date',{exact:true}).isVisible().catch(()=>false))return;const errors=await page.getByRole('alert').allTextContents();if(errors.some(e=>/timed out|timeout|network|fetch/i.test(e))&&!await page.locator('button[aria-busy=\"true\"]').count()){if(++reconnects>3)throw Error('Nym did not recover after three reconnects');events.push('Nym read reconnected');console.log('Reconnecting an interrupted Nym read');await page.getByRole('button',{name:'Reconnect network',exact:true}).click();await page.waitForTimeout(1500);}await page.waitForTimeout(2000);}throw Error('Balance sync did not complete');}
 async function refresh(page){await page.getByRole('button',{name:'Refresh ↻',exact:true}).click();await waitSync(page);}
 try{
- const alice=await device(),bob=await device(false);await create(alice.page,'alice');await bob.page.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Create private wallet'&&!b.disabled));await bob.context.setOffline(true);await create(bob.page,'bob',true);const bobAddress=await receiving(bob.page);await bob.context.close();events.push('Bob offline');
- await alice.page.getByRole('button',{name:'Add ETH',exact:true}).click();const publicAddress=await alice.page.getByLabel('Fund this public address',{exact:true}).inputValue();await alice.page.keyboard.press('Escape');
+ const alice=await device(),bob=await device(false);await create(alice.page,'alice');await bob.page.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Create ERC-8286 PQ wallet'&&!b.disabled));await bob.context.setOffline(true);await create(bob.page,'bob',true);const bobAddress=await receiving(bob.page);events.push('Bob offline');
+ await alice.page.getByRole('button',{name:'Manage ERC-8286 PQ wallets',exact:true}).click();const publicAddress=await alice.page.getByLabel('ERC-8286 PQ wallet address',{exact:true}).inputValue();await alice.page.keyboard.press('Escape');
  await new Promise((resolve,reject)=>{const child=spawn('bun',['scripts/fund-private-test-address.ts',publicAddress],{stdio:'inherit'});child.on('close',code=>code===0?resolve():reject(Error('Test funding failed')));child.on('error',reject);});
  await refresh(alice.page);await payment(alice.page,'Add ETH','0.00002');await refresh(alice.page);await payment(alice.page,'Add ETH','0.00002');await refresh(alice.page);
  await alice.page.getByText('0.00004',{exact:true}).waitFor();events.push('Two deposits displayed as one 0.00004 ETH balance');
@@ -58,10 +58,10 @@ try{
  let responseLost=false;
  await alice.page.route('**/api/private/relay',async route=>{if(!responseLost){responseLost=true;await route.fetch({timeout:240000});await route.abort('failed');}else await route.continue();});
  await alice.page.getByRole('button',{name:'Send',exact:true}).click();await alice.page.getByLabel('Amount in ETH',{exact:true}).fill('0.00003');await alice.page.getByLabel('Private receiving address',{exact:true}).fill(bobAddress);await alice.page.getByRole('button',{name:'Review payment',exact:true}).click();await alice.page.getByRole('button',{name:'Send privately',exact:true}).click();
- await alice.page.locator('button[aria-busy="true"]').first().waitFor({state:'hidden',timeout:260000});assert.equal(responseLost,true);
- await alice.page.reload();await alice.page.getByRole('button',{name:'Unlock your wallet',exact:true}).click();await alice.page.getByRole('button',{name:/Wallet 1 Recovery file saved/}).click();await alice.page.getByRole('button',{name:'Check payment',exact:true}).waitFor();await settle(alice.page,'Private payment after lost response/reload');
+ await alice.page.locator('main[aria-busy="true"]').first().waitFor({state:'hidden',timeout:260000});assert.equal(responseLost,true);
+ await alice.page.reload();await alice.page.getByRole('button',{name:'Unlock your ERC-8286 PQ wallet',exact:true}).click();await alice.page.getByRole('button',{name:/ERC-8286 PQ wallet 1 Recovery file saved/}).click();await alice.page.getByRole('button',{name:'Check payment',exact:true}).waitFor();await settle(alice.page,'Private payment after lost response/reload');
  await refresh(alice.page);await alice.page.getByText('0.00001',{exact:true}).waitFor();events.push('Sender change is exactly 0.00001 ETH');
- const restored=await device();await restored.page.getByRole('button',{name:'Restore wallet ↗',exact:true}).click();await restored.page.locator('input[type=file]').setInputFiles(root+'/bob-recovery.json');await restored.page.getByLabel('Recovery password',{exact:true}).fill('private-e2e-recovery-password');await restored.page.getByRole('button',{name:'Restore wallet',exact:true}).click();await restored.page.getByText('0.00003',{exact:true}).waitFor();assert.equal(await receiving(restored.page),bobAddress);events.push('Fresh device restores offline payment and same receiving identity');
+ await bob.context.setOffline(false);await bob.page.evaluate(()=>localStorage.clear());await bob.page.reload();const restored=bob;await restored.page.getByRole('button',{name:'Restore ERC-8286 PQ wallet ↗',exact:true}).click();await restored.page.locator('input[type=file]').setInputFiles(root+'/bob-recovery.json');await restored.page.getByRole('button',{name:'Restore ERC-8286 PQ wallet',exact:true}).click();await restored.page.getByText('0.00003',{exact:true}).waitFor();assert.equal(await receiving(restored.page),bobAddress);events.push('Cleared browser storage restores payment and receiving identity using original passkey');
  console.log('Recovery safety timer running; waiting for onchain expiry window.');
  await restored.page.getByRole('button',{name:'Withdraw',exact:true}).waitFor();
  const deadline=Date.now()+360000;while(await restored.page.getByRole('button',{name:'Withdraw',exact:true}).isDisabled()){if(Date.now()>deadline)throw Error('Recovery never unlocked');await restored.page.waitForTimeout(15000);await refresh(restored.page);}

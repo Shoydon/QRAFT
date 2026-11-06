@@ -203,3 +203,7 @@ The core wallet is implemented and the fresh deployment is pinned in `public/pri
 - The production-browser test confirmed two deposits as one balance, a payment funded by both deposits with exact change, safe recovery after a dropped relay response/reload, offline receiving, fresh-device recovery and an exact partial withdrawal. The evidence distinguishes injected test reads from the separate real-Nym checks.
 
 The independent builder review was completed, and its receipt binding, expired-intent recovery, crash-lock, passkey replacement, decimal precision and backup verification findings were addressed. These checks are development evidence, not a protocol audit or a production readiness claim.
+
+## Hackathon update: passkey-only backup
+
+Password-based recovery has been removed. The downloaded file is now the encrypted private vault, including its passkey credential metadata. Export verifies it with the original passkey; import authenticates that same credential and never creates a replacement passkey. Restoring requires the original PRF-capable passkey on the same QRAFT domain. There is no independent recovery if that credential is lost. The five-minute spending quarantine and pending-journal reset remain. Earlier password/new-passkey recovery descriptions and recorded E2E results describe the previous implementation and are superseded by this update.

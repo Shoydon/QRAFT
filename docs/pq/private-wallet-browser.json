@@ -1,18 +1,19 @@
 {
   "passed": true,
   "transport": "injected direct test RPC; does not validate Nym",
+  "balanceLoading": true,
   "timedOutReadReconnect": true,
   "passkey": true,
   "encryptedBackup": true,
   "reloadUnlock": true,
   "receivingAddressStable": true,
   "crossTabLock": true,
-  "lostPasskeyReplacement": true,
+  "samePasskeyRestore": true,
   "oldJournalArchived": true,
   "recoveryQuarantine": true,
   "mobileOverflow": false,
   "browserProof": {
     "words": 8,
-    "ms": 5097
+    "ms": 5020
   }
 }
