@@ -9,6 +9,7 @@ import {preparePublicKey} from '../../../packages/pq-account/src/keys';
 import {Frame,FrameSig,FrameTx,assertSuccessfulReceipt} from '../../../packages/frame-account/src/frametx';
 import {submitToSidecar} from '../../../packages/frame-account/src/alt-mempool';
 import {signServiceFrame} from '../pq/service-frames';
+import {ATOMIC_MAX_FEE,ATOMIC_MAX_PRIORITY_FEE} from './account';
 import type {PqRawReceipt} from '../pq/account';
 const root='.local/modular-service';
 const rpc={async request<T>(method:string,params:unknown[]=[]):Promise<T>{const r=await fetch(manifest.sidecarUrl,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(60000)});const j=await r.json();if(j.error)throw Error(j.error.message);return j.result;}};
@@ -25,7 +26,7 @@ async function operatorCall(id:string,to:Hex,data:Hex,value=0n){
  if(!await rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[previous.hash]))throw Error('A prior deployment is awaiting confirmation. Retry it before creating another wallet.');
  }
  const nonce=BigInt(await rpc.request<Hex>('eth_getTransactionCount',[operator.address,'latest']));
- const plan=new FrameTx({chainId:1337,sender:operator.address,nonceKeys:[0],nonceSeq:nonce,maxFee:128,maxPriorityFee:1,signatures:[new FrameSig({scheme:1,signer:operator.address,signature:`0x${'00'.repeat(65)}`})],frames:[new Frame({mode:1,flags:3,target:operator.address,gasLimit:30000,stateGasLimit:97920}),new Frame({mode:2,target:to,gasLimit:2000000,stateGasLimit:8000000,data,value})]});
+ const plan=new FrameTx({chainId:1337,sender:operator.address,nonceKeys:[0],nonceSeq:nonce,maxFee:ATOMIC_MAX_FEE,maxPriorityFee:ATOMIC_MAX_PRIORITY_FEE,signatures:[new FrameSig({scheme:1,signer:operator.address,signature:`0x${'00'.repeat(65)}`})],frames:[new Frame({mode:1,flags:3,target:operator.address,gasLimit:30000,stateGasLimit:97920}),new Frame({mode:2,target:to,gasLimit:2000000,stateGasLimit:8000000,data,value})]});
  const tx=signServiceFrame(plan,await operator.sign({hash:plan.sigHash()}));record={raw:tx.raw(),hash:tx.transactionHash()};await writeFile(file,JSON.stringify(record),{mode:0o600});}
  for(let i=0;i<90;i++){
  const receipt=await rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[record.hash]);if(receipt){assertSuccessfulReceipt(receipt,2);return record.hash;}

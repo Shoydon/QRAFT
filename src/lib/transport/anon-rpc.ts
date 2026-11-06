@@ -217,11 +217,14 @@ export function createAnonRpcTransport(options: TransportOptions = {}): ChainTra
       if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       const id = ++requestId;
       const started = performance.now();
-      const res = await w.fetch(method === 'eth_sendFrameTransaction' || method.startsWith('skandha_') || method === 'eth_getFrameTransactionReceipt' ? TRANSPORT.submissionRpcUrl : TRANSPORT.readRpcUrl as string, {
+      const submission = method === 'eth_sendFrameTransaction' || method.startsWith('skandha_') || method === 'eth_getFrameTransactionReceipt';
+      const res = await w.fetch(submission ? TRANSPORT.submissionRpcUrl : TRANSPORT.readRpcUrl as string, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
-        signal: AbortSignal.timeout(120_000),
+        // A read is idempotent and its caller retries, so a dead mixnet circuit should be
+        // abandoned quickly. A submission is not idempotent and keeps the long window.
+        signal: AbortSignal.timeout(submission ? 120_000 : 45_000),
       });
       if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       if (!res.ok) throw new Error(`Read failed: the RPC endpoint returned HTTP ${res.status}.`);

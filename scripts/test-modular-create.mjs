@@ -9,7 +9,7 @@ try{
  const response=page.waitForResponse(r=>r.url().endsWith('/api/atomic/wallet')&&r.request().method()==='POST',{timeout:300000});
  await page.getByRole('button',{name:'Create ERC-8286 wallet',exact:true}).click();
  const result=await response;const data=await result.json();assert.equal(result.status(),200,JSON.stringify(data));
- await page.getByRole('heading',{name:'ERC-8286 wallet deployed',exact:true}).waitFor({timeout:30000});
+ await page.getByText('ERC-8286 wallet deployed',{exact:true}).waitFor({timeout:30000});
  assert.match(data.address,/^0x[0-9a-fA-F]{40}$/);assert.match(data.hash,/^0x[0-9a-fA-F]{64}$/);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('qraft:atomic:wallets:v1')??'[]'));assert.equal(saved.length,1);assert.equal(saved[0].vault.address,data.address);assert.equal(JSON.stringify(saved).includes('"seed"'),false);
  await context.storageState({path:'.local/modular-live/created-browser-state.json'});
