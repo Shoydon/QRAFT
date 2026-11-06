@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "poseidonVectors": 20,
+  "realProofs": 2,
+  "withdrawGas": "332503",
+  "mutationsRejected": 4,
+  "replayRejected": true,
+  "payoutRollback": true
+}

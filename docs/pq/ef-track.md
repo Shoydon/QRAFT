@@ -1,37 +1,22 @@
-# EF integration status
+# EF track evidence
 
-The active application targets **chain 1337**, using EIP-8141 frame transactions. The proposal number 8141 is not the network ID. The [official devnet guide](https://docs.altmempool.wtf/guides/devnet/) and [workshop](https://github.com/forshtat/mempool-workshop) specify this network.
+## Frame Transaction Alternative Mempool
 
-## Routes
+Active chain: 1337. The native ML-DSA verification frame consumes approximately 2.39 million execution gas, well above the simple public-mempool validation budget. Both the sponsored deposit and atomic withdrawal were admitted and included through the alternative mempool.
 
-| Purpose | Endpoint |
-| --- | --- |
-| Execution and simulation | `https://altmempool.forshtat.com` |
-| Alternative-mempool submission | `https://altmempool.forshtat.com/rpc` |
-| Explorer | `https://explorer.altmempool.wtf/` |
+- [Deposit](https://explorer.altmempool.wtf/tx/0x38ff98c1a2bbc903f157ab9d083a47a8cb50b9bc7adb323d191939b948c07316)
+- [Withdrawal](https://explorer.altmempool.wtf/tx/0x19f9ef5d4ffcb2342ca4828becb3ec8c9c631575e85541f122c9ba4424e791d7)
+- Code: `src/lib/atomic/account.ts`, `packages/frame-account/src/alt-mempool.ts`
+- [Receipts and active addresses](atomic-live.json)
 
-Browser RPC uses the official Nym worker by default, including sidecar submission. There is no automatic direct fallback. Nym hides the browser IP from the destination RPC; it does not hide public transaction contents, addresses, amounts, or timing correlations. Worker discovery uses a direct Ethereum bootstrap RPC. The local public-data/proof helper and CLI tests use direct RPC; their traffic is not anonymous.
+EIP-8141 describes the transaction format. 1337 is the devnet chain ID; it is not a replacement EIP.
 
-The client encodes the devnet's nine-field type-0x06 envelope and submits JSON using `eth_sendFrameTransaction`. It checks the returned hash against the signed intent. PQ authorization is verified directly in the sender VERIFY frame, with a larger verification budget than the standard public mempool permits. The sender and paymaster stake in the devnet registry. Application and public-helper writes use the sidecar with no canonical fallback.
+## Anon-RPC
 
-One-time shared infrastructure deployment uses explicit native execution-RPC transactions where necessary: the cryptographic primitive deployment exceeds the sidecar's 25-million-gas transaction budget. Those bootstrap receipts are not presented as alternative-mempool evidence.
+The browser uses the actual hash-pinned Nym worker for reads and submission. The host header-serialization compatibility patch preserves the pinned worker bytes. No silent direct-RPC fallback is provided. Nym hides the browser's IP from the RPC provider, not public transaction contents. Bootstrap discovery and the server's public provisioning have distinct privacy boundaries.
 
-## Evidence and limitations
+## CROPS
 
-The following native transaction was submitted through the sidecar and included successfully:
+The application is open source, keeps private note witnesses and signing seeds local, uses a directly verifiable onchain proof and accepts an arbitrary recipient. The new architecture removes 663-step verifier orchestration and per-proof deployments. The initial deployment and public account-provisioning operator remain centralization limitations; devnet availability and sponsorship are not guaranteed.
 
-[Chain-1337 sidecar probe](https://explorer.altmempool.wtf/tx/0x878a98ba54c02ccafc67fbd5d6e7c2d028eb05cd87e25911b83d5c9a23290ad8)
-
-The account implementation deployment also passed sidecar admission and inclusion:
-
-[Account implementation deployment](https://explorer.altmempool.wtf/tx/0xc58aa78e4f140df7055d6073d7172ff10c0cc07cb49bb7ca115615b33ed6d747)
-
-These are operator-authorized infrastructure transactions, not proof of a sponsored PQ deposit or full withdrawal. Fresh PQ account creation and staking succeeded through the sidecar. The sponsored PQ deposit passed execution simulation, but sidecar admission rejected it under OP-011: `sender uses banned opcode: GAS`. The manifest disables application transactions until this is resolved. See [the public admission report](alt-mempool-admission.json). No deposit or withdrawal success is claimed on 1337. The devnet has also admitted transactions and subsequently cancelled them after four relays without inclusion; admission alone must not be labelled confirmation. The client preserves pending signed intents for reconciliation.
-
-The historical [complete withdrawal evidence](application-checks.json) belongs to the previous chain-8141 deployment and does not establish chain-1337 withdrawal success. Only the default 0.0001 ETH pool is currently activated on 1337.
-
-## Track scope
-
-The [EF prize page](https://ethglobal.com/events/mumbai/prizes/ethereum-foundation) lists Anon-RPC, alternative mempool, and CROPS tracks, with at most one EF prize per project. Submission code and explorer evidence support alternative-mempool review; final eligibility and awards are determined by judges. A short demonstration video remains a submission deliverable.
-
-README documents CROPS properties and limitations. There are no configured third-party analytics. ML-DSA-44 authorization, SHA3-512 notes, and the transparent proof cover application cryptography; consensus, TLS, Nym, operator keys, and availability have separate assumptions. The proof remains experimental. See [security boundaries](application-security.md) and [licenses](../../NOTICE.md).
+Security scope is explicit: ML-DSA wallet authorization, conventional Groth16 withdrawal proof, development trusted setup, no independent audit. These are implementation and evidence claims, not a guarantee of prize eligibility or an award.

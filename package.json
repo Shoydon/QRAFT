@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run build",
     "prepare:proving": "node scripts/prepare-proving.mjs",
-    "predev": "node scripts/check-pq-artifacts.mjs",
-    "prebuild": "node scripts/check-pq-artifacts.mjs",
+    "predev": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs",
+    "prebuild": "node scripts/patch-anon-rpc-headers.mjs && node scripts/check-pq-artifacts.mjs && node scripts/check-atomic-artifacts.mjs && node scripts/prepare-proving.mjs",
     "protocol:build": "node scripts/build-protocol.mjs",
     "protocol:deploy": "node scripts/deploy.mjs",
     "test:protocol": "npm run protocol:build && npm run prepare:proving && node --experimental-strip-types scripts/test-protocol.mjs",
@@ -23,7 +23,8 @@
     "test:pq:browser": "node packages/pq-hiding-stark/scripts/test-browser-v5.mjs",
     "test:pq:crypto": "bun test tests/pq.test.ts",
     "prepare:pq": "node scripts/build-pq.mjs",
-    "test:pq:export": "node scripts/test-pq-public-export.mjs"
+    "test:pq:export": "node scripts/test-pq-public-export.mjs",
+    "postinstall": "node scripts/patch-anon-rpc-headers.mjs"
   },
   "dependencies": {
     "@anon-rpc/browser-harness": "0.4.0",

@@ -1,0 +1,18 @@
+{
+  "scripts/build-atomic-verifier.mjs": "1394fb1127c7fc57390adce05a4ada9784a5677006a02877d29bbbc40f2b98f5",
+  "scripts/build-atomic.mjs": "224c7a5b45d24262707ce7cf03885c16861376b3bf8addbeb4221de0f8f6bcf3",
+  "scripts/generate-atomic-pool.mjs": "71faa67dc539f24bc03666fb3819727f7a159a2b43ff7439409ed025f19910ad",
+  "packages/atomic/contracts/AtomicAccount.sol": "4c8bd5fae93fbbdfbbb797252f0e2b215b47f3eaff9f9804ffe413902cd192a0",
+  "packages/atomic/contracts/AtomicFactory.sol": "bfea123c11494ab9b3cfa539078c91185f9bafc355c8004e494513b31b9f249a",
+  "packages/atomic/contracts/AtomicPool.sol": "2c2b30478cd9893c6395c1b0b0947138a033948057fc27c032e172acf795fb76",
+  "packages/atomic/contracts/AtomicPaymaster.sol": "cf448fe029b73b80ffcf3fc7647f1b62696631f8022cfdcff6cbee1a50114718",
+  "packages/atomic/artifacts/AtomicAccount.json": "3e40c2df669de8befa969e01f834cb1ebb2a36f6c622dc15670a8a71a366f249",
+  "packages/atomic/artifacts/AtomicFactory.json": "8a839bed828673fe0296e153ef6fb53c0c5ea7d10d41aee076b29c94de5959c9",
+  "packages/atomic/artifacts/AtomicPool.json": "da24a68f87bcbf59a563ca8d56111a7faa795e2aa9db59ffc3dc8ff8ed105711",
+  "packages/atomic/artifacts/AtomicPaymaster.json": "634cdf5ce1225055fb0d0deefa317407c235ee5a5389aeee1d741756620ff392",
+  "packages/atomic/artifacts/MLDSA44Verifier.json": "73021d0a7fc59a698df87b82e6954baf93fac838bb3a4415f92582d593369a3f",
+  "packages/atomic/artifacts/SpendVerifierStock.json": "e67eeb585421f42e9ef9f12189465d87626643d189aebb28e05d0b98ff2b4327",
+  "protocol/contracts/SpendVerifier.sol": "21c7c524860cea5285b73f03daacc4f5620fc886a3ad6bbd9f4772ba9a812a7a",
+  "packages/frame-account/contracts/vendor/erc8286/lib/LibERC8286.sol": "707126fe7a5eadc7fe87373e2484552bc2af3c5befcebd0af69bead8d24f879b",
+  "packages/pq-hiding-stark/contracts/src/FastSha3_512.sol": "2dd59a9fc940041f1f40e7f654b0e4fc6286d9c1bc705cd0c143e1d470895099"
+}

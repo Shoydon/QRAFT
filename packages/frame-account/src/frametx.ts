@@ -114,7 +114,7 @@ export interface FrameSimulation { valid?: boolean; canonicalMempoolValid?: bool
 export function assertSuccessfulSimulation(result: FrameSimulation, expectedFrames: number, alternative = false): void {
   if (!(result.valid === true || alternative && typeof result.canonicalMempoolValid === 'boolean') || result.violation || result.executionError || result.executionStatus !== 'success' || !result.payer || result.gasUsed === null || result.frames?.length !== expectedFrames || result.frames.some(f => f.succeeded !== true)) throw Error('Frame admission/execution simulation did not fully succeed');
 }
-export interface FrameReceipt { type: Hex; status: Hex; payer?: Hex; frameReceipts?: { status: Hex; gasUsed: Hex; logs: unknown[] }[] }
+export interface FrameReceipt { type: Hex; status: Hex; payer?: Hex; frameReceipts?: { status: Hex; gasUsed: Hex; stateGasUsed?: Hex; logs: unknown[] }[] }
 /** Standard receipt formatters may discard frameReceipts/payer: fetch raw JSON-RPC. */
 export function assertSuccessfulReceipt(receipt: FrameReceipt, expectedFrames: number): void {
   if (BigInt(receipt.type) !== 6n || BigInt(receipt.status) !== 1n || !receipt.payer || receipt.frameReceipts?.length !== expectedFrames || receipt.frameReceipts.some(f => BigInt(f.status) !== 1n)) throw Error('Frame receipt contains failed/skipped/missing frames');

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createPublicClient,http,encodeFunctionData,keccak256,stringToHex,type Hex} from 'viem';
+import {poolAbi} from '../src/lib/atomic/account';
+const manifest=JSON.parse(await readFile('public/atomic-deployment.json','utf8'));
+const note=JSON.parse(await readFile('.local/atomic-live/note.json','utf8'));
+const proof=JSON.parse(await readFile('.local/atomic-live/proof.json','utf8'));
+const evidence=JSON.parse(await readFile('docs/pq/atomic-live.json','utf8'));
+const client=createPublicClient({transport:http(manifest.rpcUrl)});
+assert.equal(await client.getChainId(),1337);
+assert.equal((await client.getBlock({blockNumber:0n})).hash,manifest.genesisHash);
+for(const pin of Object.values(manifest.contracts) as {address:Hex;runtimeHash:Hex}[])assert.equal(keccak256((await client.getCode({address:pin.address}))!),pin.runtimeHash);
+assert.equal(await client.readContract({address:note.pool,abi:poolAbi,functionName:'spent',args:[note.nullifierHash]}),true);
+await assert.rejects(()=>client.call({to:note.pool,data:encodeFunctionData({abi:poolAbi,functionName:'withdraw',args:[proof.root,note.nullifierHash,evidence.wallets[1],BigInt(proof.expiry),proof.words.map(BigInt)]})}));
+const creations=await client.request({method:'eth_getLogs',params:[{address:manifest.contracts.factory.address,fromBlock:'0x0',toBlock:'latest',topics:[keccak256(stringToHex('AccountCreated(address,bytes32)'))]}]});
+assert.equal(creations.length,2);evidence.replayRejected=true;evidence.confirmedWalletContracts=creations.length;evidence.runtimeHashesVerified=true;
+await writeFile('docs/pq/atomic-live.json',JSON.stringify(evidence,null,2)+'\n');console.log('Live chain/genesis, five runtime pins, two wallets, spent state and replay rejection verified');

@@ -32,3 +32,13 @@ packages/pq-hiding-stark/wasm/pkg/
 # Wallet backup: holds the account seed, and the browser saves it wherever
 # downloads land — which can be the repo root.
 key.json
+
+# Reproducible atomic runtime artifacts used by the wallet provisioning build.
+!packages/atomic/artifacts/
+packages/atomic/artifacts/*
+!packages/atomic/artifacts/AtomicAccount.json
+!packages/atomic/artifacts/AtomicFactory.json
+!packages/atomic/artifacts/AtomicPool.json
+!packages/atomic/artifacts/AtomicPaymaster.json
+!packages/atomic/artifacts/MLDSA44Verifier.json
+!packages/atomic/artifacts/SpendVerifierStock.json

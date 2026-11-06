@@ -1,6 +1,6 @@
 # QRAFT: atomic withdrawal and a fixed contract architecture
 
-Status: proposed design, awaiting approval. This document does not claim the replacement has been implemented or deployed.
+Status: approved by the user; implementation and live end-to-end verification in progress. See docs/pq/atomic-feasibility.md for the authorized conventional-proof selection.
 
 ## Intent and agreed requirements
 

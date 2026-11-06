@@ -1,0 +1,11 @@
+{
+  "shake256Vectors": 36,
+  "validKeys": 3,
+  "invalidCases": 12,
+  "estimatedGas": [
+    "2694491",
+    "2694175",
+    "2693071"
+  ],
+  "runtimeBytes": 23730
+}

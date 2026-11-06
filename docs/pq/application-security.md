@@ -1,32 +1,19 @@
-# Application security and external limits
+# Application security boundaries
 
-The supported scope is post-quantum **application** security with explicit external limits. It is not a claim that the complete internet, Ethereum or Nym is post-quantum.
+## Active atomic profile
 
-## Application boundary
+Wallet signatures are ML-DSA-44. Withdrawal proofs are **conventional Groth16 over BN254**, using the existing development setup and depth-10 Poseidon circuit. Neither the withdrawal proof nor the note/tree system is claimed post-quantum. This was the explicitly approved fallback after the previous PQ verifier proved impractical for a single transaction. See [feasibility](atomic-feasibility.md).
 
-- ML-DSA-44 signatures authorize exact native frame transactions. The browser independently derives and verifies the prepared public key, descriptor, immutable account configuration, CREATE2 address and deployed runtime. No ordinary Ethereum signature can substitute for the user's ML-DSA signature.
-- Notes use 64 random secret bytes, SHA3-512 commitments and nullifiers, and a depth-32 SHA3-512 Merkle tree. Checksums detect accidental backup corruption, not malicious replacement.
-- Transparent V5 proofs use the pinned SPBCS/stream/writeback Goldilocks5 profile. The browser verifies the proof before exporting its public envelope. The public-only encoder independently binds the statement and verifies the native proof; it rejects private witness fields. Read the [V5 security argument](pq-v5-security-argument.md) and [salt lemma](pq-finite-field-salt-lemma.md) for assumptions and research limitations. Do not infer a certified 128-bit quantum-security guarantee from use of these primitives.
-- The application pins chain genesis/anchor and contract runtimes. It checks exact canonical receipts, native frames and withdrawal events. Wallet secrets are encrypted with a passkey-derived key in browser storage and optional downloaded backups; decrypted signing keys remain in memory while unlocked. Note witnesses remain in memory or user-saved note files. Public signed-intent journals can still reveal transaction relationships.
+The shared signature verifier checks the full ML-DSA equations and SHAKE256. The account commits to prepared public verification data and binds its signature to the native transaction signing hash. Prepared data must be generated from a genuine key; the client applies the pinned upstream preparation and degenerate-key rejection. A malicious creator choosing its own weak key compromises its own account, not another account's key commitment. The adapted verifier is research code without an independent audit.
 
-## External trust and privacy
+The pool verifies membership and ownership, derives the complete public digest including chain, pool, amount, root, nullifier, recipient, expiry and zero fee, and pays atomically. Failed proof/payout reverts the spent flag. A note is a bearer credential. The recipient may be an EOA; subsequent custody then depends on the recipient's own signature scheme.
 
-The devnet's consensus, historical deployments, RPC infrastructure, TLS certificates, browser/OS and software distribution are outside this PQ boundary. Runtime and file hashes provide consistency checks; they do not make a compromised distribution channel safe.
+The paymaster only approves the fixed three-frame shape and recognized factory accounts, bounded fees/gas, and pool deposit/withdraw calls. It does not authorize execution; the ML-DSA account does. Sponsorship is intentionally a bounded public devnet service, not an economic Sybil defense. Only the operator can withdraw sponsor funds. Account staking has no key-management authority.
 
-The local helper holds an ordinary ECDSA **test gas-carrier** key. It funds new accounts, deploys public key data, caches signatures that it verifies against the public ML-DSA key, uploads public proof bytes and advances permissionless verification. These public writes use native type-0x06 transactions, with the protocol default EOA verifier authenticating the operator. This key is not the custody authority for the user's account or pool notes. Its compromise can spend carrier funds, disrupt availability and expose public transaction relationships. It cannot fabricate an ML-DSA signature or a valid private-note proof.
+Private seeds are browser-local and encrypted at rest by AES-GCM with WebAuthn PRF/HKDF. An unlocked compromised origin can access signing material; passkeys do not prevent malicious application JavaScript. Notes and proof witnesses are local. A journal retains exact signed bytes before submission. An uncertain response is reconciled using that same transaction, never an automatically different withdrawal.
 
-Nym browser reads and submissions use Anon-RPC by default. Worker discovery/bootstrap is direct. The local helper uses direct RPC for public provisioning, signature caching and proof computation, linking those requests to the local machine. An untrusted RPC can delay or withhold data; anonymous transport does not make responses trustworthy. Explicit passthrough is not anonymous. Nym has its own [post-quantum roadmap](https://nym.com/blog/nym-post-quantum-roadmap); Ethereum describes its own [quantum-resistance work](https://ethereum.org/roadmap/security/quantum-resistance/). Neither is covered by QRAFT's application claim.
+Nym hides the browser IP from the destination RPC; the destination still sees requests. Worker discovery is direct. Public account creation is performed by a funded server operator and is linkable to that server. Neither Ethereum consensus, Nym transport, nor the conventional proof inherits ML-DSA's security properties. Alternative-mempool admission is not a substitute for final receipt checks.
 
-The helper is an opt-in, loopback-bound development service with same-origin guards, bounded inputs and a protected local key. It has no public authentication or quota system. Do not expose the listener through a tunnel, reverse proxy or external interface. Hosted deployment requires a separate service design, persistent execution and upload handling; this version is intended to run locally.
+## Historical V5 scope
 
-A withdrawal recipient may be any valid address. Funds paid to an ordinary EOA are subsequently protected by that recipient's classical key; use a PQ account recipient when post-quantum custody after payout is required. QRAFT cannot upgrade a recipient's authorization scheme.
-
-## Recovery and availability
-
-Native signed intents are journaled before disclosure. An uncertain receipt freezes that intent until reconciliation; it is not permission to replace it with a new nonce. Keep wallet and note backups. Public proof/session progress can be resumed where the journal and canonical chain evidence agree.
-
-The gas carrier also journals exact signed transactions and permits one writer. A process crash can leave its lock or a pending transaction. Inspect the public journal and chain receipt before manual reconciliation; automatically deleting a lock can permit nonce races. Public encoder jobs detect a stopped process, but PID reuse and a stopped carrier can still require operator intervention.
-
-Proof verification uses a fixed public call sequence. Another party advancing the same permissionless session can make a scheduled call revert; the helper stops instead of guessing a replacement sequence. This is an availability limitation, not a claim of adversarially resilient concurrent execution. Devnet resets, gas exhaustion, timeouts and expiry may interrupt a withdrawal. Keep the note and reconcile confirmed session/transaction state before trying again.
-
-Small anonymity sets, reused recipients/accounts, timing and the shared public gas carrier can link deposits and withdrawals. Successful proof verification does not establish practical anonymity. Never use real funds in this experimental deployment.
+Historical notes use the separate transparent V5/SHA3-512 design documented in [the V5 security argument](pq-v5-security-argument.md). That research construction and its conditional claims are not the active atomic proof profile. Old deployment/proof artifacts and incomplete runs are retained for recovery and provenance.

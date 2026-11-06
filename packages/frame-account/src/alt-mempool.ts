@@ -30,6 +30,7 @@ export async function submitToSidecar(rpc: SidecarRpc, raw: Hex): Promise<Hex> {
   for (let attempt = 0; attempt < 16; attempt++) {
     try { hash = await rpc.request<Hex>('eth_sendFrameTransaction', [frameToSidecar(tx)]); break; }
     catch (error) {
+      if (error instanceof Error && error.message === 'Frame transaction already known') { hash = tx.transactionHash(); break; }
       if (!(error instanceof Error) || !error.message.includes('is already held by pending transaction') || attempt === 15) throw error;
       await new Promise(resolve => setTimeout(resolve, 2000));
     }

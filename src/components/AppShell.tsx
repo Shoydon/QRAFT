@@ -1,3 +1,3 @@
 'use client';
 
-export { PqApp as AppShell } from './PqApp';
+export { AtomicApp as AppShell } from './AtomicApp';

@@ -1,0 +1,13 @@
+# Atomic replacement: measured decision
+
+The selected profile is ML-DSA-44 wallet authorization plus the existing conventional Groth16/BN254 withdrawal circuit. This is the fallback explicitly approved by the user. It is not an end-to-end post-quantum pool. The Poseidon/BN254 notes and development Groth16 setup do not inherit the wallet signature's PQ security.
+
+The former V5 verifier required 663 calls, 446,680 public upload bytes and 55 data contracts for the observed proof; historical full-flow gas was approximately 6.43 billion. The incomplete chain-1337 run is not a successful withdrawal. A local repeated-hashing optimization saved 8.7% on one AIR call, nowhere near the reduction required for atomic verification. No proof parameters were weakened.
+
+A practical complete direct PQ verifier for this statement, browser prover and gas budget was not established. This is an implementation feasibility decision, not a claim that compact PQ proofs are impossible. RISC Zero's documented Ethereum path wraps its STARK in Groth16, so it cannot establish the requested PQ scope: https://dev.risczero.com/api/blockchain-integration/risc-zero-on-eth . Existing StarkWare verifier deployments use a different statement and multiple components; they are not a drop-in proof of this circuit's feasibility.
+
+The imported circuit has a depth-10 Poseidon tree, ownership and nullifier constraints, and public recipient plus two constrained 128-bit digest limbs. The pool derives the digest from chain, pool, denomination, root, nullifier, recipient, expiry and zero fee. The circuit and pinned proving artifacts are unchanged. Setup provenance is documented in `protocol/README.md`: development setup, not an independently audited ceremony. The generated verifier retains GPL-3.0 licensing.
+
+Local complete real-proof test: withdrawal uses 332,503 gas including the pool, verifier and payout. Invalid proof, recipient/expiry/root mutation, replay, and reverting recipient are checked. The shared wallet verifier is 23,730 bytes and verifies three independent real keypairs at approximately 2.69 million gas including calldata. SHAKE256 was checked against noble across 36 input/output-length combinations. These are tests, not an independent cryptographic audit.
+
+The active application inventory is five shared contracts (wallet verifier, proof verifier, factory, pool with inlined tree hashing, paymaster) and one account per wallet. No deployment occurs during proof generation or withdrawal. Network predeploys and historical abandoned deployments are not counted as active application dependencies.
