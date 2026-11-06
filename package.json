@@ -19,6 +19,7 @@
     "test": "bun test tests",
     "doctor": "node scripts/doctor.mjs",
     "test:browser": "node scripts/test-pq-app.mjs",
+    "test:pq:passkey": "node scripts/test-pq-passkey.mjs",
     "test:pq:browser": "node packages/pq-hiding-stark/scripts/test-browser-v5.mjs",
     "test:pq:crypto": "bun test tests/pq.test.ts",
     "prepare:pq": "node scripts/build-pq.mjs",

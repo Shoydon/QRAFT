@@ -36,6 +36,8 @@ import {
   StatusLine,
 } from "./primitives";
 import { Sheet } from "./Sheet";
+import { WalletSetup, walletSetupStep, WALLET_SETUP_STEPS } from "./WalletSetup";
+import { WalletPasskeyController, type WalletConnection } from "./WalletPasskeyController";
 import { StepRail } from "./StepRail";
 import {
   ArrowLeftIcon,
@@ -178,6 +180,8 @@ export function PqApp() {
   const [busy, setBusy] = useState<false | "transaction" | "wallet:create" | "wallet:import">(false);
   const isBusy = Boolean(busy);
   const [progress, setProgress] = useState("");
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupStep, setSetupStep] = useState<number | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [unspent, setUnspent] = useState<number | null>(null);
@@ -257,7 +261,11 @@ export function PqApp() {
   }, [pool, status.phase]);
 
   function updateProgress(label: string) {
-    if (mounted.current) setProgress(label);
+    if (mounted.current) {
+      setProgress(label);
+      const step = walletSetupStep(label);
+      if (step !== null) setSetupStep(step);
+    }
   }
   async function refreshBalance(client: PqAccountClient) {
     try {
@@ -294,36 +302,41 @@ export function PqApp() {
     busyRef.current = false;
     if (mounted.current) setBusy(false);
   }
-  async function connectWallet(file?: File) {
-    if (
-      !transport ||
-      !begin(
-        file ? "Checking the saved PQ wallet" : "Preparing your ML-DSA account",
-        file ? "wallet:import" : "wallet:create",
-      )
-    )
-      return;
+  async function connectWallet(file?: File, setup: WalletConnection = {}): Promise<PqAccountClient | null> {
+    if (!transport || (!setup.alreadyBusy && !begin(
+      file ? "Checking the saved PQ wallet" : "Preparing your ML-DSA account",
+      file ? "wallet:import" : "wallet:create",
+    ))) return null;
     setWalletError(null);
+    let opened: PqAccountClient | null = null;
     try {
-      if (file && file.size > 16384)
-        throw Error("That file is too large to be a PQ wallet backup.");
+      const restoring = !!setup.plaintextBackup;
+      if (!restoring) {
+        setSetupStep(0);
+        setSetupOpen(true);
+      }
       updateProgress(`Connecting through ${TRANSPORT.worker.label} and checking the RPC network`);
-      if (!file) {
-        // Do not provision or fund a new account until an anonymous RPC round
-        // trip succeeds. Worker startup alone does not prove RPC access works.
+      if (!restoring) {
         const chainId = await transport.request<string>("eth_chainId");
         if (BigInt(chainId) !== BigInt(PQ_DEPLOYMENT.chainId))
           throw Error(`This wallet requires chain ${PQ_DEPLOYMENT.chainId}. The configured RPC reports another network.`);
       }
-      updateProgress(file ? "Verifying saved PQ account ownership" : "Provisioning and verifying your ML-DSA account");
-      if (!file && !creationSeed.current) creationSeed.current = crypto.getRandomValues(new Uint8Array(32));
-      const client = file
-        ? await PqAccountClient.restore(await file.text(), transport)
-        : await PqAccountClient.create(transport, { seed: creationSeed.current!, onProgress: updateProgress });
-      if (!mounted.current) {
-        client.lock();
-        return;
+      updateProgress(restoring ? "Verifying saved PQ account ownership" : "Provisioning and verifying your ML-DSA account");
+      if (setup.seed && setup.seed !== creationSeed.current) {
+        creationSeed.current?.fill(0);
+        creationSeed.current = setup.seed.slice();
       }
+      if (!restoring && !creationSeed.current) creationSeed.current = crypto.getRandomValues(new Uint8Array(32));
+      const client = opened = restoring
+        ? await PqAccountClient.restore(setup.plaintextBackup!, transport, { backupAcknowledged: setup.backupAcknowledged, signal: setup.signal, onProgress: updateProgress })
+        : await PqAccountClient.create(transport, { seed: creationSeed.current!, onProgress: updateProgress });
+      if (!restoring) {
+        setSetupStep(10);
+        setProgress("Encrypting your wallet on this device");
+      }
+      await setup.onReady?.(client);
+      setSetupStep(WALLET_SETUP_STEPS);
+      if (!mounted.current) { client.lock(); return null; }
       accountRef.current?.lock();
       creationSeed.current?.fill(0);
       creationSeed.current = null;
@@ -334,29 +347,24 @@ export function PqApp() {
       setWalletBackedUp(client.isBackedUp);
       if (client.isBackedUp) setWalletOpen(false);
       await refreshBalance(client);
+      return client;
     } catch (error) {
-      if (mounted.current)
-        setWalletError(
-          safeMessage(
-            error,
-            "The PQ wallet could not be opened. Your keys have not been shared.",
-          ),
-        );
-    } finally {
-      end();
-    }
+      if (opened !== accountRef.current) opened?.lock();
+      if (mounted.current) setWalletError(safeMessage(error, "The PQ wallet could not be opened. Your keys have not been shared."));
+      return null;
+    } finally { if (!setup.alreadyBusy) end(); }
   }
   function reconnectReads() {
-    if (busyRef.current) return;
+    if (busyRef.current || transport?.getStatus().phase === "starting") return;
     setWalletError(null);
     setReadError(null);
     transport?.stop();
     transport?.start();
   }
-  function downloadWallet() {
+  function downloadWallet(encrypted: string) {
     if (!account || busyRef.current) return;
     try {
-      saveText(account.backup(), `qraft-pq-wallet-${stamp()}.json`);
+      saveText(encrypted, `qraft-pq-wallet-encrypted-${stamp()}.json`);
       setWalletDownloaded(true);
     } catch {
       setWalletError("The wallet is locked. Restore the saved backup.");
@@ -1477,6 +1485,14 @@ export function PqApp() {
           ) : null}
         </div>
       </main>
+      <WalletPasskeyController
+        account={account} transport={transport} getPendingSeed={() => creationSeed.current} setPendingSeed={seed => { creationSeed.current = seed; }}
+        begin={begin} end={end} show={() => setWalletOpen(true)} error={setWalletError}
+        connect={connectWallet} exportEncrypted={downloadWallet} confirm={confirmWalletBackup} lock={lockWallet}
+        onSetupStart={() => { setSetupStep(0); setSetupOpen(true); }}
+        requireProtection={() => { setWalletBackedUp(false); setWalletDownloaded(false); setWalletAcknowledged(false); setWalletOpen(true); }}
+      >
+      {wallet => (
       <Sheet
         open={walletOpen}
         onClose={() => setWalletOpen(false)}
@@ -1491,24 +1507,24 @@ export function PqApp() {
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = "";
-            void connectWallet(file);
+            if (file) void wallet.importFile(file);
           }}
         />
         {!account ? (
           <div className="space-y-4">
             <p className="text-sm leading-relaxed text-ink-60">
               Create an ML-DSA-44 account or restore its saved backup. Its
-              signing seed stays on this device; no ordinary Ethereum wallet is
-              used.
+              signing key is encrypted with your passkey. Reloading locks the wallet
+              until you choose to unlock it with your passkey.
             </p>
             <Button
               variant="primary"
               className="w-full"
               busy={isBusy && busy !== "wallet:import"}
-              disabled={isBusy || serviceEnabled !== true}
-              onClick={() => void connectWallet()}
+              disabled={isBusy || !!wallet.localhostUrl || (!wallet.hasVault && serviceEnabled !== true)}
+              onClick={() => void wallet.create()}
             >
-              Create PQ wallet
+              {wallet.primaryLabel}
             </Button>
             <Button
               className="w-full"
@@ -1522,6 +1538,11 @@ export function PqApp() {
               <p role="status" className="text-sm text-ink-60">
                 {progress}
               </p>
+            ) : null}
+            {setupStep !== null ? (
+              <Button className="w-full" onClick={() => setSetupOpen(true)}>
+                View wallet setup
+              </Button>
             ) : null}
             <div className="space-y-3" role="status" aria-live="polite">
               {!busy ? (
@@ -1541,7 +1562,11 @@ export function PqApp() {
               ) : null}
             </div>
             {!busy && (!readReady || !!walletError) ? (
-              <Button className="w-full" onClick={reconnectReads}>
+              <Button
+                className="w-full"
+                disabled={status.phase === "starting"}
+                onClick={reconnectReads}
+              >
                 Retry anonymous connection
               </Button>
             ) : null}
@@ -1560,6 +1585,11 @@ export function PqApp() {
                 {walletBackedUp ? "Acknowledged" : "Required before signing"}
               </Row>
             </RowGroup>
+            {setupStep !== null ? (
+              <Button className="w-full" onClick={() => setSetupOpen(true)}>
+                View wallet setup
+              </Button>
+            ) : null}
             <Notice
               tone="neutral"
               title="Wallet backup and private note are different"
@@ -1568,12 +1598,13 @@ export function PqApp() {
               controls each pool deposit. Keep both securely; losing one cannot
               be fixed by the other.
             </Notice>
+            {!wallet.protected ? <Button className="w-full" variant="primary" disabled={isBusy} onClick={() => void wallet.create()}>Protect with passkey</Button> : null}
             <Button
               variant={walletDownloaded ? "secondary" : "primary"}
               className="w-full"
-              disabled={isBusy}
+              disabled={isBusy || !wallet.protected}
               icon={<DownloadIcon width={17} height={17} />}
-              onClick={downloadWallet}
+              onClick={wallet.download}
             >
               {walletDownloaded
                 ? "Download PQ backup again"
@@ -1592,15 +1623,15 @@ export function PqApp() {
                     className="mt-1 size-4 shrink-0 accent-[var(--color-ink)]"
                   />
                   <span>
-                    I saved the wallet backup securely. Anyone with it can
-                    control this PQ account.
+                    I saved the encrypted wallet backup securely and can access
+                    its matching passkey. Both are needed to restore this account.
                   </span>
                 </label>
                 <Button
                   variant="primary"
                   className="w-full"
                   disabled={!walletDownloaded || !walletAcknowledged || isBusy}
-                  onClick={confirmWalletBackup}
+                  onClick={() => void wallet.confirmBackup()}
                 >
                   I saved my PQ wallet backup
                 </Button>
@@ -1619,12 +1650,17 @@ export function PqApp() {
               variant="ghost"
               className="w-full"
               disabled={isBusy}
-              onClick={lockWallet}
+              onClick={wallet.lock}
             >
               Lock PQ wallet
             </Button>
           </div>
         )}
+        {wallet.localhostUrl ? (
+          <p className="mt-4 text-sm leading-relaxed text-ink-60">
+            Passkeys require a domain name. <a className="underline" href={wallet.localhostUrl}>Open this app on localhost</a> to set up or unlock your wallet.
+          </p>
+        ) : null}
         {walletError ? (
           <p
             role="alert"
@@ -1634,6 +1670,8 @@ export function PqApp() {
           </p>
         ) : null}
       </Sheet>
+      )}
+      </WalletPasskeyController>
       <Sheet
         open={readOpen}
         onClose={() => setReadOpen(false)}
@@ -1675,13 +1713,14 @@ export function PqApp() {
           </p>
           <Button
             className="w-full"
-            disabled={isBusy}
+            disabled={isBusy || status.phase === "starting"}
             onClick={reconnectReads}
           >
             Reconnect anonymous reads
           </Button>
         </div>
       </Sheet>
+      <WalletSetup open={setupOpen} step={setupStep ?? 0} progress={progress} error={walletError} onClose={() => setSetupOpen(false)} />
     </div>
   );
 }

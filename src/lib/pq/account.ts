@@ -175,12 +175,40 @@ export type PqSendResult =
 export interface PqSendOptions { paymaster?: Hex; to: Hex; data: Hex; value?: bigint; onProgress?: (label: string) => void; signal?: AbortSignal; timeoutMs?: number }
 export type PqFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export interface PqAccountClientOptions {
+  backupAcknowledged?: boolean;
   seed?: Uint8Array;
   fetch?: PqFetch;
   journalStorage?: PublicJournalStorage;
   withLock?: <T>(name: string, operation: () => Promise<T>) => Promise<T>;
   deployment?: PqAccountDeployment;
   onProgress?: (label: string) => void;
+  signal?: AbortSignal;
+  verificationTimeoutMs?: number;
+}
+
+/** Bound recovery as a whole, including transports that ignore request aborts. */
+function recoveryTransport(transport: ChainTransport, signal: AbortSignal, progress: (completed: number) => void): ChainTransport {
+  let completed = 0;
+  return {
+    getStatus: () => transport.getStatus(),
+    subscribe: listener => transport.subscribe(listener),
+    start: () => transport.start(),
+    stop: () => transport.stop(),
+    request<T>(method: string, params?: unknown[]): Promise<T> {
+      signal.throwIfAborted();
+      return new Promise<T>((resolve, reject) => {
+        const onAbort = () => reject(signal.reason);
+        signal.addEventListener('abort', onAbort, { once: true });
+        void Promise.resolve().then(() => {
+          signal.throwIfAborted();
+          return transport.request<T>(method, params);
+        }).then(value => {
+          if (signal.aborted) reject(signal.reason);
+          else { progress(++completed); resolve(value); }
+        }, reject).catch(reject).finally(() => signal.removeEventListener('abort', onAbort));
+      });
+    },
+  };
 }
 
 function browserJournal(): PublicJournalStorage {
@@ -257,12 +285,14 @@ export class PqAccountClient {
     const journal = this.readJournal(); return journal ? { hash: journal.hash, raw: journal.raw, state: journal.state } : null;
   }
   static async create(transport: ChainTransport, options: PqAccountClientOptions = {}): Promise<PqAccountClient> {
+    options.onProgress?.('Generating your signing key locally');
     const key = createKey(options.seed);
     try {
       const publicKey = bytesToHex(key.publicKey);
       const fetcher = options.fetch ?? globalThis.fetch.bind(globalThis);
       const response = await postPublic(fetcher, '/api/pq/accounts', { publicKey });
       const completed = await finishAccountSetup(fetcher,response,publicKey,options.onProgress);
+      options.onProgress?.('Verifying your deployed smart account');
       const account = await verifyProvisionedPqAccount(publicKey, completed, transport, options.deployment ?? manifest);
       return new PqAccountClient(transport, key, account, options);
     } catch (error) { key.seed.fill(0); throw error; }
@@ -275,17 +305,25 @@ export class PqAccountClient {
     const keys = ['version', 'algorithm', 'chainId', 'genesisHash', 'publicKey', 'address', 'seed'];
     if (Object.keys(backup).length !== keys.length || Object.keys(backup).some(key => !keys.includes(key)) || backup.version !== 1 || backup.algorithm !== 'ML-DSA-44' || backup.chainId !== deployment.chainId || backup.genesisHash !== deployment.genesisHash || !isHex(backup.seed, 32) || !isHex(backup.publicKey, KEY_BYTES) || !isHex(backup.address, 20)) failure('The PQ backup format or network does not match.');
     const seed = hexToBytes(backup.seed as Hex);
+    const deadline = new AbortController();
+    const timer = setTimeout(() => deadline.abort(new Error('Your passkey unlocked the saved wallet, but anonymous network verification timed out. Reconnect anonymous reads, then unlock again. Your encrypted wallet is unchanged.')), options.verificationTimeoutMs ?? 120_000);
+    const signal = options.signal ? AbortSignal.any([options.signal, deadline.signal]) : deadline.signal;
     let key: PQKey | null = null;
     try {
+      signal.throwIfAborted();
       key = createKey(seed);
       const publicKey = bytesToHex(key.publicKey);
       if (!equal(publicKey, backup.publicKey as string)) failure('The backup key does not match its public key.');
-      const account = await recoverProvisionedPqAccount(publicKey, backup.address as Hex, transport, deployment);
+      const totalReads = Object.keys(deployment.contracts).length + 13;
+      const report = (completed: number) => options.onProgress?.(`Passkey accepted. Verifying wallet: ${completed} of ${totalReads} checks complete.`);
+      report(0);
+      const account = await recoverProvisionedPqAccount(publicKey, backup.address as Hex, recoveryTransport(transport, signal, report), deployment);
+      signal.throwIfAborted();
       const client = new PqAccountClient(transport, key, account, options);
-      client.backedUp = true;
+      client.backedUp = options.backupAcknowledged ?? true;
       return client;
     } catch (error) { key?.seed.fill(0); throw error; }
-    finally { seed.fill(0); }
+    finally { clearTimeout(timer); seed.fill(0); }
   }
   backup(): string {
     if (!this.key) failure('Unlock the PQ wallet before exporting its backup.');

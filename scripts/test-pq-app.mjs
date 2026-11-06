@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,chmod}from'node:fs/promises';
 import {chromium}from'@playwright/test';
 import{createPublicClient,http}from'viem';import{generatePrivateKey,privateKeyToAccount}from'viem/accounts';
-const url=new URL(process.env.QRAFT_BROWSER_URL??'http://127.0.0.1:3006').origin;
+const url=new URL(process.env.QRAFT_BROWSER_URL??'http://localhost:3006').origin;
 const manifest=JSON.parse(await readFile('public/pq-deployment.json'));
 if(!manifest.applicationEnabled)throw Error('Deploy the QRAFT protocol and update its verified deployment manifest before running the live lifecycle test.');
 const rpc=createPublicClient({cacheTime:0,transport:http(manifest.rpcUrl,{timeout:60000,retryCount:0})});
@@ -18,6 +18,7 @@ let context,page;let latestProgress='';
 const diagnostic=setInterval(()=>{if(page&&!page.isClosed())void page.locator('main').allTextContents().then(text=>console.log('Browser state:',text.join(' ').replace(/\s+/g,' ').slice(-1300))).catch(()=>{});},30000);
 async function newPage(){
  context=await browser.newContext({acceptDownloads:true,permissions:['clipboard-read','clipboard-write'],viewport:{width:1280,height:900}});page=await context.newPage();page.setDefaultTimeout(120000);
+ const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',ctap2Version:'ctap2_1',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
  page.on('pageerror',error=>errors.push(error.message));
  page.on('request',request=>{const body=request.postDataBuffer();if(request.method()==='POST'&&request.url().startsWith(manifest.rpcUrl))directBrowserPosts++;if(body){requests.push(body);if(needles.some(needle=>body.includes(needle)))sensitiveRequests++;}});
  page.on('response',response=>{if(response.request().method()==='GET'&&/\/api\/pq\/proofs\/[a-f0-9]{64}$/.test(response.url()))void response.json().then(job=>{const label=job.phase==='verifying'?`${job.phase}:${Math.floor((job.done??0)/24)*24}`:job.stage;if(label&&label!==latestProgress){latestProgress=label;console.log(`PQ progress: ${label}`);}}).catch(()=>{});});
@@ -35,12 +36,14 @@ try{
  const creationError=page.getByRole('dialog',{name:'PQ wallet',exact:true}).getByRole('alert');
  await backup.or(creationError).first().waitFor({timeout:1000000});
  if(await creationError.isVisible())throw Error('Wallet creation stopped: '+await creationError.innerText());
+ await page.getByRole('dialog',{name:'Your wallet is ready',exact:true}).getByRole('button',{name:'Continue to wallet',exact:true}).click();
  await download(page.getByRole('button',{name:'Download PQ wallet backup',exact:true}),walletPath);
  wallet=JSON.parse(await readFile(walletPath));
+ assert.equal(wallet.kind,'qraft-passkey-wallet');assert.equal(wallet.seed,undefined);assert.ok(wallet.ciphertext);
  for(const text of [wallet.seed,wallet.seed?.replace(/^0x/,'')])if(text)needles.push(Buffer.from(text));
  if(wallet.seed)needles.push(Buffer.from(wallet.seed.replace(/^0x/,''),'hex'));
  for(const body of requests)if(needles.some(needle=>body.includes(needle)))sensitiveRequests++;
- await page.getByRole('checkbox',{name:/I saved the wallet backup securely/}).check();
+ await page.getByRole('checkbox',{name:/I saved the encrypted wallet backup securely/}).check();
  await page.getByRole('button',{name:'I saved my PQ wallet backup',exact:true}).click();
  console.log('PASS fresh ML-DSA account provisioning, independent ownership checks and explicit wallet backup');
  await page.getByRole('button',{name:'Generate a PQ note',exact:true}).click();
@@ -64,12 +67,15 @@ try{
  }else{wallet=JSON.parse(await readFile(walletPath));const text=await readFile(notePath,'utf8');const note=JSON.parse(text.slice('qraft-pq-note-v1:'.length,text.lastIndexOf(':')));for(const secret of [wallet.seed,note[5]])if(secret)needles.push(Buffer.from(secret),Buffer.from(secret.replace(/^0x/,''),'hex'));}
  const poolAbi=JSON.parse(await readFile('public/pq-v5/abis.json')).pool;
  const poolBefore=await rpc.getBalance({address:manifest.pool});
- if(context)await context.close();
- await newPage();
+ const reloading=!!context;
+ // Keep the virtual authenticator across reload, as a real passkey provider would.
+ if(reloading)await page.reload();else await newPage();
  await page.getByRole('button',{name:'Connect wallet',exact:true}).click();
+ if(reloading)await page.getByRole('button',{name:'Unlock with passkey',exact:true}).click();
  for(let attempt=0;;attempt++){
   const sheet=page.getByRole('dialog',{name:'PQ wallet',exact:true});
-  await page.getByLabel('PQ wallet backup',{exact:true}).setInputFiles(walletPath);
+  await sheet.waitFor({state:'visible'});
+  if(!reloading||attempt>0)await page.getByLabel('PQ wallet backup',{exact:true}).setInputFiles(walletPath);
   const opened=await Promise.race([sheet.waitFor({state:'hidden',timeout:360000}).then(()=>true),sheet.getByRole('alert').waitFor({timeout:360000}).then(()=>false)]);
   if(opened)break;
   const message=await sheet.getByRole('alert').innerText();if(attempt>=2||!/timed out|timeout|network|fetch/i.test(message))throw Error('Wallet recovery stopped: '+message);
