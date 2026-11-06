@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "chainId": 1337,
+  "address": "0x06d0E6B437886D2f8663F84b9168d44e0D824D86",
+  "transactionHash": "0x827f531ad8806722332da400d903287af4d03e1683d076f232f410dc17c960f3",
+  "passkeyProtected": true,
+  "creationLabel": "ERC-8286 wallet"
+}

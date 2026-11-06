@@ -1,8 +1,11 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
-import {bytesToHex,hexToBytes,encodeFunctionData,isAddress,type Hex} from 'viem';
+import {bytesToHex,hexToBytes,encodeFunctionData,isAddress,keccak256,type Hex} from 'viem';
 import manifest from '../../public/atomic-deployment.json';
+import modular from '../../public/modular-deployment.json';
+import {modularPlan,modularNonce,predictModular} from '@/lib/atomic/modular';
+import {preparePublicKey} from '../../packages/pq-account/src/keys';
 import {Button,Card,Mono,Row,RowGroup,StatusLine,ToneIcon} from './primitives';
 import {Sheet} from './Sheet';
 import {ChevronIcon,CopyIcon,DownloadIcon,LockIcon,Spinner} from './icons';
@@ -21,6 +24,7 @@ export function AtomicApp(){
  const [wallets,setWallets]=useState<SavedWallet[]>([]),[active,setActive]=useState<WalletSecrets|null>(null),[walletOpen,setWalletOpen]=useState(false);
  const [tab,setTab]=useState<'deposit'|'withdraw'>('deposit'),[note,setNote]=useState<AtomicNote|null>(null),[text,setText]=useState(''),[recipient,setRecipient]=useState('');
  const [busy,setBusy]=useState(false),[status,setStatus]=useState(''),[error,setError]=useState(''),[receipt,setReceipt]=useState<Hex|null>(null),[progress,setProgress]=useState(false),[network,setNetwork]=useState('Connecting to Nym'),[balance,setBalance]=useState<{address:Hex;value:string}|null>(null);
+ const [walletSetup,setWalletSetup]=useState(false);
  const [pending,setPending]=useState<Hex|null>(null),[deployment,setDeployment]=useState<Hex|null>(null);
  useEffect(()=>{
  const transport=browserPageTransport();transport?.start();const off=transport?.subscribe(s=>setNetwork(s.phase==='ready'?'Nym ready':s.detail??'Connecting to Nym'));
@@ -52,7 +56,7 @@ export function AtomicApp(){
  setStatus('Unlocking wallet');const unlocked=await unlockWalletVault(w.vault);let secrets=unlocked.secrets;
  if(secrets.chainId!==1337||secrets.genesisHash!==manifest.genesisHash)throw Error('This wallet belongs to another network');
  if(!secrets.address){
- setStatus('Checking wallet deployment');setProgress(true);
+ setDeployment(null);setWalletSetup(true);setStatus('Checking ERC-8286 wallet deployment');setProgress(true);
  const response=await fetch('/api/atomic/wallet',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({publicKey:secrets.publicKey})});const result=await response.json();if(!response.ok)throw Error(result.error);
  secrets={...secrets,address:result.address};const vault=await sealWallet(secrets,unlocked.session);save(wallets.map(a=>a.vault.publicKey===secrets.publicKey?{...a,vault}:a));setDeployment(result.hash);setStatus('Wallet deployed');
  }
@@ -65,7 +69,7 @@ export function AtomicApp(){
  key.seed.fill(0);
  // Persist encrypted recovery material before spending gas on deployment.
  const saved:SavedWallet={name:`Wallet ${wallets.length+1}`,vault:await sealWallet(secrets,session)};save([...wallets,saved]);
- setStatus('Deploying your smart account');setProgress(true);
+ setDeployment(null);setWalletSetup(true);setStatus('Deploying your ERC-8286 wallet');setProgress(true);
  const response=await fetch('/api/atomic/wallet',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({publicKey:secrets.publicKey})});const result=await response.json();if(!response.ok)throw Error(result.error);
  secrets={...secrets,address:result.address};saved.vault=await sealWallet(secrets,session);save([...wallets,saved]);setActive(secrets);setDeployment(result.hash);setStatus('Wallet deployed');setWalletOpen(false);
  });
@@ -77,15 +81,19 @@ export function AtomicApp(){
  });
  const send=async(data:Hex,value=0n)=>{
  if(!active?.address)throw Error('Connect PQ wallet');if(pending)throw Error('Check the pending transaction first');
- // Name this read before awaiting it: otherwise a failure here reports the previous step's status.
- const nonce=BigInt(await read<Hex>('Reading the account nonce through anonymous RPC','eth_getTransactionCount',[active.address,'latest']));
- const key=createKey(hexToBytes(active.seed));const signed=signAtomic(atomicPlan(active.address,key,nonce,pin('paymaster'),pin('pool'),data,value),key);key.seed.fill(0);
+ setStatus('Preparing wallet authorization and sponsored pool frames');
+ const key=createKey(hexToBytes(active.seed));
+ const commitment=keccak256(bytesToHex(preparePublicKey(key.publicKey).subarray(1)));
+ const isModular=active.address.toLowerCase()===predictModular(modular.contracts.factory.address as Hex,modular.contracts.implementation.address as Hex,modular.contracts.validator.address as Hex,commitment).toLowerCase();
+ const nonce=isModular?await modularNonce({request:<T,>(method:string,params:unknown[]=[])=>read<T>('Reading the account nonce through anonymous RPC',method,params)},active.address,modular.contracts.validator.address as Hex):BigInt(await read<Hex>('Reading the account nonce through anonymous RPC','eth_getTransactionCount',[active.address,'latest']));
+ const plan=isModular?modularPlan(active.address,key,nonce,modular.contracts.validator.address as Hex,modular.contracts.paymaster.address as Hex,pin('pool'),data,value):atomicPlan(active.address,key,nonce,pin('paymaster'),pin('pool'),data,value);
+ const signed=signAtomic(plan,key);key.seed.fill(0);
  localStorage.setItem(JOURNAL,JSON.stringify({raw:signed.raw(),hash:signed.transactionHash()}));setPending(signed.raw());
  setStatus('Submitting through Nym to the alternative mempool');
  const result=await submitAtomic(rpc(),signed.raw(),setStatus);setReceipt(result.hash);setStatus('Confirmed');localStorage.removeItem(JOURNAL);setPending(null);
  };
  const transact=()=>run(async()=>{
- setProgress(true);setReceipt(null);setDeployment(null);
+ setWalletSetup(false);setProgress(true);setReceipt(null);setDeployment(null);
  if(tab==='deposit'){if(!note)throw Error('Save a deposit note first');await send(encodeFunctionData({abi:poolAbi,functionName:'deposit',args:[note.commitment]}),BigInt(manifest.denominationWei));setNote(null);}
  else{
  if(!isAddress(recipient))throw Error('Enter a valid recipient address');const imported=parseNote(text,pin('pool'),manifest.denominationWei);
@@ -99,7 +107,7 @@ export function AtomicApp(){
  });
  const discard=()=>{localStorage.removeItem(JOURNAL);setPending(null);setError('');setStatus('');setProgress(false);};
  const reconcile=()=>run(async()=>{
- if(!pending)return;setProgress(true);
+ if(!pending)return;setWalletSetup(false);setProgress(true);
  let saved:{hash?:Hex}={};try{saved=JSON.parse(localStorage.getItem(JOURNAL)??'{}') as {hash?:Hex};}catch{}
  try{const result=await submitAtomic(rpc(),pending,setStatus);setReceipt(result.hash);setPending(null);localStorage.removeItem(JOURNAL);setStatus('Confirmed');}
  catch(failure){
@@ -144,24 +152,25 @@ export function AtomicApp(){
  {error&&<p role="alert" className="mx-auto mt-5 max-w-xl text-sm text-state-bad">{error}</p>}
  <Sheet open={walletOpen} onClose={()=>setWalletOpen(false)} title="PQ wallets"><div className="space-y-4 p-5"><p>{wallets.length} {wallets.length===1?'wallet':'wallets'} found</p>
  {wallets.map((w,i)=><div key={w.vault.publicKey} className="rounded-2xl bg-sunk p-4"><div className="flex items-center gap-3"><input aria-label={`Wallet ${i+1} name`} value={w.name} onChange={e=>save(wallets.map((a,j)=>j===i?{...a,name:e.target.value.slice(0,40)}:a))} className="min-w-0 flex-1 rounded-md bg-transparent focus:outline-none focus:ring-2 focus:ring-ink/15"/><div className="flex shrink-0 items-center gap-1">{active?.publicKey===w.vault.publicKey?<><span className="px-1 text-xs text-ink-60">Connected</span><button type="button" className={rowAction} disabled={busy} onClick={()=>download('qraft-wallet.json',JSON.stringify(w.vault))} aria-label="Download the encrypted wallet backup" title="Download the encrypted wallet backup"><DownloadIcon width={17} height={17}/></button><button type="button" className={rowAction} disabled={busy} onClick={lock} aria-label="Lock the PQ wallet" title="Lock the PQ wallet"><LockIcon width={17} height={17}/></button></>:<button type="button" className={rowAction} disabled={busy} onClick={()=>connect(w)} aria-label={`Unlock ${w.name}`} title={`Unlock ${w.name}`}><ChevronIcon width={17} height={17} className="-rotate-90"/></button>}</div></div><div className="mt-2 flex items-center gap-2 text-xs text-ink-60"><span className="truncate">{w.vault.address??'Deployment pending'}</span>{w.vault.address&&<button aria-label="Copy address" onClick={()=>copy(w.vault.address!)}><CopyIcon className="size-4"/></button>}</div></div>)}
- <Button className="w-full" busy={busy} onClick={create}>Create {wallets.length?'another wallet':'PQ wallet'}</Button>
+ <Button className="w-full" busy={busy} onClick={create}>Create {wallets.length?'another ERC-8286 wallet':'ERC-8286 wallet'}</Button>
+ <p className="text-xs text-ink-60">ERC-8286 modular account · ML-DSA-44 authorization</p>
  <label className="block cursor-pointer text-center text-sm underline">Import wallet backup<input className="sr-only" type="file" onChange={e=>{const f=e.target.files?.[0];if(f)void importWallet(f);}}/></label>
  {active&&<Row label="ETH balance">{walletBalance===null?'—':`${walletBalance} ETH`}</Row>}
  {busy&&<p className="text-sm text-ink-60">{status}</p>}
  </div></Sheet>
- <Sheet open={progress} onClose={()=>setProgress(false)} title={deployment?'':tab==='deposit'?'Deposit transaction':'Withdrawal transaction'}><div className="space-y-5 p-5 pt-0">
+ <Sheet open={progress} onClose={()=>setProgress(false)} title={deployment?'':walletSetup?'Creating ERC-8286 wallet':tab==='deposit'?'Deposit transaction':'Withdrawal transaction'}><div className="space-y-5 p-5 pt-0">
  {deployment&&!busy?null:<div className="flex items-center gap-3" role="status">{busy&&<Spinner/>}<span>{status}</span></div>}
  {deployment?<><div className="flex flex-col items-center gap-3  text-center">
- <p className="text-3xl font-semibold tracking-[-0.03em]">Wallet deployed</p>
+ <p className="text-3xl font-semibold tracking-[-0.03em]">ERC-8286 wallet deployed</p>
  </div>
  <ol className="divide-y divide-rule text-sm">
  <li className="flex items-center gap-3 py-3"><ToneIcon tone="good"/>ML-DSA-44 key sealed with your passkey</li>
- <li className="flex items-center gap-3 py-3"><ToneIcon tone="good"/>Smart account deployed on chain 1337</li>
+ <li className="flex items-center gap-3 py-3"><ToneIcon tone="good"/>ERC-8286 account deployed on chain 1337</li>
  <li className="flex items-center gap-3 py-3"><ToneIcon tone="good"/>Deployment included through the alternative mempool</li>
  </ol>
  <RowGroup><Row label="Smart account">{active?.address?<span className="inline-flex items-center gap-2"><Mono>{truncateMiddle(active.address,10,8)}</Mono><button aria-label="Copy smart account address" title="Copy smart account address" onClick={()=>void copy(active.address!)} className="text-ink-60 transition-colors duration-[120ms] hover:text-ink"><CopyIcon className="size-4"/></button></span>:'—'}</Row>
  <Row label="Authorization">ML-DSA-44</Row></RowGroup>
- {explorer(deployment)}</>:<><ol className="divide-y divide-rule text-sm"><li className="py-3">1 · VERIFY · ML-DSA-44 wallet authorization</li><li className="py-3">2 · VERIFY · QRAFT paymaster approves gas</li><li className="py-3">3 · SENDER · Pool {tab==='deposit'?'deposit':'verifies proof and pays recipient'}</li></ol><p className="text-xs leading-relaxed text-ink-60">Submitted through Nym Anon-RPC to the alternative mempool. Nym hides your browser’s IP from the RPC provider; onchain addresses, amounts and transaction data remain public.</p>{receipt&&explorer(receipt)}</>}
+ {explorer(deployment)}</>:walletSetup?<p className="text-xs text-ink-60">ERC-8286 modular account · ML-DSA-44 authorization</p>:<><ol className="divide-y divide-rule text-sm"><li className="py-3">1 · VERIFY · ML-DSA-44 wallet authorization</li><li className="py-3">2 · VERIFY · QRAFT paymaster approves gas</li><li className="py-3">3 · SENDER · Pool {tab==='deposit'?'deposit':'verifies proof and pays recipient'}</li></ol><p className="text-xs leading-relaxed text-ink-60">Submitted through Nym Anon-RPC to the alternative mempool. Nym hides your browser’s IP from the RPC provider; onchain addresses, amounts and transaction data remain public.</p>{receipt&&explorer(receipt)}</>}
  {error&&<p className="text-sm text-state-bad">{error}</p>}
  </div></Sheet>
  </main>;
