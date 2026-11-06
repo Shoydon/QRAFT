@@ -2,6 +2,7 @@
 
 import { TRANSPORT } from '@/config/transport';
 import type { ChainTransport, TransportStatus } from './types';
+import type { WorkerInit } from '@anon-rpc/browser-harness';
 
 /**
  * Anon-RPC transport.
@@ -45,7 +46,17 @@ const missingUrlDetail = (missing: string[]) =>
   `Anonymous reads are not configured. Set ${missing.join(' and ')} in .env.local, then reload. ` +
   `Chain reads stay off until then — this app does not fall back to a direct connection.`;
 
-export function createAnonRpcTransport(): ChainTransport {
+type WorkerFactory = (init: WorkerInit) => AnonWorker;
+interface TransportOptions {
+  loadWorker?: () => Promise<WorkerFactory>;
+  bootTimeoutMs?: number;
+}
+async function loadWorker(): Promise<WorkerFactory> {
+  const { AnonRpcWorker } = await import('@anon-rpc/browser-harness');
+  return init => new AnonRpcWorker(init) as unknown as AnonWorker;
+}
+
+export function createAnonRpcTransport(options: TransportOptions = {}): ChainTransport {
   let status: TransportStatus = {
     phase: 'idle',
     network: TRANSPORT.worker.label,
@@ -60,6 +71,7 @@ export function createAnonRpcTransport(): ChainTransport {
   let booting: Promise<AnonWorker> | null = null;
   let generation = 0;
   let requestId = 0;
+  let bootController: AbortController | null = null;
 
   function set(next: Partial<TransportStatus>) {
     status = { ...status, ...next };
@@ -109,48 +121,46 @@ export function createAnonRpcTransport(): ChainTransport {
 
     set({ phase: 'starting', detail: null, code: null });
 
-    // Imported lazily: the harness spawns a sandboxed iframe and must not be
-    // part of the server bundle or the first paint.
-    const { AnonRpcWorker, RpcError } = await import('@anon-rpc/browser-harness');
-
-    const instance = new AnonRpcWorker({
-      address: TRANSPORT.worker.specifier,
-      // The config schema belongs to the network; the harness never interprets
-      // it. tor-js reads `gateways`.
-      config: TRANSPORT.gateways.length ? { gateways: TRANSPORT.gateways } : undefined,
-      preExisting: { rpcProvider: bootstrapProvider(TRANSPORT.bootstrapRpcUrl as string) },
-    }) as unknown as AnonWorker;
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const deadline = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new BootTimeout()),
-        BOOT_TIMEOUT_MS,
-      );
+    const controller = new AbortController();
+    bootController = controller;
+    let instance: AnonWorker | null = null;
+    const timeoutMs = options.bootTimeoutMs ?? BOOT_TIMEOUT_MS;
+    const timer = setTimeout(() => controller.abort(new BootTimeout(timeoutMs)), timeoutMs);
+    let rejectAbort: () => void = () => {};
+    const aborted = new Promise<never>((_, reject) => {
+      rejectAbort = () => {
+        try { instance?.close(); } catch { /* already closed */ }
+        reject(controller.signal.reason);
+      };
+      controller.signal.addEventListener('abort', rejectAbort, { once: true });
     });
 
     try {
-      await Promise.race([instance.ready, deadline]);
+      // A cancelled import must never construct a second mixnet client. This
+      // matters for React Strict Mode and for reconnecting during startup.
+      const createWorker = await Promise.race([(options.loadWorker ?? loadWorker)(), aborted]);
       if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
-      clearTimeout(timer);
-    } catch (error) {
-      clearTimeout(timer);
-      const code = error instanceof RpcError ? String(error.code ?? '') : '';
-      if (epoch === generation) set({
-        phase: 'failed',
-        code: code || null,
-        detail: describeBootFailure(code, error),
+      instance = createWorker({
+        address: TRANSPORT.worker.specifier,
+        config: TRANSPORT.gateways.length ? { gateways: TRANSPORT.gateways } : undefined,
+        preExisting: { rpcProvider: bootstrapProvider(TRANSPORT.bootstrapRpcUrl as string) },
       });
-      try {
-        instance.close();
-      } catch {
-        /* already torn down */
+      await Promise.race([instance.ready, aborted]);
+      if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
+      set({ phase: 'ready', detail: null, code: null });
+      return instance;
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        try { instance?.close(); } catch { /* already closed */ }
       }
+      const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : '';
+      if (epoch === generation) set({ phase: 'failed', code: code || null, detail: describeBootFailure(code, error) });
       throw error;
-    } finally { clearTimeout(timer); }
-
-    set({ phase: 'ready', detail: null, code: null });
-    return instance;
+    } finally {
+      clearTimeout(timer);
+      controller.signal.removeEventListener('abort', rejectAbort);
+      if (bootController === controller) bootController = null;
+    }
   }
 
   return {
@@ -167,6 +177,10 @@ export function createAnonRpcTransport(): ChainTransport {
       const epoch = generation;
       booting = boot(epoch).then(
         (w) => {
+          if (epoch !== generation) {
+            w.close();
+            throw new DOMException('Transport closed', 'AbortError');
+          }
           worker = w;
           return w;
         },
@@ -182,6 +196,7 @@ export function createAnonRpcTransport(): ChainTransport {
 
     stop() {
       generation += 1;
+      bootController?.abort(new DOMException('Transport closed', 'AbortError'));
       worker?.close();
       worker = null;
       booting = null;
@@ -192,7 +207,9 @@ export function createAnonRpcTransport(): ChainTransport {
       if (!booting) this.start();
       if (!booting) throw new Error(status.detail ?? 'Anonymous reads are unavailable.');
 
+      const epoch = generation;
       const w = await booting;
+      if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       const id = ++requestId;
       const started = performance.now();
       const res = await w.fetch(TRANSPORT.readRpcUrl as string, {
@@ -201,8 +218,10 @@ export function createAnonRpcTransport(): ChainTransport {
         body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
         signal: AbortSignal.timeout(120_000),
       });
+      if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       if (!res.ok) throw new Error(`Read failed: the RPC endpoint returned HTTP ${res.status}.`);
       const json = (await res.json()) as { jsonrpc?: string; id?: number; result?: T; error?: { message?: string } };
+      if (epoch !== generation) throw new DOMException('Transport closed', 'AbortError');
       if (json.jsonrpc !== '2.0' || json.id !== id || (!Object.hasOwn(json, 'result') && !json.error)) throw new Error('Invalid anonymous RPC response');
       set({
         lastLatencyMs: Math.round(performance.now() - started),
@@ -216,20 +235,18 @@ export function createAnonRpcTransport(): ChainTransport {
 
 /** Distinguishes "took too long" from "the worker said no". */
 class BootTimeout extends Error {
-  constructor() {
+  constructor(readonly timeoutMs: number) {
     super('boot-timeout');
   }
 }
 
 function describeBootFailure(code: string, error: unknown): string {
-  if (error instanceof BootTimeout)
-    return (
-      `The ${TRANSPORT.worker.label} network did not become usable within ` +
-      `${Math.round(BOOT_TIMEOUT_MS / 1000)} seconds. Its client started, but no gateway would ` +
-      `relay the connection — the gateway in NEXT_PUBLIC_ANON_RPC_GATEWAYS may be down, at ` +
-      `capacity, or have rotated its key. Chain reads stay off; this app does not fall back to a ` +
-      `direct connection.`
-    );
+  if (error instanceof BootTimeout) {
+    const recovery = TRANSPORT.worker.needsGateways
+      ? 'Check the configured Tor KPS gateways, then reconnect.'
+      : 'Reconnect the anonymous network and retry. Nym does not use the Tor KPS gateway setting.';
+    return `The ${TRANSPORT.worker.label} network did not become ready within ${Math.round(error.timeoutMs / 1000)} seconds. ${recovery} Chain reads remain off; there is no direct fallback.`;
+  }
 
   if (code === 'unsupported-chain')
     return 'The anonymizing network does not support this chain. Chain reads stay off.';
