@@ -75,7 +75,7 @@ If Nym reads time out, open the read-path footer, reconnect anonymous reads, and
 - **Privacy:** signing seeds and note witnesses stay in the browser. Default chain reads use Nym. The bootstrap provider sees the worker lookup, and the helper sees public account/proof data and uses direct RPC. Timing, gas funding, pool size, and recipient reuse can link activity. No third-party analytics are configured.
 - **Security:** ML-DSA authorization, deployment pins, local proof verification, and recoverable transaction journals protect the application flow. The proof is experimental; external consensus and transport are outside its post-quantum claim. Keep both backups.
 
-For exact EF endpoints, deployment prerequisites, and implemented versus pending features, see [EF track status](docs/pq/ef-track.md). The active pool is on chain 8141; the EF alternative mempool target is chain 1337. A paymaster and sidecar integration are still pending.
+For exact EF endpoints, deployment prerequisites, and implemented versus pending features, see [EF track status](docs/pq/ef-track.md). The historical pool is on chain 8141; the EF alternative mempool target is chain 1337. A paymaster and sidecar integration are still pending.
 
 ## Source and license information
 
