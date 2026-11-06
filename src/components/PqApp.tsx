@@ -38,7 +38,6 @@ import {
 import { Sheet } from "./Sheet";
 import { WalletSetup, walletSetupStep, WALLET_SETUP_STEPS } from "./WalletSetup";
 import { WalletPasskeyController, type WalletConnection } from "./WalletPasskeyController";
-import { StepRail } from "./StepRail";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -57,8 +56,6 @@ const IDLE: TransportStatus = {
   lastLatencyMs: null,
   requestCount: 0,
 };
-const STEPS = ["Amount", "Note", "Confirm", "Receipt"] as const;
-const WITHDRAW_STEPS = ["Note", "Recipient", "Prove", "Receipt"] as const;
 type Tab = "deposit" | "withdraw";
 type DepositStage =
   | "amount"
@@ -661,21 +658,6 @@ export function PqApp() {
   const depositInsufficient =
     balance !== null && balance < BigInt(selectedPool.denominationWei);
   const recipientCheck = checkRecipient(recipient);
-  const depositStep =
-    depositStage === "amount"
-      ? 0
-      : depositStage === "note"
-        ? 1
-        : depositStage === "receipt"
-          ? 3
-          : 2;
-  const withdrawStep = ["import", "checking", "status"].includes(withdrawStage)
-    ? 0
-    : withdrawStage === "recipient"
-      ? 1
-      : withdrawStage === "receipt"
-        ? 3
-        : 2;
 
   function renderWalletGate() {
     return !accountReady ? (
@@ -868,9 +850,6 @@ export function PqApp() {
                 inert={tab !== "deposit"}
               >
                 <Card as="section" className="overflow-hidden">
-                  <div className="border-b border-rule px-5 py-4 sm:px-6">
-                    <StepRail steps={STEPS} current={depositStep} />
-                  </div>
                   <div className="p-5 sm:p-6">
                     {depositStage === "amount" ? (
                       <div className="space-y-5">
@@ -1126,9 +1105,6 @@ export function PqApp() {
                 inert={tab !== "withdraw"}
               >
                 <Card as="section" className="overflow-hidden">
-                  <div className="border-b border-rule px-5 py-4 sm:px-6">
-                    <StepRail steps={WITHDRAW_STEPS} current={withdrawStep} />
-                  </div>
                   <div className="p-5 sm:p-6">
                     {withdrawStage === "import" ? (
                       <div className="space-y-5">
