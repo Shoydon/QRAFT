@@ -43,6 +43,10 @@ The proof account pins the exact frame shape, fees, sponsor and gas budgets. Its
 
 See [the contract inventory](docs/pq/relayerless-contracts.md) for deployed addresses and responsibilities.
 
+## Relayerless verification
+
+The [native transaction run](docs/pq/private-pool-direct-live.json) confirms account setup without charging the user, deposit, private send and withdrawal through the alternative mempool. All three payment frames succeeded with the pinned paymaster paying gas. Modified nonce, fee, execution-gas, state-gas and sponsor fields were rejected in native simulation. The [full browser run through real Nym](docs/pq/private-wallet-e2e-nym.json) also passed: two deposits combined into one balance, private send with lost-acknowledgement recovery, restore after clearing browser storage with the original passkey, and withdrawal with exact payout and change.
+
 ## Earlier verified flow (before relayer removal)
 
 Live chain-1337 runs against the real sidecar, [full receipts here](docs/pq/private-pool-live.json). Each action landed three successful frames with gas paid by the paymaster:

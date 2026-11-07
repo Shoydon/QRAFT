@@ -25,7 +25,7 @@ The paymaster budget covers gas. The bootstrap budget separately pays 0.012 ETH 
 
 ## Verification status
 
-Contract compilation, 93 unit tests, build and local real-proof protocol tests pass. Real Nym initialization and pinned-contract reads pass. Full updated native and browser payment tests are in progress; earlier carrier/relay receipts do not validate this deployment.
+Contract compilation, 93 unit tests, build and local real-proof protocol tests pass. Real Nym initialization and pinned-contract reads pass. Updated native account setup, deposit, private send and withdrawal all confirmed through the alternative mempool; all payment frames succeeded and gas was sponsored. Native tests rejected modified nonce, fee, gas, state-gas and sponsor fields. See `private-pool-direct-live.json`. The full browser flow through real Nym also passed, including unified balance, a lost submission acknowledgement, reload reconciliation, recovery after clearing storage with the original passkey, and exact withdrawal payout/change. See `private-wallet-e2e-nym.json`. External payout verification uses an independent direct RPC read. Earlier carrier/relay receipts do not validate this deployment.
 
 ## Limits
 

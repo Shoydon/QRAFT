@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "pool": "0x8A15B95e7174409F38b977f99a2a88Bb5dd8ce70",
+  "transport": "Real Nym reads, browser-only account setup and all native payment submissions; no application relayer",
+  "events": [
+    "alice created, encrypted recovery verified",
+    "bob created offline, encrypted recovery verified",
+    "Bob offline",
+    "External faucet funded public account; setup is sponsored",
+    "Add ETH 0.00002 confirmed",
+    "Add ETH 0.00002 confirmed",
+    "Two deposits displayed as one 0.00004 ETH balance",
+    "Private payment after lost response/reload confirmed",
+    "Sender change is exactly 0.00001 ETH",
+    "Cleared browser storage restores payment and receiving identity using original passkey",
+    "Withdraw 0.00001 confirmed"
+  ],
+  "withdrawalWei": "10000000000000",
+  "receiverRemainingEth": "0.00002"
+}

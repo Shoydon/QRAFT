@@ -12,7 +12,7 @@ The demo slide gives a four-step recording guide. No investor ask or commercial 
 
 QRAFT is a private ETH payment protocol using ERC-8286 PQ wallets and EIP-8141 transactions. ETH is held in a shared pool; encrypted notes represent private funds. Devices create spending proofs locally and decrypt incoming notes. The pool checks proofs and nullifiers before recording payment and change outputs or releasing a public withdrawal.
 
-Slide 2 diagrams these paths. Wallet signing and receiving encryption use PQ algorithms; Groth16 proofs do not. The three-minute edit is intended for Aditya’s own voiceover.
+Slide 6 diagrams these paths. Wallet signing and receiving encryption use PQ algorithms; Groth16 proofs do not. The three-minute edit is intended for Aditya’s own voiceover.
 
 ## Slide order and claim sources
 
@@ -24,7 +24,7 @@ Slide 2 diagrams these paths. Wallet signing and receiving encryption use PQ alg
 6. Architecture: local proof, direct Anon RPC submission, pool verification and recipient discovery.
 7. Results and limits: test evidence, cryptographic and network boundaries.
 
-QRAFT claims are grounded in `src/lib/private-wallet/`, `src/config/brand.ts`, `docs/pq/private-wallet-e2e.json`, `docs/pq/private-pool-live.json` and `docs/pq/private-wallet-review.md`.
+QRAFT claims are grounded in `src/lib/private-wallet/`, `src/config/brand.ts`, `docs/pq/private-wallet-e2e-nym.json`, `docs/pq/private-pool-direct-live.json` and `docs/pq/private-wallet-review.md`.
 
 Comparison sources:
 - [Classic deposit, withdrawal and optional encrypted Note Account](https://github.com/tornadocash-community/docs/blob/en/tornado-cash-classic/deposit-withdraw.md)
