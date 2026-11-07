@@ -4,27 +4,28 @@ A 7-slide, 16:9 product-demo draft for a three-minute technical hackathon video.
 
 - `qraft-demo.pdf`: presentation PDF.
 - `qraft-demo.html`: editable source, based on the pitch-deck-builder template.
+- `qraft-protocol-flow.png`: standalone protocol diagram.
 - `narration.md`: 180-second narration, shot list and recording preparation.
 
-The demo slide gives a four-step recording guide. No investor ask or commercial pricing is implied.
+The demo slide is a centered “Demo” handoff; the four-step recording guide stays in narration.md. No investor ask or commercial pricing is implied.
 
 ## Protocol description
 
 QRAFT is a private ETH payment protocol using ERC-8286 PQ wallets and EIP-8141 transactions. ETH is held in a shared pool; encrypted notes represent private funds. Devices create spending proofs locally and decrypt incoming notes. The pool checks proofs and nullifiers before recording payment and change outputs or releasing a public withdrawal.
 
-Slide 6 diagrams these paths. Wallet signing and receiving encryption use PQ algorithms; Groth16 proofs do not. The three-minute edit is intended for Aditya’s own voiceover.
+Slide 7 diagrams these paths. Wallet signing and receiving encryption use PQ algorithms; Groth16 proofs do not. The three-minute edit is intended for Aditya’s own voiceover.
 
 ## Slide order and claim sources
 
 1. QRAFT: identity and unified private balance.
 2. Tornado Cash Classic limitations: fixed amounts and notes, public withdrawals, separate network privacy, no bundled PQ wallet, and gas/relayer handling.
 3. QRAFT solutions: unified balance, encrypted payments, Anon RPC, PQ wallets, and sponsored EIP-8141 execution.
-4. Comparison: Tornado Cash Classic only, with Nova’s overlapping capabilities disclosed.
-5. Demo: app handoff for deposit, transfer, receipt and withdrawal.
-6. Architecture: local proof, direct Anon RPC submission, pool verification and recipient discovery.
-7. Results and limits: test evidence, cryptographic and network boundaries.
+4. Demo: app handoff for deposit, transfer, receipt and withdrawal.
+5. Keys: two PQ keypairs, the spending secret, passkey protection and receiving-address contents.
+6. Private payment flow: adding ETH, selecting notes, encrypted receipt, and returning private change.
+7. Detailed protocol diagram: factory setup, deposit, private-send frames, settlement, receipt and withdrawal.
 
-QRAFT claims are grounded in `src/lib/private-wallet/`, `src/config/brand.ts`, `docs/pq/private-wallet-e2e-nym.json`, `docs/pq/private-pool-direct-live.json` and `docs/pq/private-wallet-review.md`.
+QRAFT claims are grounded in `src/lib/private-wallet/crypto.ts`, `src/lib/private-wallet/discovery.ts`, `src/lib/private-wallet/model.ts`, `src/config/brand.ts`, `docs/pq/private-wallet-e2e-nym.json`, `docs/pq/private-pool-direct-live.json` and `docs/pq/private-wallet-review.md`.
 
 Comparison sources:
 - [Classic contract: denominations, public recipients and optional relayer fees](https://github.com/tornadocash/tornado-core/blob/master/contracts/Tornado.sol)
