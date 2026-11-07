@@ -1,3 +1,5 @@
+> Current architecture update: backend payment and provisioning relayers have been removed from the active app. See [relayerless contracts and verification](relayerless-contracts.md). The earlier implementation details below are historical where they describe HTTPS relay submission or password recovery.
+
 # Qraft private wallet
 
 The application at `/` now uses a native ETH join/split pool. Wallets discover encrypted incoming payments, display one private balance, select up to four inputs, and return private change. Users manage one encrypted recovery file instead of individual notes.

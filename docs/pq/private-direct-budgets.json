@@ -1,0 +1,12 @@
+{
+  "hash": "0x7eb5c89fb3c460fc2b4e383580177af73aac4f7c492d9133e82c9ca2a36dce45",
+  "type": "0x6",
+  "paymaster": {
+    "address": "0x9751B7f9F83B3B396dB4b4520961D747e9362D92",
+    "balanceWei": "100500000000000000000"
+  },
+  "bootstrap": {
+    "address": "0x459ACe42519Fd2D8b4E3aFE843aC1f306fDcd85C",
+    "balanceWei": "120240000000000000000"
+  }
+}

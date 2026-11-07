@@ -1,19 +1,18 @@
-# QRAFT: three-minute demo script
+# QRAFT: three-minute presentation and demo
 
-First draft. Product-launch deck adapted for a technical hackathon demo. Runtime: 180 seconds. Slides 5–7 are visual anchors for recorded application footage, not a claim that the entire live transaction flow completes in that time.
+Seven slides. Aditya records the voiceover. Slide 5 is a handoff to the actual application; the four demo steps are not four extra slides. Confirmation waits must be visibly marked when shortened.
 
-| Time | Slide | Voiceover | Recording cue |
+| Time | Slide | Voiceover | Visual cue |
 |---|---|---|---|
-| 0:00–0:10 | 1 · QRAFT | “QRAFT stands for Quantum-Resistant Anonymous Frame Transactions. It combines an ERC-8286 PQ wallet with private ETH payments and native EIP-8141 execution.” | Centered title and full form. |
-| 0:10–0:22 | 2 · Two balances | “Your public smart account and your private balance are different. Public ETH sits at your account address. Depositing creates encrypted notes in a pool, which your device discovers and adds together.” | Briefly show the two-balance diagram. |
-| 0:22–0:37 | 3 · One balance | “Users see one available balance. Underneath, QRAFT selects unspent notes, proves ownership, and returns change automatically. Here, two separate deposits appear as one balance of 0.00004 ETH.” | Show note diagram, then the actual confirmed balance. |
-| 0:37–0:55 | 4 · Keys | “One passkey unlocks the ERC-8286 PQ wallet. ML-DSA signs account transactions, ML-KEM protects incoming notes, and a separate spending secret proves ownership. These derive from one master secret. The encrypted backup needs the original passkey.” | Show the three key purposes. Keep passkey prompt and backup file contents out of the recording. |
-| 0:55–1:20 | 5 · Deposit | “In the top-right dialog, I can see my public address and fund the account. I then deposit 0.00002 ETH twice. QRAFT prepares the account, generates the proof locally, and submits the deposit. Once confirmed, both notes contribute to my private balance.” | Actual app: public address/balance → Add ETH → amount → review → progress → confirmed total. Compress confirmation waits with a visible ‘Time compressed’ caption. |
-| 1:20–1:50 | 6 · Send | “Bob shares his QRAFT receiving address. It contains public receiving information, not his secrets. I send 0.00003 ETH. The wallet combines my two inputs, creates Bob’s encrypted payment, and returns 0.00001 ETH to me as private change. I never select or export individual notes.” | Actual app: Bob Receive → copy full address → Alice Send → review 0.00003 → progress → Alice 0.00001. Show real confirmation. |
-| 1:50–2:20 | 7 · Receive and withdraw | “Bob’s device decrypts the incoming note and shows 0.00003 ETH. He can keep paying privately or withdraw to a normal Ethereum address. Withdrawing 0.00001 leaves 0.00002 in the private balance. The withdrawal address and amount are public.” | Actual Bob session: receiving balance → Withdraw → public address → confirmation → 0.00002 remaining. Show a verified explorer receipt briefly. |
-| 2:20–2:35 | 8 · Native frames | “Each application payment uses an EIP-8141 transaction: authorization, gas sponsorship, then pool settlement. The pool checks the proof and rejects reused nullifiers. Private sends use a shared carrier account.” | Three-frame diagram; optionally replace its final seconds with a successful type-6 receipt. |
-| 2:35–2:50 | 9 · Evidence and limits | “Ninety tests and a live end-to-end flow passed. The current Groth16 proof is conventional cryptography. Nym protects reads and deposits, while the HTTPS relay still sees network metadata. This is a prototype, not an audited production system.” | Evidence and boundaries slide. Do not crop away qualifications. |
-| 2:50–3:00 | 10 · Close | “QRAFT brings a unified private balance, encrypted receiving, and local proofs to ERC-8286 PQ accounts. The implementation and test evidence are available in the repository.” | Repository URL and product identity. |
+| 0:00–0:10 | 1 · QRAFT | QRAFT stands for Quantum-Resistant Anonymous Frame Transactions. It combines a unified private ETH balance with ERC-8286 PQ wallets and EIP-8141 transactions. | Title and full form. |
+| 0:10–0:25 | 2 · Problems | We address sender-address exposure, quantum-vulnerable signatures, IP exposure to RPC providers, execution and gas complexity, and fragmented private notes. QRAFT combines a shared proof-authorized account, PQ wallets, Anon RPC, an alternative mempool and one unified private balance. | Five problem-to-component rows. |
+| 0:25–0:40 | 3 · Solution | QRAFT discovers incoming payments and shows one private balance. It selects notes automatically, sends exact amounts and returns private change. A passkey unlocks the ERC-8286 PQ wallet; signing and receiving encryption use post-quantum algorithms. | Four matching solution cards. |
+| 0:40–0:55 | 4 · Comparison | Compared with Tornado Cash Classic’s fixed-denomination deposit and withdrawal flow, QRAFT supports exact private payments and automatic input selection. Nova also supports shielded transfers. QRAFT combines this payment experience with PQ account authorization and native frame transactions. | Comparison table; retain the Classic/Nova qualification. |
+| 0:55–1:20 | 5 · Demo: deposit | Here is Alice’s public ERC-8286 PQ account. Funding this address is separate from depositing into the private pool. We deposit 0.00002 ETH twice. After confirmation, Alice sees a single private balance of 0.00004 ETH. | Switch to app: public address and balance → two deposits → confirmed private balance. |
+| 1:20–1:50 | 5 · Demo: send | Bob shares his receiving address. Alice sends 0.00003 ETH. QRAFT selects both deposit notes and creates a private payment for Bob plus a change note for Alice. Alice retains 0.00001 ETH. Bob opens his ERC-8286 PQ wallet and sees 0.00003 ETH. | Bob Receive → Alice Send → actual confirmations and both balances. |
+| 1:50–2:15 | 5 · Demo: withdraw | Bob can continue paying privately or withdraw to a public address. He withdraws 0.00001 ETH. Once confirmed, the public recipient receives the funds and Bob retains 0.00002 ETH privately. The withdrawal amount and destination are public. | Bob Withdraw → receipt → private remainder. |
+| 2:15–2:40 | 6 · Architecture | That payment starts on the sender’s device: select notes, encrypt outputs and generate a proof. The browser submits the EIP-8141 transaction through Nym Anon RPC with account authorization, sponsorship and pool execution. The pool checks the proof and prevents double spending. The recipient decrypts the incoming note and updates their balance. | Follow the diagram. Explain public deposit and withdrawal branches briefly. |
+| 2:40–3:00 | 7 · Results and limits | Ninety-three tests and local real-proof tests passed. The new relayerless live flow is being verified. Wallet signatures and receiving encryption use PQ algorithms, but Groth16 proofs do not. There is no application relayer. Network correlation remains possible, and full Nym end-to-end validation is being tested. The repository contains the implementation and test evidence. | Results, limitations and repository URL. |
 
 ## Recording preparation
 
@@ -25,6 +24,7 @@ First draft. Product-launch deck adapted for a technical hackathon demo. Runtime
 6. If adding recovery footage, record it separately. The real recovery quarantine lasts five minutes of chain time and cannot fit into this three-minute cut unedited.
 7. Test the actual Nym connection before recording. Existing E2E evidence uses direct test reads; never describe that test as full-Nym validation. If network conditions prevent a fresh take, label prior recorded footage accurately.
 
-## What remains before the video
 
-The deck and voiceover draft are ready for review. Actual demo footage, voice recording and video editing are not included. The narration is written for a three-minute cut; rehearse once and trim pauses to match the timecodes. No founder, traction, launch-date, pricing or security-audit claims have been invented.
+## Delivery status
+
+Deck and narration are ready. Actual application footage and Aditya’s voiceover still need recording and editing. This PDF is a presentation, not a completed video.

@@ -19,11 +19,13 @@ The pool is a four-input, two-output join/split circuit over a depth-20 Poseidon
 
 Every wallet action is one native EIP-8141 transaction with three frames:
 
-1. Account VERIFY frame checks the ML-DSA-44 signature over the native transaction digest.
+1. Account VERIFY checks an ML-DSA-44 signature for public deposits, or the exact pool proof for private sends and withdrawals.
 2. Paymaster VERIFY frame checks the exact pool action and approves gas payment.
 3. SENDER frame calls the pool, which verifies the proof, spends nullifiers and pays out atomically.
 
-Public deposits use the user's own account. Private sends and withdrawals are submitted by a shared relay account whose identity is independent of the depositor. No per-payment contract is deployed.
+Public deposits use the user's own account. Private sends and withdrawals name a shared proof-authorized contract as the sender, without a shared signing key. The browser builds and submits every payment through Nym Anon RPC. No per-payment contract is deployed and no application relayer is used.
+
+A separate onchain bootstrap account checks the user's PQ signature and deploys their public account. QRAFT's bootstrap budget pays the 0.012 ETH account stake, and the paymaster pays setup gas. User ETH is not debited for setup. No per-user operator transaction is needed.
 
 The browser holds wallet seeds encrypted with AES-GCM under a WebAuthn PRF-derived key, and a reload stays locked until explicit unlock. Signing, spending and receiving keys derive from one master secret, so there is no separate viewing key to back up.
 
@@ -33,9 +35,15 @@ The browser holds wallet seeds encrypted with AES-GCM under a WebAuthn PRF-deriv
 - Alternative mempool: `https://altmempool.forshtat.com/rpc`
 - Explorer: https://explorer.altmempool.wtf/
 
-Chain reads and the user's public deposits use Nym Anon-RPC, which hides the browser IP from the destination RPC and has no direct fallback on failure. Private sends and withdrawals reach a shared HTTPS relay, which **can see the requesting IP and timing** and executes `eth_call` against the real pool before signing native frames. Onchain addresses, values and transaction data remain public on both paths, and ML-KEM confidentiality does not prevent traffic correlation. Worker discovery is a direct bootstrap request. Infrastructure bootstrap may use the execution endpoint; wallet transactions do not fall back to it.
+Chain reads, account setup, deposits, private sends and withdrawals use Nym Anon RPC. There is no application HTTPS relayer and no direct-network fallback. The browser retains the exact raw transaction before submitting it and reconciles its canonical settlement before retrying. Public-balance queries occur only for public-account views and deposits, not automatically before private sends.
 
-## Verified flow
+Nym hides the browser IP from the destination RPC; this does not establish protection from every traffic-correlation observer. Worker discovery is a direct bootstrap request, and the separately provided faucet is a public funding service. Public deposit and withdrawal amounts and addresses remain visible.
+
+The proof account pins the exact frame shape, fees, sponsor and gas budgets. Its nonce key is the action digest with sequence zero, allowing independent private operations without a server nonce allocator. The bootstrap uses a signed per-key nonce sequence, permitting recovery after a failed setup. Pool expiry is enforced during execution because the deployed node has no supported expiry-verifier predeploy. An expired or otherwise failing operation can waste sponsored gas; sponsorship is finite and not abuse-proof.
+
+See [the contract inventory](docs/pq/relayerless-contracts.md) for deployed addresses and responsibilities.
+
+## Earlier verified flow (before relayer removal)
 
 Live chain-1337 runs against the real sidecar, [full receipts here](docs/pq/private-pool-live.json). Each action landed three successful frames with gas paid by the paymaster:
 
@@ -82,7 +90,7 @@ Deployment targets EF devnet 1337 only, and uses the mode-0600 operator file und
 
 ```sh
 bun scripts/deploy-private-pool.ts
-bun scripts/fund-private-relay.ts --execution-bootstrap
+bun scripts/setup-private-direct.ts --execution-bootstrap
 ```
 
 Live scripts are explicitly state-changing and use ignored, private journals. Do not delete a pending signed journal or create a different nonce because confirmation is slow.

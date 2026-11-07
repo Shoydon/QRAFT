@@ -36,8 +36,17 @@ contract PrivatePool {
  }
  function transact(Action calldata a,uint256[8] calldata proof) external payable {
   require(entered==1,"reentrancy");entered=2;
-  require(a.kind<=2&&msg.value==a.deposit,"operation/value");
+  require(msg.value==a.deposit,"value");
   require(block.timestamp<=a.expiry&&a.expiry<=block.timestamp+300,"expiry");
+  bytes32 id=validateAction(a,proof);
+  for(uint256 i;i<4;i++)if(a.nullifiers[i]!=0){spent[a.nullifiers[i]]=true;emit Spent(a.nullifiers[i]);}
+  for(uint256 i;i<2;i++)if(a.outputs[i]!=0)_insert(a.outputs[i],a.envelopes[i]);
+  if(a.withdrawal>0){(bool ok,)=payable(a.recipient).call{value:a.withdrawal}("");require(ok,"payout");}
+  emit Settled(id,a.kind,a.deposit,a.withdrawal,a.recipient);entered=1;
+ }
+ /// Read-only admission check shared by proof authorization and settlement.
+ function validateAction(Action calldata a,uint256[8] calldata proof) public view returns(bytes32 id) {
+  require(a.kind<=2,"operation");
   require(roots[a.root],"root");
   if(a.kind==0)require(a.deposit>0&&a.withdrawal==0&&a.recipient==address(0),"shield");
   if(a.kind==1)require(a.deposit==0&&a.withdrawal==0&&a.recipient==address(0),"transfer");
@@ -56,13 +65,10 @@ contract PrivatePool {
   }
   require(a.outputs[0]==0||a.outputs[0]!=a.outputs[1],"duplicate output");
   require(nextIndex+count<=1<<DEPTH,"capacity");
-  bytes32 id=actionDigest(a);uint256 digest=uint256(id);
+  id=actionDigest(a);uint256 digest=uint256(id);
   uint256[14] memory signals=[a.root,domain,uint256(a.kind),uint256(a.deposit),uint256(a.withdrawal),uint256(uint160(a.recipient)),a.nullifiers[0],a.nullifiers[1],a.nullifiers[2],a.nullifiers[3],a.outputs[0],a.outputs[1],digest>>128,uint256(uint128(digest))];
   require(verifier.verifyProof([proof[0],proof[1]],[[proof[2],proof[3]],[proof[4],proof[5]]],[proof[6],proof[7]],signals),"proof");
-  for(uint256 i;i<4;i++)if(a.nullifiers[i]!=0){spent[a.nullifiers[i]]=true;emit Spent(a.nullifiers[i]);}
-  for(uint256 i;i<2;i++)if(a.outputs[i]!=0)_insert(a.outputs[i],a.envelopes[i]);
-  if(a.withdrawal>0){(bool ok,)=payable(a.recipient).call{value:a.withdrawal}("");require(ok,"payout");}
-  emit Settled(id,a.kind,a.deposit,a.withdrawal,a.recipient);entered=1;
+
  }
  function _insert(uint256 cm,bytes calldata envelope) private {
   commitments[cm]=true;uint256 index=nextIndex++;uint256 cursor=index;uint256 node=cm;

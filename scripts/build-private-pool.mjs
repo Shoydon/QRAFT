@@ -30,7 +30,7 @@ if(!previous||previous.r1csHash!==r1csHash){
 const verificationKey=await zKey.exportVerificationKey(out+'/join-split.zkey');
 await writeFile(out+'/verification_key.json',JSON.stringify(verificationKey));
 const template=await readFile('node_modules/snarkjs/templates/verifier_groth16.sol.ejs','utf8');
-const verifier=(await zKey.exportSolidityVerifier(out+'/join-split.zkey',{groth16:template})).replace('contract Groth16Verifier','contract JoinSplitVerifier');
+const verifier=(await zKey.exportSolidityVerifier(out+'/join-split.zkey',{groth16:template})).replace('contract Groth16Verifier','contract JoinSplitVerifier').replaceAll('staticcall(sub(gas(), 2000), 7,','staticcall(10000, 7,').replaceAll('staticcall(sub(gas(), 2000), 6,','staticcall(1000, 6,').replaceAll('staticcall(sub(gas(), 2000), 8,','staticcall(200000, 8,');
 await writeFile('packages/private-pool/contracts/JoinSplitVerifier.sol',verifier);
 const sources={};for(const name of ['PrivatePool','JoinSplitVerifier'])sources[name+'.sol']={content:await readFile('packages/private-pool/contracts/'+name+'.sol','utf8')};
 const compiled=JSON.parse(solc.compile(JSON.stringify({language:'Solidity',sources,settings:{optimizer:{enabled:true,runs:200},viaIR:true,evmVersion:'shanghai',outputSelection:{'*':{'*':['abi','evm.bytecode.object','evm.deployedBytecode.object']}}}})));

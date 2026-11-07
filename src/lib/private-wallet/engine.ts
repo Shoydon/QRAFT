@@ -1,11 +1,12 @@
-import {bytesToHex,encodeFunctionData,isAddress,keccak256,type Hex} from 'viem';
+import {bytesToHex,encodeFunctionData,isAddress,keccak256,parseAbi,type Hex} from 'viem';
+import {decodeFrameTransaction,nonceSlot,NONCE_MANAGER_LEGACY} from '../../../packages/frame-account/src/frametx';
 import {createKey,preparePublicKey,signAtomic,submitAtomic} from '../atomic/account';
 import {modularNonce,predictModular} from '../atomic/modular';
 import type {VaultSession} from '../pq/vault';
 import {derivePrivateKeys,decodePrivateAddress,encodePrivateAddress,type PrivateKeys} from './crypto';
 import {deploymentDomain,type PrivateDeployment} from './deployment';
 import {discoverPrivateWallet,type PrivateRpc,type PrivateSnapshot} from './discovery';
-import {privateFramePlan} from './frames';
+import {privateFramePlan,privateProofFramePlan,privateBootstrapPlan} from './frames';
 import {selectNotes} from './planner';
 import {actionDigest,buildPrivateAction,privatePoolAbi} from './protocol';
 import {provePrivate} from './prover';
@@ -55,9 +56,8 @@ export class PrivateWalletEngine{
   if(canonical.hash!==receipt.blockHash)throw Error('Payment confirmation changed. Check again.');
   const head=BigInt(await this.rpc.request<Hex>('eth_blockNumber'));
   if(head<=BigInt(receipt.blockNumber))throw Error('Payment included. Waiting for one more block before confirming.');
-  // Only a transaction signed and journaled by this wallet can be classified
-  // as its failed deposit; arbitrary relay-provided failed receipts prove nothing.
-  if(this.intent?.raw&&(BigInt(receipt.status)!==1n||receipt.frameReceipts?.some(f=>BigInt(f.status)!==1n))){this.intent=null;await this.save();throw Error('Deposit was included but failed. Your private balance has been refreshed; you can try again.');}
+  // Only the exact locally journaled transaction is classified as failed.
+  if(this.intent?.raw&&(BigInt(receipt.status)!==1n||receipt.frameReceipts?.some(f=>BigInt(f.status)!==1n))){this.intent=null;await this.save();throw Error('Payment was included but failed. Your private balance has been refreshed; you can try again.');}
   if(!this.intent?.id)throw Error('Missing saved payment identity');
   assertPrivateSettlement(receipt,{hash,id:this.intent.id,pool:this.domain.pool,paymaster:this.manifest.contracts.paymaster.address});
  }
@@ -68,13 +68,13 @@ export class PrivateWalletEngine{
   if(!this.verified){
    const chain=BigInt(await this.rpc.request<Hex>('eth_chainId')),genesis=await this.rpc.request<{hash:Hex}>('eth_getBlockByNumber',['0x0',false]);
    if(chain!==BigInt(this.domain.chainId)||genesis.hash!==this.domain.genesisHash)throw Error('Private wallet network identity mismatch');
-   const code=await this.rpc.request<Hex>('eth_getCode',[this.domain.pool,'latest']);if(keccak256(code)!==this.manifest.contracts.pool.runtimeHash)throw Error('Private pool code does not match the pinned deployment');this.verified=true;
+   for(const name of ['pool','proofAccount','bootstrap','paymaster','implementation','validator','factory'] as const){const pin=this.manifest.contracts[name];const code=await this.rpc.request<Hex>('eth_getCode',[pin.address,'latest']);if(keccak256(code)!==pin.runtimeHash)throw Error('Contract code does not match the pinned deployment: '+name);}this.verified=true;
   }
   const snapshot=await discoverPrivateWallet(this.rpc,this.domain,this.keys,this.status,BigInt(this.manifest.fromBlock),this.controller.signal);
-  const publicBalance=BigInt(await this.rpc.request<Hex>('eth_getBalance',[this.address,'latest']));
-  this.snapshot=snapshot;this.publicBalance=publicBalance;
+  this.snapshot=snapshot;
   this.status(snapshot.pendingBalance?'Incoming payment confirming':'Balance up to date');
  }
+ async refreshPublic(){this.publicBalance=BigInt(await this.rpc.request<Hex>('eth_getBalance',[this.address,'latest']));}
  async pay(kind:PaymentKind,amount:bigint,recipient:string){
   if(!navigator.locks)throw Error('This browser cannot safely coordinate wallet payments');
   return navigator.locks.request(this.storage,{ifAvailable:true},async lock=>{
@@ -89,9 +89,24 @@ export class PrivateWalletEngine{
    if(kind==='combine'&&selection!.inputs.length<2)throw Error('Your balance is already ready to spend');
    if(kind==='withdraw'&&(!isAddress(recipient)||/^0x0{40}$/i.test(recipient)||recipient.toLowerCase()===this.domain.pool.toLowerCase()))throw Error('Enter a valid public Ethereum address');
    if(kind==='shield'){
+    await this.refreshPublic();
     if(amount>this.publicBalance!)throw Error('Insufficient public ETH. Fund your public address first.');
-    this.status('Preparing your public wallet');const key=createKey(this.keys.signingSeed);
-    try{const r=await fetch('/api/atomic/wallet',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({publicKey:bytesToHex(key.publicKey)})});const j=await r.json();if(!r.ok)throw Error(j.error);if(j.address.toLowerCase()!==this.address.toLowerCase())throw Error('Public wallet address mismatch');}finally{key.seed.fill(0);}
+    const code=await this.rpc.request<Hex>('eth_getCode',[this.address,'latest']);
+    const ready=code!=='0x'&&BigInt(await this.rpc.request<Hex>('eth_call',[{to:this.address,data:encodeFunctionData({abi:parseAbi(['function bootstrapped() view returns(bool)']),functionName:'bootstrapped'})},'latest']))===1n;
+    if(!ready){
+     this.status('Preparing your ERC-8286 PQ account: setup sponsored by QRAFT');
+     const setupStorage=this.storage+':setup';let stored=localStorage.getItem(setupStorage);
+     if(stored){const previous=await decryptLocal<{raw:Hex}>(stored,this.session);const receipt=await this.rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[decodeFrameTransaction(previous.raw).transactionHash()]);if(receipt&&(BigInt(receipt.status)!==1n||receipt.frameReceipts?.some(f=>BigInt(f.status)!==1n))){const canonical=await this.rpc.request<{hash:Hex}>('eth_getBlockByNumber',[receipt.blockNumber,false]);if(canonical.hash!==receipt.blockHash)throw Error('Account setup confirmation changed');localStorage.setItem(setupStorage+':last-failed',stored);localStorage.removeItem(setupStorage);stored=null;}}
+     let setup: {raw:Hex};
+     if(stored)setup=await decryptLocal<{raw:Hex}>(stored,this.session);
+     else{
+      const key=createKey(this.keys.signingSeed);
+      try{const initial=privateBootstrapPlan(this.manifest.contracts.bootstrap.address,key,this.manifest.contracts.paymaster.address);const nonce=BigInt(await this.rpc.request<Hex>('eth_getStorageAt',[NONCE_MANAGER_LEGACY,nonceSlot(initial.sender,initial.nonceKeys[0]!),'latest']));const tx=signAtomic(privateBootstrapPlan(this.manifest.contracts.bootstrap.address,key,this.manifest.contracts.paymaster.address,nonce),key);setup={raw:tx.raw()};localStorage.setItem(setupStorage,await encryptLocal(setup,this.session));}finally{key.seed.fill(0);}
+     }
+     await submitAtomic(this.rpc,setup.raw,this.status);localStorage.removeItem(setupStorage);
+     this.publicBalance=BigInt(await this.rpc.request<Hex>('eth_getBalance',[this.address,'latest']));
+    }
+
    }
    const outputs=kind==='shield'?[{recipient:self,amount}]:kind==='combine'?[{recipient:self,amount:selection!.inputs.reduce((s,n)=>s+n.amount,0n)}]:[
     ...(kind==='send'?[{recipient:decodePrivateAddress(recipient,this.domain),amount}]:[]),
@@ -106,19 +121,20 @@ export class PrivateWalletEngine{
    if(kind==='shield'){
     const key=createKey(this.keys.signingSeed);
     try{const nonce=await modularNonce(this.rpc,this.address,this.manifest.contracts.validator.address);const data=encodeFunctionData({abi:privatePoolAbi,functionName:'transact',args:[built.action,proof]});const signed=signAtomic(privateFramePlan(this.address,key,nonce,this.manifest.contracts.validator.address,this.manifest.contracts.paymaster.address,this.domain.pool,data,amount),key);this.intent.raw=signed.raw();this.intent.hash=signed.transactionHash();await this.save();}finally{key.seed.fill(0);}
+   }else{
+    const data=encodeFunctionData({abi:privatePoolAbi,functionName:'transact',args:[built.action,proof]});
+    const tx=privateProofFramePlan(this.manifest.contracts.proofAccount.address,this.manifest.contracts.paymaster.address,this.domain.pool,data,this.intent.id!);
+    this.intent.raw=tx.raw();this.intent.hash=tx.transactionHash();await this.save();
    }
    return this.submit();
   });
  }
  private async submit():Promise<Hex>{
   if(!this.intent?.payment)throw Error('Preparation was interrupted. Refresh after the safety timer expires.');
-  let hash:Hex;
-  if(this.intent.raw){this.status('Submitting your deposit through Nym');hash=(await submitAtomic(this.rpc,this.intent.raw,this.status)).hash;}
-  else{
-   this.status('Submitting through the shared relay');
-   const r=await fetch('/api/private/relay',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(this.intent.payment)});const result=await r.json();if(!r.ok)throw Error(result.error);hash=result.hash;
-  }
-  // An HTTP result alone is insufficient: check the canonical chain receipt.
+  if(!this.intent.raw)throw Error('Transaction preparation was interrupted. Wait for its safety timer to expire.');
+  this.status('Submitting your transaction through Nym Anon RPC');
+  const hash=(await submitAtomic(this.rpc,this.intent.raw,this.status)).hash;
+  // A submission result alone is insufficient: check the canonical chain receipt.
   const receipt=await this.rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[hash]);if(!receipt)throw Error('Submitted. Confirmation is still pending; check this payment again.');await this.confirmReceipt(receipt,hash);
   this.intent=null;await this.save();await this.refresh();this.status('Payment confirmed');return hash;
  }
@@ -130,10 +146,10 @@ export class PrivateWalletEngine{
    if(discovered){const receipt=await this.rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[discovered]);if(receipt){await this.confirmReceipt(receipt,discovered);this.intent=null;await this.save();this.status('Payment confirmed');return discovered;}}
    if(this.intent.hash){const receipt=await this.rpc.request<PqRawReceipt|null>('eth_getTransactionReceipt',[this.intent.hash]);if(receipt){const hash=this.intent.hash;await this.confirmReceipt(receipt,hash);this.intent=null;await this.save();this.status('Payment confirmed');return hash;}}
    if(this.snapshot!.timestamp>BigInt(this.intent.expiry)+30n){
-    // Proof is now invalid even if a relay still holds it. A fresh snapshot
+    // Proof is now invalid even if the network still holds it. A fresh snapshot
     // determines whether its inputs were spent before expiry.
     // Preserve the terminal signed intent for diagnosis. Once expiry passed,
-    // its pool call cannot move value even if the carrier nonce is still free.
+    // its pool call cannot move value even if the action nonce is still free.
     localStorage.setItem(this.storage+':last-expired',await encryptLocal(this.intent,this.session));
     this.intent=null;await this.save();this.status('Balance checked. You can prepare a new payment.');return;
    }

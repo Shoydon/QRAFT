@@ -1,6 +1,6 @@
 {
   "passed": true,
   "transport": "Nym",
-  "requestCount": 8,
+  "requestCount": 13,
   "scope": "Real Nym boot, chain/genesis and pool code verification, pool discovery and public balance read"
 }

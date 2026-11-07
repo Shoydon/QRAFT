@@ -56,7 +56,7 @@ export default function LandingPage() {
             {TAGLINE}
           </h1>
           <p className="mx-auto mt-6 max-w-[36ch] text-base leading-relaxed text-ink-60 sm:text-lg">
-            Deposit ETH, send and receive private payments, and manage everything in one balance.
+            Use one unified private balance to send funds anonymously.
           </p>
           <Link
             href="/"
@@ -103,7 +103,7 @@ export default function LandingPage() {
                 {TRANSPORT.worker.anonymizing
                   ? `Browser reads use ${TRANSPORT.worker.label}, with no direct fallback.`
                   : "Browser reads use a non-anonymous diagnostic worker."}{" "}
-                Private payments use an HTTPS relay that can see IP and timing.
+                Private payments are submitted directly through Anon RPC using a shared proof-authorized account, with no backend relayer.
               </dd>
             </div>
             <div className="grid gap-2 py-6 sm:grid-cols-[12rem_1fr] sm:gap-8 sm:py-7">
