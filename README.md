@@ -25,7 +25,7 @@ Every wallet action is one native EIP-8141 transaction with three frames:
 
 Public deposits use the user's own account. Private sends and withdrawals name a shared proof-authorized contract as the sender, without a shared signing key. The browser builds and submits every payment through Nym Anon RPC. No per-payment contract is deployed and no application relayer is used.
 
-A separate onchain bootstrap account checks the user's PQ signature and deploys their public account. QRAFT's bootstrap budget pays the 0.012 ETH account stake, and the paymaster pays setup gas. User ETH is not debited for setup. No per-user operator transaction is needed.
+The factory checks the user's PQ signature and deploys their public account directly. The paymaster funds both the 0.012 ETH account stake and setup gas; there is no separate bootstrap account. User ETH is not debited for setup. No per-user operator transaction is needed.
 
 The browser holds wallet seeds encrypted with AES-GCM under a WebAuthn PRF-derived key, and a reload stays locked until explicit unlock. Signing, spending and receiving keys derive from one master secret, so there is no separate viewing key to back up.
 
@@ -39,13 +39,13 @@ Chain reads, account setup, deposits, private sends and withdrawals use Nym Anon
 
 Nym hides the browser IP from the destination RPC; this does not establish protection from every traffic-correlation observer. Worker discovery is a direct bootstrap request, and the separately provided faucet is a public funding service. Public deposit and withdrawal amounts and addresses remain visible.
 
-The proof account pins the exact frame shape, fees, sponsor and gas budgets. Its nonce key is the action digest with sequence zero, allowing independent private operations without a server nonce allocator. The bootstrap uses a signed per-key nonce sequence, permitting recovery after a failed setup. Pool expiry is enforced during execution because the deployed node has no supported expiry-verifier predeploy. An expired or otherwise failing operation can waste sponsored gas; sponsorship is finite and not abuse-proof.
+The proof account pins the exact frame shape, fees, sponsor and gas budgets. Its nonce key is the action digest with sequence zero, allowing independent private operations without a server nonce allocator. The factory uses a signed per-key nonce sequence, permitting recovery after a failed setup. Pool expiry is enforced during execution because the deployed node has no supported expiry-verifier predeploy. An expired or otherwise failing operation can waste sponsored gas; sponsorship is finite and not abuse-proof.
 
 See [the contract inventory](docs/pq/relayerless-contracts.md) for deployed addresses and responsibilities.
 
 ## Relayerless verification
 
-The [native transaction run](docs/pq/private-pool-direct-live.json) confirms account setup without charging the user, deposit, private send and withdrawal through the alternative mempool. All three payment frames succeeded with the pinned paymaster paying gas. Modified nonce, fee, execution-gas, state-gas and sponsor fields were rejected in native simulation. The [full browser run through real Nym](docs/pq/private-wallet-e2e-nym.json) also passed: two deposits combined into one balance, private send with lost-acknowledgement recovery, restore after clearing browser storage with the original passkey, and withdrawal with exact payout and change.
+The [native transaction run](docs/pq/private-pool-direct-live.json) confirms direct factory setup with paymaster-funded stake and no user charge, deposit, private send and withdrawal through the alternative mempool. All three payment frames succeeded with the pinned paymaster paying gas. Modified nonce, fee, execution-gas, state-gas and sponsor fields were rejected in native simulation. The [full browser run through real Nym](docs/pq/private-wallet-e2e-nym.json) also passed: two deposits combined into one balance, private send with lost-acknowledgement recovery, restore after clearing browser storage with the original passkey, and withdrawal with exact payout and change.
 
 ## Earlier verified flow (before relayer removal)
 

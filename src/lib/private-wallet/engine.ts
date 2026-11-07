@@ -6,7 +6,7 @@ import type {VaultSession} from '../pq/vault';
 import {derivePrivateKeys,decodePrivateAddress,encodePrivateAddress,type PrivateKeys} from './crypto';
 import {deploymentDomain,type PrivateDeployment} from './deployment';
 import {discoverPrivateWallet,type PrivateRpc,type PrivateSnapshot} from './discovery';
-import {privateFramePlan,privateProofFramePlan,privateBootstrapPlan} from './frames';
+import {privateFramePlan,privateProofFramePlan,privateFactoryPlan} from './frames';
 import {selectNotes} from './planner';
 import {actionDigest,buildPrivateAction,privatePoolAbi} from './protocol';
 import {provePrivate} from './prover';
@@ -68,7 +68,7 @@ export class PrivateWalletEngine{
   if(!this.verified){
    const chain=BigInt(await this.rpc.request<Hex>('eth_chainId')),genesis=await this.rpc.request<{hash:Hex}>('eth_getBlockByNumber',['0x0',false]);
    if(chain!==BigInt(this.domain.chainId)||genesis.hash!==this.domain.genesisHash)throw Error('Private wallet network identity mismatch');
-   for(const name of ['pool','proofAccount','bootstrap','paymaster','implementation','validator','factory'] as const){const pin=this.manifest.contracts[name];const code=await this.rpc.request<Hex>('eth_getCode',[pin.address,'latest']);if(keccak256(code)!==pin.runtimeHash)throw Error('Contract code does not match the pinned deployment: '+name);}this.verified=true;
+   for(const name of ['pool','proofAccount','paymaster','implementation','validator','factory'] as const){const pin=this.manifest.contracts[name];const code=await this.rpc.request<Hex>('eth_getCode',[pin.address,'latest']);if(keccak256(code)!==pin.runtimeHash)throw Error('Contract code does not match the pinned deployment: '+name);}this.verified=true;
   }
   const snapshot=await discoverPrivateWallet(this.rpc,this.domain,this.keys,this.status,BigInt(this.manifest.fromBlock),this.controller.signal);
   this.snapshot=snapshot;
@@ -92,7 +92,7 @@ export class PrivateWalletEngine{
     await this.refreshPublic();
     if(amount>this.publicBalance!)throw Error('Insufficient public ETH. Fund your public address first.');
     const code=await this.rpc.request<Hex>('eth_getCode',[this.address,'latest']);
-    const ready=code!=='0x'&&BigInt(await this.rpc.request<Hex>('eth_call',[{to:this.address,data:encodeFunctionData({abi:parseAbi(['function bootstrapped() view returns(bool)']),functionName:'bootstrapped'})},'latest']))===1n;
+    const ready=code!=='0x'&&BigInt(await this.rpc.request<Hex>('eth_call',[{to:this.address,data:encodeFunctionData({abi:parseAbi(['function setupComplete() view returns(bool)']),functionName:'setupComplete'})},'latest']))===1n;
     if(!ready){
      this.status('Preparing your ERC-8286 PQ account: setup sponsored by QRAFT');
      const setupStorage=this.storage+':setup';let stored=localStorage.getItem(setupStorage);
@@ -101,7 +101,7 @@ export class PrivateWalletEngine{
      if(stored)setup=await decryptLocal<{raw:Hex}>(stored,this.session);
      else{
       const key=createKey(this.keys.signingSeed);
-      try{const initial=privateBootstrapPlan(this.manifest.contracts.bootstrap.address,key,this.manifest.contracts.paymaster.address);const nonce=BigInt(await this.rpc.request<Hex>('eth_getStorageAt',[NONCE_MANAGER_LEGACY,nonceSlot(initial.sender,initial.nonceKeys[0]!),'latest']));const tx=signAtomic(privateBootstrapPlan(this.manifest.contracts.bootstrap.address,key,this.manifest.contracts.paymaster.address,nonce),key);setup={raw:tx.raw()};localStorage.setItem(setupStorage,await encryptLocal(setup,this.session));}finally{key.seed.fill(0);}
+      try{const initial=privateFactoryPlan(this.manifest.contracts.factory.address,key,this.manifest.contracts.paymaster.address);const nonce=BigInt(await this.rpc.request<Hex>('eth_getStorageAt',[NONCE_MANAGER_LEGACY,nonceSlot(initial.sender,initial.nonceKeys[0]!),'latest']));const tx=signAtomic(privateFactoryPlan(this.manifest.contracts.factory.address,key,this.manifest.contracts.paymaster.address,nonce),key);setup={raw:tx.raw()};localStorage.setItem(setupStorage,await encryptLocal(setup,this.session));}finally{key.seed.fill(0);}
      }
      await submitAtomic(this.rpc,setup.raw,this.status);localStorage.removeItem(setupStorage);
      this.publicBalance=BigInt(await this.rpc.request<Hex>('eth_getBalance',[this.address,'latest']));

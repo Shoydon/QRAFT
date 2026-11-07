@@ -13,12 +13,11 @@ const rpc={async request<T>(method:string,params:unknown[]=[]):Promise<T>{const 
 const pin=(name:keyof typeof manifest.contracts)=>manifest.contracts[name].address as Hex;
 const operations:[string,Hex,Hex,bigint][]=[
  ['initialize-proof',pin('proofAccount'),encodeFunctionData({abi:parseAbi(['function initialize(address)']),functionName:'initialize',args:[pin('paymaster')]}),0n],
- ['initialize-bootstrap',pin('bootstrap'),encodeFunctionData({abi:parseAbi(['function initialize(address,address,address,address)']),functionName:'initialize',args:[pin('factory'),pin('implementation'),pin('validator'),pin('paymaster')]}),0n],
+ ['initialize-factory',pin('factory'),encodeFunctionData({abi:parseAbi(['function initialize(address,address,address)']),functionName:'initialize',args:[pin('implementation'),pin('validator'),pin('paymaster')]}),0n],
  ['proof-stake',pin('proofAccount'),encodeFunctionData({abi:parseAbi(['function stake() payable']),functionName:'stake'}),12000000000000000n],
- ['bootstrap-stake',pin('bootstrap'),encodeFunctionData({abi:parseAbi(['function stake() payable']),functionName:'stake'}),12000000000000000n],
+ ['factory-stake',pin('factory'),encodeFunctionData({abi:parseAbi(['function stake() payable']),functionName:'stake'}),12000000000000000n],
  ['sponsor-stake',pin('paymaster'),encodeFunctionData({abi:parseAbi(['function stake() payable']),functionName:'stake'}),12000000000000000n],
  ['sponsor-fund',pin('paymaster'),'0x',500000000000000000n],
- ['onboarding-fund',pin('bootstrap'),'0x',240000000000000000n],
 ];
 for(const [name,to,data,value] of operations){
  const file=root+'/setup-'+name+'-'+to+'.json';let tx:{raw:Hex;hash:Hex};

@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "pool": "0x8A15B95e7174409F38b977f99a2a88Bb5dd8ce70",
+  "pool": "0xbE1EeA2060D89b76f61aB5d24caeD53a49E3f18e",
   "transport": "Real Nym reads, browser-only account setup and all native payment submissions; no application relayer",
   "events": [
     "alice created, encrypted recovery verified",

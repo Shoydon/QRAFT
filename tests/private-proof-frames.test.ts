@@ -16,12 +16,13 @@ describe('direct proof-authorized submission',()=>{
  it('refuses the legacy linear nonce lane',()=>{expect(()=>privateProofFramePlan(account,sponsor,pool,'0x','0x00')).toThrow();});
 });
 
-import {privateBootstrapPlan} from '../src/lib/private-wallet/frames';
+import {privateFactoryPlan} from '../src/lib/private-wallet/frames';
 import {createKey,signAtomic} from '../src/lib/atomic/account';
-it('bootstrap owner signature binds its retry sequence and setup operation',()=>{
+it('factory owner signature binds its retry sequence and setup operation',()=>{
  const key=createKey(new Uint8Array(32).fill(7));
- const first=privateBootstrapPlan(account,key,sponsor,0n),retry=privateBootstrapPlan(account,key,sponsor,1n);
+ const first=privateFactoryPlan(account,key,sponsor,0n),retry=privateFactoryPlan(account,key,sponsor,1n);
  expect(first.nonceKeys).toEqual(retry.nonceKeys);expect(first.sigHash()).not.toBe(retry.sigHash());
+ expect(first.sender).toBe(account);expect(first.frames.map(f=>f.target)).toEqual([account,sponsor,account]);
  expect(first.frames[2]!.target).toBe(account);expect(first.frames[2]!.value).toBe(0n);
  const signed=signAtomic(retry,key);expect(signed.sigHash()).toBe(retry.sigHash());expect(signed.signatures).toHaveLength(1);key.seed.fill(0);
 });

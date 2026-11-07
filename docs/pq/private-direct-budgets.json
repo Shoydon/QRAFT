@@ -1,12 +1,9 @@
 {
-  "hash": "0x7eb5c89fb3c460fc2b4e383580177af73aac4f7c492d9133e82c9ca2a36dce45",
+  "hash": "0x7249247d5d26eb54c76a5993b5a879a79e8ddd12829240722a9490b908f9a2f7",
   "type": "0x6",
   "paymaster": {
-    "address": "0x9751B7f9F83B3B396dB4b4520961D747e9362D92",
-    "balanceWei": "100500000000000000000"
+    "address": "0xc571C61dfcDC74ba507Ec8E4A54D2aA0Fc30c700",
+    "balanceWei": "220500000000000000000"
   },
-  "bootstrap": {
-    "address": "0x459ACe42519Fd2D8b4E3aFE843aC1f306fDcd85C",
-    "balanceWei": "120240000000000000000"
-  }
+  "purpose": "Combined gas and per-account 0.012 ETH setup stake budget"
 }

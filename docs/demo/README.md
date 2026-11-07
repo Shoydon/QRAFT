@@ -17,8 +17,8 @@ Slide 6 diagrams these paths. Wallet signing and receiving encryption use PQ alg
 ## Slide order and claim sources
 
 1. QRAFT: identity and unified private balance.
-2. Problems: sender identity, quantum-vulnerable signatures, RPC metadata, execution and gas complexity, and fragmented private funds.
-3. Solution: private payments, automatic balance, exact amounts and passkey control.
+2. Tornado Cash Classic limitations: fixed amounts and notes, public withdrawals, separate network privacy, no bundled PQ wallet, and gas/relayer handling.
+3. QRAFT solutions: unified balance, encrypted payments, Anon RPC, PQ wallets, and sponsored EIP-8141 execution.
 4. Comparison: Tornado Cash Classic only, with Nova’s overlapping capabilities disclosed.
 5. Demo: app handoff for deposit, transfer, receipt and withdrawal.
 6. Architecture: local proof, direct Anon RPC submission, pool verification and recipient discovery.
@@ -27,6 +27,8 @@ Slide 6 diagrams these paths. Wallet signing and receiving encryption use PQ alg
 QRAFT claims are grounded in `src/lib/private-wallet/`, `src/config/brand.ts`, `docs/pq/private-wallet-e2e-nym.json`, `docs/pq/private-pool-direct-live.json` and `docs/pq/private-wallet-review.md`.
 
 Comparison sources:
+- [Classic contract: denominations, public recipients and optional relayer fees](https://github.com/tornadocash/tornado-core/blob/master/contracts/Tornado.sol)
+- [Network privacy guidance](https://github.com/tornadocash-community/docs/blob/en/general/tips-to-remain-anonymous.md)
 - [Classic deposit, withdrawal and optional encrypted Note Account](https://github.com/tornadocash-community/docs/blob/en/tornado-cash-classic/deposit-withdraw.md)
 - [Classic fixed-denomination design](https://tornado.cash/audits/TornadoCash_whitepaper_v1.4.pdf)
 - [Nova arbitrary amounts, shielded transfers and balance](https://docs.tornado.cash/tornado-cash-nova/logging-in-tornado-cash-nova)

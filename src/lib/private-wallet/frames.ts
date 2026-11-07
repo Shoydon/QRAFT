@@ -17,10 +17,10 @@ export function privateProofFramePlan(account:Hex,paymaster:Hex,pool:Hex,data:He
  ]});
 }
 
-export function privateBootstrapPlan(account:Hex,key:PQKey,paymaster:Hex,nonce=0n){
+export function privateFactoryPlan(account:Hex,key:PQKey,paymaster:Hex,nonce=0n){
  const prepared=bytesToHex(preparePublicKey(key.publicKey).subarray(1));
  const commitment=keccak256(prepared);
- const nonceKey=keccak256(encodeAbiParameters([{type:'string'},{type:'uint256'},{type:'address'},{type:'bytes32'}],['QRAFT_BOOTSTRAP_V1',1337n,account,commitment]));
+ const nonceKey=keccak256(encodeAbiParameters([{type:'string'},{type:'uint256'},{type:'address'},{type:'bytes32'}],['QRAFT_FACTORY_V1',1337n,account,commitment]));
  const base=privateFramePlan(account,key,nonce,account,paymaster,account,'0x');
  return new FrameTx({...base,nonceKeys:[BigInt(nonceKey)],frames:[base.frames[0]!,base.frames[1]!,new Frame({mode:2,target:account,gasLimit:2000000,stateGasLimit:8000000,data:encodeFunctionData({abi:parseAbi(['function create(bytes32 commitment)']),functionName:'create',args:[commitment]})})]});
 }

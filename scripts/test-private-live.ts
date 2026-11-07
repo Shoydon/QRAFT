@@ -1,11 +1,11 @@
 /** Real native-frame verification. Setup keys remain in ignored mode-0600 files. */
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
-import {encodeFunctionData,hexToBytes,bytesToHex,keccak256,type Hex} from 'viem';
+import {encodeFunctionData,hexToBytes,bytesToHex,keccak256,parseAbi,type Hex} from 'viem';
 import manifest from '../public/private-deployment.json';
 import {derivePrivateKeys,encodePrivateAddress,decodePrivateAddress,buildPrivateAction,privatePoolAbi} from '../src/lib/private-wallet/protocol';
 import {discoverPrivateWallet} from '../src/lib/private-wallet/discovery';
 import {deploymentDomain,type PrivateDeployment} from '../src/lib/private-wallet/deployment';
-import {privateFramePlan,privateProofFramePlan,privateBootstrapPlan} from '../src/lib/private-wallet/frames';
+import {privateFramePlan,privateProofFramePlan,privateFactoryPlan} from '../src/lib/private-wallet/frames';
 import {createKey,preparePublicKey,signAtomic,submitAtomic} from '../src/lib/atomic/account';
 import {modularNonce,predictModular} from '../src/lib/atomic/modular';
 import {Frame,FrameTx,assertSuccessfulReceipt,type FrameSimulation} from '../packages/frame-account/src/frametx';
@@ -21,14 +21,27 @@ const alice=derivePrivateKeys(hexToBytes(seeds.alice)),bob=derivePrivateKeys(hex
 const receiver=(keys:typeof alice)=>decodePrivateAddress(encodePrivateAddress(domain,keys),domain);
 const signing=createKey(alice.signingSeed),commitment=keccak256(bytesToHex(preparePublicKey(signing.publicKey).subarray(1)));
 const publicAddress=predictModular(manifest.contracts.factory.address as Hex,manifest.contracts.implementation.address as Hex,manifest.contracts.validator.address as Hex,commitment);
+let setupEvidence:unknown=null;
 if(await rpc.request<Hex>('eth_getCode',[publicAddress,'latest'])==='0x'){
  const fund=Bun.spawn(['bun','scripts/fund-private-test-address.ts',publicAddress],{stdout:'inherit',stderr:'inherit'});if(await fund.exited!==0)throw Error('Test funding failed');
+ const sponsorBefore=BigInt(await rpc.request<Hex>('eth_getBalance',[manifest.contracts.paymaster.address,'latest']));
  const fundedBalance=await rpc.request<Hex>('eth_getBalance',[publicAddress,'latest']);
- const setup=signAtomic(privateBootstrapPlan(manifest.contracts.bootstrap.address as Hex,signing,manifest.contracts.paymaster.address as Hex),signing);
+ const setup=signAtomic(privateFactoryPlan(manifest.contracts.factory.address as Hex,signing,manifest.contracts.paymaster.address as Hex),signing);
  const simulation=await rpc.request<FrameSimulation>('ethrex_simulateFrameTransaction',[setup.raw(),'latest']);
- console.log('Bootstrap simulation',JSON.stringify(simulation));
- await submitAtomic(rpc,setup.raw(),console.log);if(await rpc.request<Hex>('eth_getBalance',[publicAddress,'latest'])!==fundedBalance)throw Error('Sponsored setup debited user balance');console.log('Browser-style bootstrap confirmed without charging user',publicAddress);
+ if(simulation.executionStatus!=='success'||simulation.frames?.some(f=>!f.succeeded))throw Error('Factory setup simulation failed: '+JSON.stringify(simulation));
+ // Callers cannot withdraw setup funds directly or substitute another commitment.
+ let rejected=false;try{await rpc.request('eth_call',[{to:manifest.contracts.paymaster.address,data:encodeFunctionData({abi:parseAbi(['function fundSetup(bytes32)']),functionName:'fundSetup',args:[commitment]})},'latest']);}catch{rejected=true;}if(!rejected)throw Error('Unauthorized setup funding accepted');
+ const badSetup=signAtomic(new FrameTx({...setup,frames:setup.frames.map((f,i)=>i===2?new Frame({...f,data:encodeFunctionData({abi:parseAbi(['function create(bytes32)']),functionName:'create',args:[keccak256('0x1234')]})}):f)}),signing);
+ let badRejected=false;try{const sim=await rpc.request<FrameSimulation>('ethrex_simulateFrameTransaction',[badSetup.raw(),'latest']);badRejected=sim.executionStatus!=='success'||!!sim.frames?.some(f=>!f.succeeded);}catch{badRejected=true;}if(!badRejected)throw Error('Wrong setup commitment accepted');
+ console.log('Factory setup simulation passed; unauthorized funding and wrong commitment rejected');
+ await submitAtomic(rpc,setup.raw(),console.log);if(await rpc.request<Hex>('eth_getBalance',[publicAddress,'latest'])!==fundedBalance)throw Error('Sponsored setup debited user balance');const sponsorAfter=BigInt(await rpc.request<Hex>('eth_getBalance',[manifest.contracts.paymaster.address,'latest']));if(sponsorBefore-sponsorAfter<12000000000000000n)throw Error('Paymaster did not fund account stake');
+ if(BigInt(await rpc.request<Hex>('eth_getBalance',[manifest.contracts.factory.address,'latest']))!==0n)throw Error('Factory retained setup funds');
+ const completed=await rpc.request<Hex>('eth_call',[{to:publicAddress,data:encodeFunctionData({abi:parseAbi(['function setupComplete() view returns(bool)']),functionName:'setupComplete'})},'latest']);if(BigInt(completed)!==1n)throw Error('Account stake not completed');
+ const duplicate=signAtomic(privateFactoryPlan(manifest.contracts.factory.address as Hex,signing,manifest.contracts.paymaster.address as Hex,1n),signing);let duplicateRejected=false;try{const sim=await rpc.request<FrameSimulation>('ethrex_simulateFrameTransaction',[duplicate.raw(),'latest']);duplicateRejected=sim.executionStatus!=='success'||!!sim.frames?.some(f=>!f.succeeded);}catch{duplicateRejected=true;}if(!duplicateRejected)throw Error('Repeated setup accepted');
+ setupEvidence={hash:setup.transactionHash(),factory:manifest.contracts.factory.address,account:publicAddress,stakeWei:'12000000000000000',paymasterDebitWei:String(sponsorBefore-sponsorAfter),userBalanceUnchanged:true,unauthorizedFundingRejected:true,wrongCommitmentRejected:true,repeatedSetupRejected:true};await writeFile(root+'/setup-evidence.json',JSON.stringify(setupEvidence,null,2));
+ console.log('Factory deployment and paymaster-funded stake confirmed; user balance unchanged; repeated setup rejected',publicAddress);
 }
+if(!setupEvidence)setupEvidence=JSON.parse(await readFile(root+'/setup-evidence.json','utf8'));
 const results:unknown[]=[];
 for(const step of ['shield','send','withdraw'] as const){
  const file=root+'/'+step+'.json';let saved:{hash:Hex;raw:Hex;expiry:string};
@@ -62,4 +75,4 @@ for(const step of ['shield','send','withdraw'] as const){
  if(!receipt)throw Error('Awaiting '+step+' '+saved.hash);assertSuccessfulReceipt(receipt,3);results.push({step,hash:saved.hash,gasUsed:String(BigInt(receipt.gasUsed)),payer:receipt.payer,frameStatuses:receipt.frameReceipts?.map(f=>f.status)});console.log('Confirmed',step,saved.hash);
  await new Promise(r=>setTimeout(r,12000));
 }
-await writeFile('docs/pq/private-pool-direct-live.json',JSON.stringify({passed:true,route:process.argv.includes('--execution-test')?'explicit direct execution test':'alternative mempool',pool:domain.pool,results},null,2)+'\n');
+await writeFile('docs/pq/private-pool-direct-live.json',JSON.stringify({passed:true,route:process.argv.includes('--execution-test')?'explicit direct execution test':'alternative mempool',pool:domain.pool,setup:setupEvidence,results},null,2)+'\n');

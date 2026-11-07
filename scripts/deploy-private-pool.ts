@@ -8,7 +8,7 @@ import type { PqRawReceipt } from '../src/lib/pq/account';
 import { ALT_MEMPOOL } from '../packages/frame-account/src/alt-mempool';
 import { signServiceFrame, DEPLOYMENT_PROXY, DEPLOYMENT_PROXY_HASH } from '../src/lib/pq/service-frames';
 
-const root='.local/private-pool-relayerless-deployment';await mkdir(root,{recursive:true,mode:0o700});
+const root='.local/private-pool-factory-deployment';await mkdir(root,{recursive:true,mode:0o700});
 const keyPath='.local/alt-mempool-deployment/operator.json';
 if((await stat(keyPath)).mode&0o077)throw Error('Operator key must be mode 0600');
 const key=JSON.parse(await readFile(keyPath,'utf8'));if(key.chainId!==1337)throw Error('Wrong operator chain');
@@ -30,7 +30,7 @@ try{journal=JSON.parse(await readFile(file,'utf8'));}catch(e){if(!e||typeof e!==
 if(journal.genesisHash!==ALT_MEMPOOL.genesisHash||journal.operator!==account.address)throw Error('Journal identity mismatch');
 const save=()=>writeFile(file,JSON.stringify(journal,null,2),{mode:0o600});
 async function deploy(name:string,data:Hex){
- const salt=keccak256(stringToHex(`qraft:private-wallet:v3:${name}${name==='proofAccount'?':'+journal.contracts.bootstrap?.address:''}`));const predicted=getCreate2Address({from:DEPLOYMENT_PROXY,salt,bytecode:data});
+ const salt=keccak256(stringToHex(`qraft:private-wallet:v4:${name}${name==='proofAccount'?':'+journal.contracts.factory?.address:''}`));const predicted=getCreate2Address({from:DEPLOYMENT_PROXY,salt,bytecode:data});
  let record=journal.transactions.find((r)=>r.name===name&&r.inputHash===keccak256(data)&&r.address.toLowerCase()===predicted.toLowerCase());
  if(record&&record.inputHash!==keccak256(data))throw Error('Deployment inputs changed; use a new deployment version');
  if(!record){
@@ -54,16 +54,16 @@ async function deploy(name:string,data:Hex){
 const address=(name:string)=>journal.contracts[name]!.address as Hex;
 const artifact=async(name:string)=>JSON.parse(await readFile(`packages/private-pool/build/${name}.json`,'utf8'));
 const existing=JSON.parse(await readFile('public/modular-deployment.json','utf8'));
-for(const name of ['walletVerifier','validator','implementation','factory']){const pin=existing.contracts[name];if(keccak256(await rpc.request<Hex>('eth_getCode',[pin.address,'latest']))!==pin.runtimeHash)throw Error('Existing contract changed: '+name);journal.contracts[name]=pin;}
+for(const name of ['walletVerifier','validator']){const pin=existing.contracts[name];if(keccak256(await rpc.request<Hex>('eth_getCode',[pin.address,'latest']))!==pin.runtimeHash)throw Error('Existing contract changed: '+name);journal.contracts[name]=pin;}
 const specs:[string,string,()=>unknown[]][]=[
- ['bootstrap','PrivateBootstrapAccount',()=>[account.address,address('walletVerifier')]],
- ['implementation','PrivateWalletAccount',()=>[address('bootstrap')]],
+ ['factory','PrivateWalletFactory',()=>[account.address,address('walletVerifier')]],
+ ['implementation','PrivateWalletAccount',()=>[address('factory')]],
  ['proofVerifier','JoinSplitVerifier',()=>[]],
  ['hasher','Poseidon',()=>[]],
  ['pool','PrivatePool',()=>[address('proofVerifier'),address('hasher'),ALT_MEMPOOL.genesisHash]],
  ['proofAccount','PrivateProofAccount',()=>[address('pool'),account.address]],
- ['paymaster','PrivatePaymaster',()=>[account.address,address('implementation'),address('validator'),address('pool'),address('proofAccount'),address('bootstrap')]],
+ ['paymaster','PrivatePaymaster',()=>[account.address,address('implementation'),address('validator'),address('pool'),address('proofAccount'),address('factory')]],
 ];
 for(const [name,artifactName,args]of specs)await deploy(name,encodeDeployData({...await artifact(artifactName),args:args()}));
-await writeFile('public/private-deployment.json',JSON.stringify({version:1,id:'qraft-private-wallet-1337-v3',chainId:1337,genesisHash:ALT_MEMPOOL.genesisHash,rpcUrl:ALT_MEMPOOL.execution,sidecarUrl:'https://altmempool.forshtat.com/rpc',explorerUrl:ALT_MEMPOOL.explorer,fromBlock:journal.contracts.pool!.block,proofProfile:'Groth16-BN254-single-operator-development-setup',walletAlgorithm:'ML-DSA-44',contracts:journal.contracts},null,2)+'\n');
+await writeFile('public/private-deployment.json',JSON.stringify({version:1,id:'qraft-private-wallet-1337-v4',chainId:1337,genesisHash:ALT_MEMPOOL.genesisHash,rpcUrl:ALT_MEMPOOL.execution,sidecarUrl:'https://altmempool.forshtat.com/rpc',explorerUrl:ALT_MEMPOOL.explorer,fromBlock:journal.contracts.pool!.block,proofProfile:'Groth16-BN254-single-operator-development-setup',walletAlgorithm:'ML-DSA-44',contracts:journal.contracts},null,2)+'\n');
 console.log('Private wallet infrastructure deployed. Sponsor funding and proof-account staking are separate explicit operations.');
